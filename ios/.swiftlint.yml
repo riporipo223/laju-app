@@ -1,0 +1,9 @@
+disabled_rules:
+  - todo
+opt_in_rules:
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+line_length: 120
+identifier_name:
+  min_length: 2
+force_unwrapping: error

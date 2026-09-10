@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="1" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="NO" userDefinedModelVersionIdentifier="">
+    <entity name="Run" representedClassName="Run" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="startedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="endedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="distanceMeters" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="durationSeconds" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="gpsRoute" optional="YES" attributeType="Binary"/>
+        <attribute name="estimatedPoints" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="syncStatus" attributeType="String" defaultValueString="pendingSync"/>
+        <attribute name="serverRunId" optional="YES" attributeType="String"/>
+        <attribute name="serverStatus" optional="YES" attributeType="String"/>
+        <attribute name="flagConfidence" optional="YES" attributeType="String"/>
+        <attribute name="anomalyFlags" optional="YES" attributeType="Binary"/>
+        <attribute name="finalPointsAwarded" optional="YES" attributeType="Double" usesScalarValueType="NO"/>
+        <attribute name="resolvedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="SyncMeta" representedClassName="SyncMeta" syncable="YES" codeGenerationType="class">
+        <attribute name="lastReconciledAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastReconcileAttemptAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+</model>

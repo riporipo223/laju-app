@@ -1,0 +1,52 @@
+name: Laju
+options:
+  bundleIdPrefix: com.laju
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    DEVELOPMENT_TEAM: NTHHTF27HU
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Laju:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Laju
+    info:
+      path: Laju/Info.plist
+      properties:
+        UILaunchScreen: {}
+        NSLocationWhenInUseUsageDescription: "Laju needs your location to track your run's route and distance."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Laju needs background location access so your run keeps tracking while your phone is locked or the app is in the background."
+        UIBackgroundModes:
+          - location
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.designbyripo.laju
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+  LajuTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: LajuTests
+    dependencies:
+      - target: Laju
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Laju:
+    build:
+      targets:
+        Laju: all
+        LajuTests: [test]
+    test:
+      targets:
+        - LajuTests
