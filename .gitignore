@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Claude Code local session/agent config — not project source
+.claude/
+
+# iOS (ios/ has its own .gitignore for Xcode-specific patterns —
+# DerivedData, generated Laju.xcodeproj, xcuserdata, .build, .swiftpm)
+
+# Backend (Next.js/TypeScript, tech-spec.md §1) — empty until T2.1, these
+# patterns are here ready for when it's populated
+backend/node_modules/
+backend/.next/
+backend/dist/
+backend/.env
+backend/.env.local
+backend/.env*.local
+backend/npm-debug.log*
+backend/.vercel/
