@@ -11,10 +11,53 @@ final class LocationTrackingService: NSObject, ObservableObject, CLLocationManag
     @Published private(set) var lastLocation: CLLocation?
 
     /// Emits each new location while tracking is active — consumed by
-    /// `RunViewModel` (T0.8) to append points to the active `Run`.
+    /// `RunViewModel` (T0.8) to append points to the active `Run`. Only
+    /// points that pass the filters below (accuracy/staleness/speed) are
+    /// emitted — `RunViewModel` can trust everything it receives here.
     let locationUpdates = PassthroughSubject<CLLocation, Never>()
 
     private let manager = CLLocationManager()
+    private var lastAcceptedLocation: CLLocation?
+
+    /// Reject fixes worse than this. 20m is generous relative to modern
+    /// GPS's typical settled accuracy (single-digit meters outdoors) —
+    /// wide enough to not choke on ordinary urban-canyon degradation, but
+    /// tight enough to reject the cold-fix/multipath readings (tens to
+    /// hundreds of meters) that caused the 6459 km/h jump found in
+    /// on-device testing (2026-09-10, run pk=34).
+    private let maxHorizontalAccuracy: CLLocationAccuracy = 20
+
+    /// Reject a fix whose timestamp is this far from now — a cached/stale
+    /// fix reused as if it were live.
+    private let maxStalenessSeconds: TimeInterval = 5
+
+    /// Reject a fix implying more than this speed from the last accepted
+    /// fix. ~12 m/s (~43 km/h) is a generous sanity ceiling for a human
+    /// runner — well above elite sprint pace — chosen deliberately loose
+    /// since this is a client-side GPS-jump filter, not the anti-cheat
+    /// pace/speed logic already designed server-side in tech-spec.md
+    /// §2.4.1 (which operates on different, tighter thresholds against
+    /// the full submitted route). The two must not be conflated: this one
+    /// only protects local distance/point display from GPS noise.
+    private let maxPlausibleSpeedMetersPerSecond: Double = 12
+
+    /// Rejects a step smaller than the reporting accuracy of either
+    /// endpoint — added after a real on-device incident (2026-09-11, run
+    /// pk=38): a person moved <10m net, but 5 accepted fixes each showed
+    /// individually "plausible" walking-speed deltas (11.47m, 14.15m,
+    /// 7.96m — none tripped the speed filter above) that were actually
+    /// GPS jitter oscillating around one spot (lat drifted south then
+    /// back north almost to its starting value), summing to a reported
+    /// 33m. No single filter above catches this class of error — it's
+    /// not one bad point, it's the accumulation method (sum of
+    /// consecutive deltas) having no floor for "was this actually
+    /// movement, or just noise within the fix's own uncertainty circle."
+    /// Standard GPS-jitter heuristic: don't trust a step you can't
+    /// distinguish from the position's own error margin.
+    private func isBelowJitterFloor(_ location: CLLocation, comparedTo last: CLLocation) -> Bool {
+        let floor = max(location.horizontalAccuracy, last.horizontalAccuracy)
+        return location.distance(from: last) < floor
+    }
 
     override init() {
         authorizationStatus = manager.authorizationStatus
@@ -62,16 +105,62 @@ final class LocationTrackingService: NSObject, ObservableObject, CLLocationManag
 
     func locationManager(_: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+
+        if let reason = rejectionReason(for: location) {
+            // Rejected points are logged too (T0.7 console requirement
+            // extends here) — needed to debug the filter itself, not just
+            // the points it lets through.
+            print(
+                "LocationTrackingService: REJECTED (\(reason)) lat=\(location.coordinate.latitude)" +
+                    " lng=\(location.coordinate.longitude) accuracy=\(location.horizontalAccuracy)m" +
+                    " t=\(location.timestamp)"
+            )
+            return
+        }
+
         lastLocation = location
-        // T0.7 DoD: GPS points visible in console while foregrounded — a
-        // plain print, not a logging framework, since this is a
-        // throwaway verification aid, not user-facing or persisted.
+        lastAcceptedLocation = location
         print(
             "LocationTrackingService: lat=\(location.coordinate.latitude)" +
                 " lng=\(location.coordinate.longitude) alt=\(location.altitude)" +
-                " t=\(location.timestamp)"
+                " accuracy=\(location.horizontalAccuracy)m t=\(location.timestamp)"
         )
         locationUpdates.send(location)
+    }
+
+    /// `nil` means the point passes all three filters. Order is
+    /// accuracy → staleness → speed, checked independently — a point can
+    /// fail more than one, but only the first failing reason is reported
+    /// (good enough for debugging; the goal is knowing a point was
+    /// dropped and roughly why, not full multi-cause diagnostics).
+    private func rejectionReason(for location: CLLocation) -> String? {
+        if location.horizontalAccuracy < 0 || location.horizontalAccuracy > maxHorizontalAccuracy {
+            return "accuracy=\(location.horizontalAccuracy)m exceeds \(maxHorizontalAccuracy)m threshold"
+        }
+
+        let staleness = abs(location.timestamp.timeIntervalSinceNow)
+        if staleness > maxStalenessSeconds {
+            return "stale, \(staleness)s old (threshold \(maxStalenessSeconds)s)"
+        }
+
+        if let last = lastAcceptedLocation {
+            let dt = location.timestamp.timeIntervalSince(last.timestamp)
+            if dt > 0 {
+                let impliedSpeed = location.distance(from: last) / dt
+                if impliedSpeed > maxPlausibleSpeedMetersPerSecond {
+                    return "implausible speed \(impliedSpeed)m/s exceeds " +
+                        "\(maxPlausibleSpeedMetersPerSecond)m/s threshold"
+                }
+            }
+
+            if isBelowJitterFloor(location, comparedTo: last) {
+                let floor = max(location.horizontalAccuracy, last.horizontalAccuracy)
+                let dist = location.distance(from: last)
+                return "jitter: step \(dist)m below accuracy floor \(floor)m"
+            }
+        }
+
+        return nil
     }
 
     func locationManager(_: CLLocationManager, didFailWithError error: Error) {
