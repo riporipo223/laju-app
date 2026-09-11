@@ -1,6 +1,10 @@
 # macOS
 .DS_Store
 
+# Product/business docs — kept local only, not on GitHub (private repo or
+# not, still sensitive: lean canvas, MVP report, full tech spec)
+Laju/documents/
+
 # Claude Code local session/agent config — not project source
 .claude/
 
