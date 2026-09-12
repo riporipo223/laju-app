@@ -1,9 +1,15 @@
-name: CI
+name: CI (iOS)
 
 on:
-  pull_request:
   push:
     branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ci-ios.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ci-ios.yml"
 
 jobs:
   ios:
@@ -50,19 +56,3 @@ jobs:
       - name: Build + test
         run: |
           xcodebuild -scheme Laju -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" test
-
-  backend:
-    name: Backend — lint, test
-    runs-on: ubuntu-latest
-    if: false # activates once T2.1 creates backend/package.json — not yet, Fase 2 not built
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
