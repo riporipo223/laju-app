@@ -5,11 +5,9 @@ on:
     branches: [main]
     paths:
       - "backend/**"
-      - ".github/workflows/ci-backend.yml"
   pull_request:
     paths:
       - "backend/**"
-      - ".github/workflows/ci-backend.yml"
 
 jobs:
   backend:
