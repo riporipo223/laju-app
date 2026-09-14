@@ -21,3 +21,4 @@ backend/.env.local
 backend/.env*.local
 backend/npm-debug.log*
 backend/.vercel/
+backend/tsconfig.tsbuildinfo
