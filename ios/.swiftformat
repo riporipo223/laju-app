@@ -2,3 +2,4 @@
 --maxwidth 120
 --semicolons never
 --self remove
+--commas inline
