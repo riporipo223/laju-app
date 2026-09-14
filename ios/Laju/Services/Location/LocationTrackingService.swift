@@ -79,6 +79,19 @@ final class LocationTrackingService: NSObject, ObservableObject, CLLocationManag
         manager.requestAlwaysAuthorization()
     }
 
+    /// Run Tracking Screen (Fase 1 UI): a single fix to center the map on
+    /// the user BEFORE Start is tapped (device feedback, 2026-09-13: the
+    /// map defaulted to a zoomed-out world view pre-run). `requestLocation()`
+    /// delivers through the SAME `didUpdateLocations` delegate callback as
+    /// continuous tracking — same accuracy/staleness filtering, same
+    /// `lastLocation` published property — so this is one line of reuse,
+    /// not a second location pipeline. Independent of `isTracking`/
+    /// `startTracking()`/`stopTracking()`: doesn't enable background
+    /// updates and stops itself after one fix (or a timeout error).
+    func requestOneTimeLocation() {
+        manager.requestLocation()
+    }
+
     /// Starts a tracking session. `allowsBackgroundLocationUpdates` is
     /// only valid to set to `true` while updates are active and the app
     /// has the `location` UIBackgroundMode (Info.plist) — this is the
@@ -97,6 +110,20 @@ final class LocationTrackingService: NSObject, ObservableObject, CLLocationManag
         manager.stopUpdatingLocation()
         manager.allowsBackgroundLocationUpdates = false
         isTracking = false
+    }
+
+    /// Clears filter state left over from a PREVIOUS run — found
+    /// necessary on-device (2026-09-13): starting a new run shortly after
+    /// a prior one, without moving in between, had every fix in the new
+    /// run rejected by the jitter floor against the old run's last
+    /// accepted position (same spot, so every step reads as noise) — the
+    /// map's `currentCoordinate` never got its first fix, staying
+    /// zoomed-out indefinitely. Call this only from a genuinely NEW run's
+    /// Start — **never** from `resume()` (T1.2b), which deliberately
+    /// keeps filter continuity across a pause within the SAME run.
+    func resetSessionFilterState() {
+        lastAcceptedLocation = nil
+        lastLocation = nil
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
