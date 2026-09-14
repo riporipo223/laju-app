@@ -1,1 +1,82 @@
-[]
+[
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 179, "streak_days": 0 },
+    "expected_points": 2.5,
+    "note": "just below 3:00/km boundary -> 0.5x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 180, "streak_days": 0 },
+    "expected_points": 6.0,
+    "note": "exactly 3:00/km -> half-open boundary moves into 1.2x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 239, "streak_days": 0 },
+    "expected_points": 6.0,
+    "note": "just below 4:00/km boundary -> still 1.2x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 240, "streak_days": 0 },
+    "expected_points": 5.0,
+    "note": "exactly 4:00/km -> moves into 1.0x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 419, "streak_days": 0 },
+    "expected_points": 5.0,
+    "note": "just below 7:00/km boundary -> still 1.0x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 420, "streak_days": 0 },
+    "expected_points": 4.5,
+    "note": "exactly 7:00/km -> moves into 0.9x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 599, "streak_days": 0 },
+    "expected_points": 4.5,
+    "note": "just below 10:00/km boundary -> still 0.9x bracket"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 600, "streak_days": 0 },
+    "expected_points": 3.5,
+    "note": "exactly 10:00/km -> moves into 0.7x bracket (last, no upper bound)"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 300, "streak_days": 0 },
+    "expected_points": 5.0,
+    "note": "streak baseline: 0 days -> 0 bonus"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 300, "streak_days": 1 },
+    "expected_points": 7.0,
+    "note": "streak 1 day -> +2 bonus"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 300, "streak_days": 7 },
+    "expected_points": 19.0,
+    "note": "streak at cap (7 days) -> +14 bonus"
+  },
+  {
+    "input": { "distance_km": 5, "avg_pace_sec_per_km": 300, "streak_days": 8 },
+    "expected_points": 19.0,
+    "note": "streak beyond cap -> bonus stays capped at 7 days' worth, identical to streak_days=7"
+  },
+  {
+    "input": { "distance_km": 0, "avg_pace_sec_per_km": 300, "streak_days": 0 },
+    "expected_points": 0.0,
+    "note": "zero-distance edge case -> zero base points regardless of pace"
+  },
+  {
+    "input": { "distance_km": 0, "avg_pace_sec_per_km": 300, "streak_days": 7 },
+    "expected_points": 0.0,
+    "note": "2026-09-13 grinding-exploit regression: zero distance with max streak must be 0 total, not just 0 base points. Found on-device as 6.0/8.0 points from distanceMeters=0 runs (streak_days 3/4) before this gate existed -- streak_bonus is additive, so it survived distance=0 unless gated explicitly"
+  },
+  {
+    "input": { "distance_km": 0.099, "avg_pace_sec_per_km": 300, "streak_days": 7 },
+    "expected_points": 0.0,
+    "note": "just below MIN_DISTANCE_KM_FOR_POINTS (0.1km) -> still gated to 0 despite max streak"
+  },
+  {
+    "input": { "distance_km": 0.1, "avg_pace_sec_per_km": 300, "streak_days": 0 },
+    "expected_points": 0.1,
+    "note": "exactly at MIN_DISTANCE_KM_FOR_POINTS -> gate is inclusive, points awarded normally (0.1km * 1.0x pace multiplier)"
+  }
+]
