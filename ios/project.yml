@@ -25,6 +25,7 @@ targets:
         NSLocationAlwaysAndWhenInUseUsageDescription: "Laju needs background location access so your run keeps tracking while your phone is locked or the app is in the background."
         UIBackgroundModes:
           - location
+          - audio
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.designbyripo.laju
