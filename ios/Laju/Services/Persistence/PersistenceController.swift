@@ -55,6 +55,81 @@ struct PersistenceController {
         try? context.save()
         return created
     }
+
+    /// T1.3: cumulative local points — the input to level derivation
+    /// (`LevelProgression`). Sum of `estimatedPoints` across every local
+    /// `Run` row; product-spec.md §4.4 describes this as "synced+local"
+    /// once a server exists (Fase 2), but nothing is synced yet, so all
+    /// local runs are the whole story for now. A plain fetch-and-reduce,
+    /// not a Core Data aggregate expression — Fase 1's run counts (a
+    /// dozen-ish for internal dogfood, T1.17) don't need one.
+    static func totalEstimatedPoints(in context: NSManagedObjectContext) -> Double {
+        let request = Run.fetchRequest()
+        let runs = (try? context.fetch(request)) ?? []
+        return runs.reduce(0) { $0 + $1.estimatedPoints }
+    }
+
+    /// T1.4: local runs' `startedAt`, feeding `StreakTracker`'s
+    /// consecutive-day computation — same reasoning as
+    /// `totalEstimatedPoints` above, a plain fetch is enough at Fase 1's
+    /// run counts. `minDistanceMeters` filters out non-qualifying runs
+    /// (`PointFormula.minDistanceKmForPoints`, fixed 2026-09-13) — without
+    /// this, a 0-distance tap-Start-tap-Stop run would count as "ran
+    /// today" for every future day's streak calculation, letting someone
+    /// keep a streak alive indefinitely with empty runs and cash it in
+    /// later on one real run.
+    /// `excluding` (T1.14, crash recovery): a run being finalized long
+    /// after `start()` may already have real distance persisted on it —
+    /// without excluding its own id, it would appear in its own "prior
+    /// days" streak lookup and get double-counted (once as "prior", once
+    /// via the +1 "this run qualifies" step). Not needed at `start()`
+    /// itself — a run's own row still has `distanceMeters=0` at that
+    /// point, so the `>=` predicate already excludes it for free.
+    static func runStartDates(
+        in context: NSManagedObjectContext,
+        minDistanceMeters: Double,
+        excluding excludedRunID: UUID? = nil
+    ) -> [Date] {
+        let request = Run.fetchRequest()
+        var predicates = [NSPredicate(format: "distanceMeters >= %f", minDistanceMeters)]
+        if let excludedRunID {
+            predicates.append(NSPredicate(format: "id != %@", excludedRunID as CVarArg))
+        }
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+        let runs = (try? context.fetch(request)) ?? []
+        return runs.compactMap(\.startedAt)
+    }
+
+    /// T1.14: runs with no `endedAt` — either still genuinely active in
+    /// this same process, or left over from a force-quit/crash in a
+    /// PREVIOUS session (the case this task exists for). Sorted oldest
+    /// first so the caller can treat `.last` as "the most recent one" —
+    /// see `RunRecovery.resolveOnLaunch`.
+    static func unfinishedRuns(in context: NSManagedObjectContext) -> [Run] {
+        let request = Run.fetchRequest()
+        request.predicate = NSPredicate(format: "endedAt == nil")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Run.startedAt, ascending: true)]
+        return (try? context.fetch(request)) ?? []
+    }
+
+    /// Combines `runStartDates` + `StreakTracker.currentStreakDays` for "prior qualifying streak as of the
+    /// day before `referenceDate`" — shared by `RunViewModel.beginTracking` (`start()`/resume) and
+    /// `RunRecovery.finalize`, which both need this exact computation.
+    static func priorStreakDays(
+        asOf referenceDate: Date,
+        in context: NSManagedObjectContext,
+        excluding excludedRunID: UUID? = nil
+    ) -> Int {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: referenceDate) ?? referenceDate
+        return StreakTracker.currentStreakDays(
+            asOf: yesterday,
+            runDates: runStartDates(
+                in: context,
+                minDistanceMeters: PointFormula.minDistanceKmForPoints * 1000,
+                excluding: excludedRunID
+            )
+        )
+    }
 }
 
 /// Anchor type for `Bundle(for:)` — resolves to the app's own bundle
