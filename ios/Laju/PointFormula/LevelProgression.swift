@@ -45,4 +45,11 @@ enum LevelProgression {
         }
         return next.pointsRequired - totalPoints
     }
+
+    /// T2.16: the server (`GET /api/users/me/progress`) returns `current_level` as a bare `Int`, not a
+    /// title — this looks up the title for that level number from the same parity-tested table, rather than
+    /// re-deriving the level from `totalPoints` a second time.
+    static func title(forLevel level: Int) -> String {
+        levelThresholds.first(where: { $0.level == level })?.title ?? levelThresholds[0].title
+    }
 }

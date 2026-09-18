@@ -14,6 +14,9 @@ struct LajuApp: App {
     /// on creation (`SyncService.init`), so a run recorded fully offline syncs as soon as the network
     /// returns without needing any view to appear first.
     @StateObject private var syncService: SyncService
+    /// T2.16: server-authoritative progress (points/level/trust_score) for `ProfileView`. Owned here, not
+    /// inside the screen, so `refresh()` stays externally callable (T2.14d's future reconciliation loop).
+    @StateObject private var progressViewModel = ProgressViewModel()
 
     init() {
         let controller = PersistenceController.shared
@@ -31,6 +34,7 @@ struct LajuApp: App {
                 }
             }
             .environmentObject(authService)
+            .environmentObject(progressViewModel)
             .environment(\.managedObjectContext, persistenceController.container.viewContext)
             // Dark-native by brand identity, not by system-appearance-following (design-notes.md §0).
             .preferredColorScheme(.dark)

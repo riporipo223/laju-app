@@ -11,6 +11,11 @@ struct ProfileView: View {
     )
     private var runs: FetchedResults<Run>
 
+    /// T2.16: server-authoritative points/level, owned at the app root (`LajuApp`) so `refresh()` stays
+    /// externally callable. `nil` `serverProgress` (never fetched yet, or offline) falls back to the local
+    /// `runs`-derived estimate below — same values this screen showed before T2.16 existed.
+    @EnvironmentObject private var progressViewModel: ProgressViewModel
+
     /// T1.13 AC2: no dedicated Settings screen exists yet — Profile is the closest existing home for this
     /// toggle. Same `UserDefaults` key `AudioCueService.isEnabled` reads/writes, not a separate flag.
     @AppStorage(AudioCueService.enabledDefaultsKey) private var audioCuesEnabled = true
@@ -28,6 +33,9 @@ struct ProfileView: View {
         .background(LajuColor.background.ignoresSafeArea())
         .navigationTitle("Profile")
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .task {
+            await progressViewModel.refresh()
+        }
     }
 
     // MARK: - Streak
@@ -84,10 +92,31 @@ struct ProfileView: View {
         runs.reduce(0) { $0 + $1.estimatedPoints }
     }
 
+    /// T2.16: server-derived values when available (`progressViewModel.serverProgress != nil`), otherwise
+    /// the same local `runs`-derived estimate this screen used before T2.16 — `levelCard` renders either.
+    @ViewBuilder
     private var levelSection: some View {
-        let level = LevelProgression.currentLevel(totalPoints: totalPoints)
-        let toNext = LevelProgression.pointsToNextLevel(totalPoints: totalPoints)
-        let currentThresholdPoints = level.pointsRequired
+        if let server = progressViewModel.serverProgress {
+            levelCard(
+                levelNumber: server.currentLevel,
+                title: LevelProgression.title(forLevel: server.currentLevel),
+                totalPoints: Double(server.totalPoints),
+                toNext: Double(server.pointsToNextLevel)
+            )
+        } else {
+            let level = LevelProgression.currentLevel(totalPoints: totalPoints)
+            levelCard(
+                levelNumber: level.level,
+                title: level.title,
+                totalPoints: totalPoints,
+                toNext: LevelProgression.pointsToNextLevel(totalPoints: totalPoints)
+            )
+        }
+    }
+
+    private func levelCard(levelNumber: Int, title: String, totalPoints: Double, toNext: Double) -> some View {
+        let currentThresholdPoints = LevelProgression.levelThresholds
+            .first(where: { $0.level == levelNumber })?.pointsRequired ?? 0
         let nextThresholdPoints = totalPoints + toNext
         let progress = toNext > 0
             ? (totalPoints - currentThresholdPoints) / max(nextThresholdPoints - currentThresholdPoints, 1)
@@ -95,7 +124,7 @@ struct ProfileView: View {
 
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Level \(level.level) — \(level.title)")
+                Text("Level \(levelNumber) — \(title)")
                     .font(LajuFont.heading)
                     .foregroundStyle(LajuColor.textPrimary)
                 Text("\(Int(totalPoints)) total points")
@@ -183,6 +212,7 @@ private struct StreakDayDot: View {
     NavigationStack {
         ProfileView()
             .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+            .environmentObject(ProgressViewModel())
     }
     .preferredColorScheme(.dark)
 }

@@ -36,4 +36,24 @@ struct APIClient: Sendable {
 
         return try RunSubmissionCoding.makeDecoder().decode(SubmitRunResponse.self, from: data)
     }
+
+    /// T2.16: `GET /api/users/me/progress` (database-api-spec.md §2.3) — server-authoritative points/level,
+    /// consumed by `ProgressViewModel`.
+    func fetchProgress(jwt: String) async throws -> ProgressResponse {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/users/me/progress"))
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: body)
+        }
+
+        return try JSONDecoder().decode(ProgressResponse.self, from: data)
+    }
 }

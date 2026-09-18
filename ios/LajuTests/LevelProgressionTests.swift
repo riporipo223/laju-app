@@ -52,4 +52,16 @@ final class LevelProgressionTests: XCTestCase {
         XCTAssertEqual(LevelProgression.pointsToNextLevel(totalPoints: 100), 200)
         XCTAssertEqual(LevelProgression.pointsToNextLevel(totalPoints: 6000), 6000)
     }
+
+    // MARK: - T2.16: title(forLevel:) — server sends a bare level Int, this resolves its title locally
+
+    func testTitleForLevelMatchesEachThresholdRow() {
+        XCTAssertEqual(LevelProgression.title(forLevel: 1), "Pemula")
+        XCTAssertEqual(LevelProgression.title(forLevel: 4), "Gigih")
+        XCTAssertEqual(LevelProgression.title(forLevel: 8), "Legenda")
+    }
+
+    func testTitleForLevelFallsBackToLevelOneForAnUnknownLevel() {
+        XCTAssertEqual(LevelProgression.title(forLevel: 99), "Pemula")
+    }
 }
