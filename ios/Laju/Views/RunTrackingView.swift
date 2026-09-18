@@ -67,7 +67,6 @@ private extension RunTrackingView {
                 HStack {
                     gpsStatusBanner
                     Spacer()
-                    profileButton
                     historyButton
                 }
                 if let notice = locationPermissionNotice {
@@ -230,7 +229,7 @@ private extension RunTrackingView {
             return locationService.lastLocation == nil ? .searching : .ready
         }
         guard let lastLocation = locationService.lastLocation else { return .searching }
-        return lastLocation.horizontalAccuracy <= 10 ? .ready : .reduced
+        return lastLocation.horizontalAccuracy <= RunViewModel.anchorAccuracyThresholdMeters ? .ready : .reduced
     }
 
     /// T1.15: separate from `gpsStatus` above (that one is about live signal quality, this is about the

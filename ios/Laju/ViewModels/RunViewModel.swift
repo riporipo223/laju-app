@@ -51,7 +51,7 @@ final class RunViewModel: ObservableObject {
     /// T1.4: consecutive qualifying days ending YESTERDAY, computed at `start()`/resume, reused by the live
     /// estimate and `stop()`. `effectiveStreakDays` below adds 1 for today only once distance clears
     /// `minDistanceKmForPoints` (tech-spec.md §2.2 grinding-exploit fix).
-    private var priorStreakDays = 0
+    var priorStreakDays = 0
 
     /// Drift guard (run pk=41): stationary indoors ~90min still accumulated 34.9m, none tripping speed/jitter
     /// filters. Fixes the reference at the last CONFIRMED movement.
@@ -64,8 +64,10 @@ final class RunViewModel: ObservableObject {
 
     /// A fix worse than this can't establish/move `stationaryAnchor` (2026-09-12): a poor first fix
     /// (`accuracy=15.11m`) became the anchor unconditionally; a much-better fix 12s later landed 35m away,
-    /// read as real movement though the phone never moved.
-    private let anchorAccuracyThresholdMeters: CLLocationAccuracy = 10
+    /// read as real movement though the phone never moved. `static` (not just `private`) so `RunTrackingView`'s
+    /// GPS-status banner can read the SAME number instead of a second hardcoded "10" (found in the 2026-09-15
+    /// false-trigger review: the two had silently drifted into two separate literals for one concept).
+    static let anchorAccuracyThresholdMeters: CLLocationAccuracy = 10
 
     /// Count-based trigger — 20 points at a typical few-second GPS interval is ~1min of coverage lost at worst.
     private let saveEveryNPoints = 20
@@ -285,11 +287,13 @@ final class RunViewModel: ObservableObject {
         guard let anchor = stationaryAnchor else {
             // First point — only trust it as the anchor if accurate enough (anchorAccuracyThresholdMeters
             // doc); a poor first fix must not seed a bad reference. Either way the raw point is recorded.
-            if location.horizontalAccuracy <= anchorAccuracyThresholdMeters {
+            if location.horizontalAccuracy <= Self.anchorAccuracyThresholdMeters {
                 stationaryAnchor = location
                 autoPauseWatchdog.confirmMovement()
                 lastLocation = location
                 updateCurrentEstimatedPoints()
+            } else {
+                autoPauseWatchdog.deferPauseForDegradedSignal() // degraded signal, not silence — AutoPauseWatchdog doc
             }
             appendPoint(location, to: run)
             return
@@ -299,13 +303,23 @@ final class RunViewModel: ObservableObject {
         if distanceFromAnchor <= stationaryRadiusMeters {
             // Within the anchor's noise radius — recorded raw, but does NOT count toward distance and does
             // NOT move the anchor/lastLocation. Keeping the anchor fixed is what stops it drifting (class doc).
+            //
+            // Poor accuracy here is genuinely ambiguous (could be real standing-still, could be a degraded fix
+            // that only LOOKS close to the anchor) — don't let it accumulate as confirmed-stationary evidence.
+            // Good accuracy within radius is the one case that's a reliable "actually not moving" signal, so
+            // it's deliberately left to just let the watchdog's clock keep running, unchanged.
+            if location.horizontalAccuracy > Self.anchorAccuracyThresholdMeters {
+                autoPauseWatchdog.deferPauseForDegradedSignal()
+            }
             appendPoint(location, to: run)
             return
         }
 
-        guard location.horizontalAccuracy <= anchorAccuracyThresholdMeters else {
+        guard location.horizontalAccuracy <= Self.anchorAccuracyThresholdMeters else {
             // Beyond the radius, but this fix itself is poor — don't trust it as the new anchor. Wait for a
-            // better fix; the raw point is still recorded.
+            // better fix; the raw point is still recorded. Same degraded-signal reasoning as above: a fix
+            // this far from the anchor, even an untrusted one, is real evidence against "stationary."
+            autoPauseWatchdog.deferPauseForDegradedSignal()
             appendPoint(location, to: run)
             return
         }
@@ -346,13 +360,6 @@ final class RunViewModel: ObservableObject {
     /// split tracking (T1.10), and the tracking screen's Time stat. `internal` so the view can re-read it.
     func liveActiveDuration() -> TimeInterval {
         accumulatedActiveDuration + (currentSegmentStartedAt.map { Date().timeIntervalSince($0) } ?? 0)
-    }
-
-    /// Grinding-exploit fix (tech-spec.md §2.2): `priorStreakDays` (qualifying days ending YESTERDAY) only
-    /// extends to today once today's distance clears `minDistanceKmForPoints` — a run that never reaches it
-    /// neither earns points nor counts as "ran today" for tomorrow's streak.
-    private func effectiveStreakDays(distanceKm: Double) -> Int {
-        distanceKm >= PointFormula.minDistanceKmForPoints ? priorStreakDays + 1 : priorStreakDays
     }
 
     private func appendPoint(_ location: CLLocation, to run: Run) {
