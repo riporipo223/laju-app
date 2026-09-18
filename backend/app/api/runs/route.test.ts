@@ -16,12 +16,29 @@ interface ExistingRunData {
   resolved_at: string | null;
   anomaly_flags: string[];
 }
+interface ReconciliationRunData {
+  id: string;
+  status: string;
+  flag_confidence: string | null;
+  final_points_awarded: number;
+  resolved_at: string | null;
+  updated_at: string;
+  anomaly_flags: string[];
+}
 const selectChain = {
   select: vi.fn(() => selectChain),
   eq: vi.fn(() => selectChain),
   maybeSingle: vi.fn(
     (): Promise<{ data: ExistingRunData | null; error: { code: string; message: string } | null }> =>
       Promise.resolve({ data: null, error: null })
+  ),
+  // T2.14c's GET /api/runs reconciliation query chain — select().eq().gte().order().limit(), terminal
+  // call is `limit`, mockable per test via mockResolvedValueOnce.
+  gte: vi.fn((_col: string, _val: string) => selectChain),
+  order: vi.fn(() => selectChain),
+  limit: vi.fn(
+    (): Promise<{ data: ReconciliationRunData[] | null; error: { message: string } | null }> =>
+      Promise.resolve({ data: [], error: null })
   ),
 };
 const trustMultiplierForUserMock = vi.fn();
@@ -58,7 +75,7 @@ vi.mock("@/lib/gps-geometry", () => ({
   haversineMeters: (...args: unknown[]) => haversineMetersMock(...args),
 }));
 
-const { POST } = await import("./route");
+const { POST, GET } = await import("./route");
 
 const completeUser = {
   id: "usr-1",
@@ -89,7 +106,7 @@ function validated() {
   return { status: "validated" as const, flagConfidence: null, excludedSegmentIndices: [], anomalyFlags: [], excludedPct: 0 };
 }
 
-describe("POST /api/runs", () => {
+describe("/api/runs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -337,6 +354,132 @@ describe("POST /api/runs", () => {
       // This request lost the race — it must not write a second PointTransaction or recompute trust twice.
       expect(recordRunPointsAndUpdateAggregateMock).not.toHaveBeenCalled();
       expect(recomputeAndPersistTrustScoreMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("GET /api/runs — T2.14c status reconciliation", () => {
+    function getRequest(since?: string) {
+      const url = new URL("https://example.com/api/runs");
+      if (since !== undefined) url.searchParams.set("since", since);
+      return new Request(url, { headers: { authorization: "Bearer valid-jwt" } });
+    }
+
+    it("rejects unauthenticated requests", async () => {
+      requireUserMock.mockResolvedValueOnce({ response: Response.json({}, { status: 401 }) });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(401);
+    });
+
+    it("400s only for a present-but-unparseable since, never for a missing one", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      const res = await GET(getRequest("not-a-real-date"));
+      expect(res.status).toBe(400);
+    });
+
+    it("a missing since defaults to a 90-day lookback, not a 400", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      selectChain.limit.mockResolvedValueOnce({ data: [], error: null });
+      const res = await GET(getRequest());
+      expect(res.status).toBe(200);
+      const gteArg = selectChain.gte.mock.calls.at(-1)?.[1] as string;
+      const expectedMs = Date.now() - 90 * 24 * 60 * 60 * 1000;
+      expect(Math.abs(new Date(gteArg).getTime() - expectedMs)).toBeLessThan(5000);
+    });
+
+    it("a valid since is passed straight through as the gte filter", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      selectChain.limit.mockResolvedValueOnce({ data: [], error: null });
+      await GET(getRequest("2026-09-01T00:00:00Z"));
+      expect(selectChain.gte).toHaveBeenCalledWith("updated_at", "2026-09-01T00:00:00.000Z");
+    });
+
+    it("response includes server_time and has_more, matches the flagged->rejected override shape", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      selectChain.limit.mockResolvedValueOnce({
+        data: [
+          {
+            id: "run_501",
+            status: "rejected",
+            flag_confidence: "high",
+            final_points_awarded: 0,
+            resolved_at: "2026-09-10T05:58:00Z",
+            updated_at: "2026-09-10T05:58:00Z",
+            anomaly_flags: ["gps_speed_jump_segment_1", "gps_speed_jump_segment_2"],
+          },
+        ],
+        error: null,
+      });
+      const res = await GET(getRequest("2026-09-01T00:00:00Z"));
+      const json = await res.json();
+      expect(typeof json.server_time).toBe("string");
+      expect(json.has_more).toBe(false);
+      expect(json.runs).toEqual([
+        {
+          run_id: "run_501",
+          status: "rejected",
+          flag_confidence: "high", // retained, not nulled, on an override-rejected run
+          final_points_awarded: 0,
+          resolved_at: "2026-09-10T05:58:00Z",
+          updated_at: "2026-09-10T05:58:00Z",
+          anomaly_flags: ["gps_speed_jump_segment_1", "gps_speed_jump_segment_2"],
+        },
+      ]);
+    });
+
+    it("a run that just transitioned into flagged (resolved_at still null) is still returned", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      selectChain.limit.mockResolvedValueOnce({
+        data: [
+          {
+            id: "run_flagged",
+            status: "flagged",
+            flag_confidence: "low",
+            final_points_awarded: 3,
+            resolved_at: null,
+            updated_at: "2026-09-10T06:00:00Z",
+            anomaly_flags: ["pace_cap_exceeded"],
+          },
+        ],
+        error: null,
+      });
+      const res = await GET(getRequest("2026-09-01T00:00:00Z"));
+      const json = await res.json();
+      expect(json.runs).toHaveLength(1);
+      expect(json.runs[0].resolved_at).toBeNull();
+    });
+
+    it("has_more is true and the result is trimmed to 200 when 201 rows qualify", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      const rows = Array.from({ length: 201 }, (_, i) => ({
+        id: `run_${i}`,
+        status: "validated",
+        flag_confidence: null,
+        final_points_awarded: 1,
+        resolved_at: "2026-09-10T06:00:00Z",
+        updated_at: `2026-09-10T06:00:${String(i).padStart(2, "0")}Z`,
+        anomaly_flags: [],
+      }));
+      selectChain.limit.mockResolvedValueOnce({ data: rows, error: null });
+      const res = await GET(getRequest("2026-09-01T00:00:00Z"));
+      const json = await res.json();
+      expect(json.has_more).toBe(true);
+      expect(json.runs).toHaveLength(200);
+      expect(json.runs[199].run_id).toBe("run_199"); // the 201st row (run_200) is trimmed, not returned
+    });
+
+    it("queries ordered by updated_at ascending, requesting page size + 1", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      selectChain.limit.mockResolvedValueOnce({ data: [], error: null });
+      await GET(getRequest("2026-09-01T00:00:00Z"));
+      expect(selectChain.order).toHaveBeenCalledWith("updated_at", { ascending: true });
+      expect(selectChain.limit).toHaveBeenCalledWith(201);
+    });
+
+    it("scopes the query to the authenticated caller's own user_id", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: { ...completeUser, id: "usr-second" } });
+      selectChain.limit.mockResolvedValueOnce({ data: [], error: null });
+      await GET(getRequest("2026-09-01T00:00:00Z"));
+      expect(selectChain.eq).toHaveBeenCalledWith("user_id", "usr-second");
     });
   });
 });

@@ -238,3 +238,86 @@ export async function POST(request: Request) {
     { status: 201 }
   );
 }
+
+const RECONCILIATION_DEFAULT_LOOKBACK_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+const RECONCILIATION_PAGE_SIZE = 200;
+
+interface ReconciliationRunRow {
+  id: string;
+  status: string;
+  flag_confidence: string | null;
+  final_points_awarded: number;
+  resolved_at: string | null;
+  updated_at: string;
+  anomaly_flags: string[];
+}
+
+/**
+ * T2.14c: database-api-spec.md §2.2b — lets the client learn about a `flagged` run's *later* resolution
+ * (LOW auto-approves up to `REVIEW_WINDOW_LOW` after submission, HIGH resolves at an arbitrary later time
+ * via manual override, tech-spec.md §2.4.1). Filters on `updated_at`, never `resolved_at` — `resolved_at`
+ * stays null for any still-`flagged` run, so a `resolved_at`-based filter would never surface the
+ * transition *into* `flagged` at all, only the later resolution out of it. `updated_at` is touched by
+ * T2.2's own DB trigger on every status/flag_confidence/final_points_awarded/resolved_at change, so
+ * nothing is missed.
+ *
+ * `since` omitted → `now() - 90 days` (the only legal way to seed a client's first-ever call — a device
+ * timestamp is explicitly forbidden here, same reasoning as `duration_seconds` staying client-asserted
+ * elsewhere: the client has no trustworthy timestamp of its own before this endpoint hands it one via
+ * `server_time`). `since` present but unparseable → `400`, never for a missing one.
+ *
+ * Result capped at `RECONCILIATION_PAGE_SIZE` (200), ordered `updated_at` ASC (oldest-changed-first) — the
+ * spec's own note on why DESC + `server_time`-cursor is wrong: it would advance the window past whatever's
+ * still undrained, permanently skipping it. ASC + "persist the last row's updated_at as the next since" is
+ * the only direction that can't lose data. Fetches `PAGE_SIZE + 1` rows to detect `has_more` without a
+ * separate COUNT query, then trims back to `PAGE_SIZE`.
+ */
+export async function GET(request: Request) {
+  const result = await requireUser(request);
+  if (isAuthFailure(result)) return result.response;
+  const { user } = result;
+
+  const url = new URL(request.url);
+  const sinceParam = url.searchParams.get("since");
+
+  let since: Date;
+  if (sinceParam === null) {
+    since = new Date(Date.now() - RECONCILIATION_DEFAULT_LOOKBACK_MS);
+  } else {
+    const parsed = new Date(sinceParam);
+    if (Number.isNaN(parsed.getTime())) {
+      return NextResponse.json({ error: "since must be a valid ISO 8601 timestamp" }, { status: 400 });
+    }
+    since = parsed;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("run")
+    .select("id, status, flag_confidence, final_points_awarded, resolved_at, updated_at, anomaly_flags")
+    .eq("user_id", user.id)
+    .gte("updated_at", since.toISOString())
+    .order("updated_at", { ascending: true })
+    .limit(RECONCILIATION_PAGE_SIZE + 1);
+
+  if (error) {
+    return NextResponse.json({ error: "Could not load runs" }, { status: 500 });
+  }
+
+  const rows = (data ?? []) as ReconciliationRunRow[];
+  const hasMore = rows.length > RECONCILIATION_PAGE_SIZE;
+  const page = hasMore ? rows.slice(0, RECONCILIATION_PAGE_SIZE) : rows;
+
+  return NextResponse.json({
+    server_time: new Date().toISOString(),
+    has_more: hasMore,
+    runs: page.map((row) => ({
+      run_id: row.id,
+      status: row.status,
+      flag_confidence: row.flag_confidence,
+      final_points_awarded: row.final_points_awarded,
+      resolved_at: row.resolved_at,
+      updated_at: row.updated_at,
+      anomaly_flags: row.anomaly_flags,
+    })),
+  });
+}
