@@ -23,7 +23,7 @@ final class AuthService: ObservableObject {
             guard let self else { return }
             for await (_, session) in client.auth.authStateChanges {
                 self.session = session
-                self.hasCheckedInitialSession = true
+                hasCheckedInitialSession = true
             }
         }
     }

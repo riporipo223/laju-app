@@ -1,28 +1,36 @@
 import CoreData
-import XCTest
 @testable import Laju
+import XCTest
 
 /// Intercepts every request on a test-configured `URLSession` — this codebase had no URLSession stubbing
 /// harness before T2.14, so this is the first one; `requestHandler` is set per-test.
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var requestHandler: (@Sendable (URLRequest) throws -> (Int, Data))?
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with _: URLRequest) -> Bool {
+        true
+    }
+
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
 
     override func startLoading() {
-        guard let handler = Self.requestHandler else {
+        guard let handler = Self.requestHandler, let url = request.url else {
             client?.urlProtocol(self, didFailWithError: URLError(.unknown))
             return
         }
         do {
             let (statusCode, data) = try handler(request)
-            let response = HTTPURLResponse(
-                url: request.url!,
+            guard let response = HTTPURLResponse(
+                url: url,
                 statusCode: statusCode,
                 httpVersion: "HTTP/1.1",
                 headerFields: ["Content-Type": "application/json"]
-            )!
+            ) else {
+                client?.urlProtocol(self, didFailWithError: URLError(.unknown))
+                return
+            }
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)
@@ -61,19 +69,14 @@ final class FakePathMonitor: PathMonitoring, @unchecked Sendable {
 
 @MainActor
 final class SyncServiceTests: XCTestCase {
-    private var context: NSManagedObjectContext!
-
-    /// Not `override func setUp()` — `XCTestCase.setUp()` is not itself `@MainActor`-isolated, so an
-    /// override inside this `@MainActor` class can't synchronously touch `context`. Called explicitly as
-    /// the first line of every test method instead (all of which are already `async`, so no isolation
-    /// mismatch there).
-    private func resetState() {
+    private func makeContext() -> NSManagedObjectContext {
         let controller = PersistenceController(inMemory: true)
-        context = controller.container.viewContext
         StubURLProtocol.requestHandler = nil
+        return controller.container.viewContext
     }
 
     private func seedPendingRun(
+        in context: NSManagedObjectContext,
         syncStatus: String = "pendingSync",
         endedAt: Date? = Date(),
         gpsRoute: [GPSPoint] = [GPSPoint(lat: -6.2, lng: 106.8, timestamp: Date(), elevation: 45.0)]
@@ -92,7 +95,7 @@ final class SyncServiceTests: XCTestCase {
     }
 
     private nonisolated static func successResponseBody(runId: String = UUID().uuidString) -> Data {
-        """
+        let json = """
         {
           "run_id": "\(runId)",
           "status": "validated",
@@ -101,11 +104,12 @@ final class SyncServiceTests: XCTestCase {
           "resolved_at": "2026-09-18T04:26:30.381Z",
           "anomaly_flags": []
         }
-        """.data(using: .utf8)!
+        """
+        return Data(json.utf8)
     }
 
     private nonisolated static func flaggedResponseBody(runId: String) -> Data {
-        """
+        let json = """
         {
           "run_id": "\(runId)",
           "status": "flagged",
@@ -114,14 +118,15 @@ final class SyncServiceTests: XCTestCase {
           "resolved_at": null,
           "anomaly_flags": ["pace_cap_exceeded"]
         }
-        """.data(using: .utf8)!
+        """
+        return Data(json.utf8)
     }
 
     // MARK: - DoD: a run recorded fully offline syncs automatically once connectivity returns
 
     func testSyncsAutomaticallyWhenConnectivityReturns() async throws {
-        resetState()
-        let run = seedPendingRun()
+        let context = makeContext()
+        let run = seedPendingRun(in: context)
         let responseRunId = UUID().uuidString
         StubURLProtocol.requestHandler = { _ in (201, Self.successResponseBody(runId: responseRunId)) }
         let fakeMonitor = FakePathMonitor()
@@ -153,9 +158,9 @@ final class SyncServiceTests: XCTestCase {
 
     // MARK: - DoD: local estimatedPoints replaced by server final_points_awarded after sync
 
-    func testFinalPointsAwardedPopulatedFromServerResponse() async throws {
-        resetState()
-        let run = seedPendingRun()
+    func testFinalPointsAwardedPopulatedFromServerResponse() async {
+        let context = makeContext()
+        let run = seedPendingRun(in: context)
         StubURLProtocol.requestHandler = { _ in (201, Self.successResponseBody()) }
         let service = SyncService(
             context: context,
@@ -171,10 +176,10 @@ final class SyncServiceTests: XCTestCase {
 
     // MARK: - DoD: repeated sync failures do not drop the run — stays queued, retried, never discarded
 
-    func testFailedSyncLeavesRunQueuedForRetry() async throws {
-        resetState()
-        let run = seedPendingRun()
-        StubURLProtocol.requestHandler = { _ in (500, Data("{\"error\":\"boom\"}".utf8)) }
+    func testFailedSyncLeavesRunQueuedForRetry() async {
+        let context = makeContext()
+        let run = seedPendingRun(in: context)
+        StubURLProtocol.requestHandler = { _ in (500, Data(#"{"error":"boom"}"#.utf8)) }
         let service = SyncService(
             context: context,
             apiClient: APIClient(session: StubURLProtocol.makeSession()),
@@ -183,7 +188,7 @@ final class SyncServiceTests: XCTestCase {
         )
 
         await service.syncPendingRuns()
-        XCTAssertEqual(run.syncStatus, "pendingSync", "a failed sync must not change syncStatus away from pendingSync")
+        XCTAssertEqual(run.syncStatus, "pendingSync", "a failed sync must not change syncStatus")
         XCTAssertNil(run.serverRunId, "a failed sync must not partially populate server fields")
 
         // Retry, now succeeding — proves the run genuinely remained queryable/eligible after the failure,
@@ -193,9 +198,9 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertEqual(run.syncStatus, "synced")
     }
 
-    func testNetworkErrorAlsoLeavesRunQueuedForRetry() async throws {
-        resetState()
-        let run = seedPendingRun()
+    func testNetworkErrorAlsoLeavesRunQueuedForRetry() async {
+        let context = makeContext()
+        let run = seedPendingRun(in: context)
         StubURLProtocol.requestHandler = { _ in throw URLError(.notConnectedToInternet) }
         let service = SyncService(
             context: context,
@@ -209,11 +214,12 @@ final class SyncServiceTests: XCTestCase {
     }
 
     // MARK: - DoD: after a successful sync, serverRunId/serverStatus/flagConfidence/anomalyFlags/resolvedAt
+
     // are populated — verified specifically for a flagged response.
 
-    func testFlaggedResponsePopulatesAllServerFields() async throws {
-        resetState()
-        let run = seedPendingRun()
+    func testFlaggedResponsePopulatesAllServerFields() async {
+        let context = makeContext()
+        let run = seedPendingRun(in: context)
         let responseRunId = UUID().uuidString
         StubURLProtocol.requestHandler = { _ in (201, Self.flaggedResponseBody(runId: responseRunId)) }
         let service = SyncService(
@@ -230,16 +236,17 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertEqual(run.serverStatus, "flagged")
         XCTAssertEqual(run.flagConfidence, "low")
         XCTAssertEqual(run.finalPointsAwarded, 2)
-        XCTAssertNil(run.resolvedAt, "a still-flagged run's resolved_at is null — must not be defaulted to some other value")
+        let resolvedAtMessage = "a still-flagged run's resolved_at is null — must not default to anything else"
+        XCTAssertNil(run.resolvedAt, resolvedAtMessage)
         let flags = (try? JSONDecoder().decode([String].self, from: run.anomalyFlags ?? Data())) ?? []
         XCTAssertEqual(flags, ["pace_cap_exceeded"])
     }
 
     // MARK: - Supporting behavior
 
-    func testDoesNotAttemptToSyncAnUnfinishedRun() async throws {
-        resetState()
-        let run = seedPendingRun(endedAt: nil)
+    func testDoesNotAttemptToSyncAnUnfinishedRun() async {
+        let context = makeContext()
+        let run = seedPendingRun(in: context, endedAt: nil)
         StubURLProtocol.requestHandler = { _ in
             XCTFail("should never be called for a run with endedAt == nil")
             return (201, Data())
@@ -255,9 +262,9 @@ final class SyncServiceTests: XCTestCase {
         XCTAssertEqual(run.syncStatus, "pendingSync")
     }
 
-    func testAlreadySyncedRunIsNotResubmitted() async throws {
-        resetState()
-        _ = seedPendingRun(syncStatus: "synced")
+    func testAlreadySyncedRunIsNotResubmitted() async {
+        let context = makeContext()
+        _ = seedPendingRun(in: context, syncStatus: "synced")
         StubURLProtocol.requestHandler = { _ in
             XCTFail("should never be called for an already-synced run")
             return (201, Data())
@@ -272,9 +279,9 @@ final class SyncServiceTests: XCTestCase {
         await service.syncPendingRuns()
     }
 
-    func testMissingSessionAbortsWithoutTouchingRuns() async throws {
-        resetState()
-        let run = seedPendingRun()
+    func testMissingSessionAbortsWithoutTouchingRuns() async {
+        let context = makeContext()
+        let run = seedPendingRun(in: context)
         StubURLProtocol.requestHandler = { _ in
             XCTFail("should never reach the network without a session")
             return (201, Data())
