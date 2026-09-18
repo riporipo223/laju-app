@@ -55,7 +55,10 @@ struct RunHistoryView: View {
 }
 
 private struct RunHistoryRow: View {
-    let run: Run
+    /// `@ObservedObject` (not a plain `let`): T2.14d rewrites `serverStatus`/`anomalyFlags` on an existing row
+    /// when a flagged run later resolves — the row must re-render on that attribute change, not only when the
+    /// fetched list itself gains/loses a run.
+    @ObservedObject var run: Run
 
     var body: some View {
         HStack(spacing: 12) {
@@ -79,6 +82,10 @@ private struct RunHistoryRow: View {
                 }
                 .font(.subheadline)
                 .foregroundStyle(LajuColor.textSecondary)
+
+                if let copy = run.statusCopy {
+                    statusView(copy)
+                }
             }
         }
         .padding(12)
@@ -90,6 +97,22 @@ private struct RunHistoryRow: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 1)
         }
+    }
+
+    /// T2.14b: status-appropriate copy from the local server-outcome attributes — never the raw status string
+    /// or raw flag codes.
+    private func statusView(_ copy: RunStatusCopy) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(copy.headline)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(run.serverStatus == "rejected" ? LajuColor.textPrimary : LajuColor.accent)
+            ForEach(copy.reasons, id: \.self) { reason in
+                Text("• \(reason)")
+                    .font(.caption)
+                    .foregroundStyle(LajuColor.textSecondary)
+            }
+        }
+        .padding(.top, 2)
     }
 
     private var paceText: String {
