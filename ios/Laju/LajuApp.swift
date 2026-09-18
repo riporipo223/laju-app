@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct LajuApp: App {
-    let persistenceController = PersistenceController.shared
+    let persistenceController: PersistenceController
     /// Shown once on first launch (user-flow.md §2.1) — `false` until `OnboardingContainerView` completes.
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
@@ -10,6 +10,16 @@ struct LajuApp: App {
     /// T2.3: created once at the app root, injected via `.environmentObject` so any screen (starting with
     /// `OnboardingSignInStep`) can read/act on the current Supabase Auth session.
     @StateObject private var authService = AuthService()
+    /// T2.14: background sync queue for offline-recorded runs — starts observing connectivity immediately
+    /// on creation (`SyncService.init`), so a run recorded fully offline syncs as soon as the network
+    /// returns without needing any view to appear first.
+    @StateObject private var syncService: SyncService
+
+    init() {
+        let controller = PersistenceController.shared
+        persistenceController = controller
+        _syncService = StateObject(wrappedValue: SyncService(context: controller.container.viewContext))
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -47,6 +57,9 @@ struct LajuApp: App {
             let priorStreak = PersistenceController.priorStreakDays(asOf: Date(), in: context)
             let streakDays = hasRunToday ? priorStreak + 1 : priorStreak
             streakReminderScheduler.reschedule(currentStreakDays: streakDays, hasRunToday: hasRunToday)
+            // T2.14: covers "already online when the app opens" — NWPathMonitor only fires on a
+            // *transition* to satisfied, not on an already-satisfied path observed for the first time here.
+            Task { await syncService.syncPendingRuns() }
         }
     }
 }
