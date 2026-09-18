@@ -16,5 +16,11 @@ export default defineConfig({
     // rankings (found in T2.19). Serial files remove that whole class of cross-file flake; the unit files
     // are milliseconds each, so the cost is negligible.
     fileParallelism: false,
+    // Integration tests are network-bound: CI runners are in the US, Supabase in Singapore (~230 ms per
+    // round-trip), and `POST /api/runs` alone makes ~9 sequential calls — it sat right at the 5 s default
+    // (measured 4.7 s in CI) and finally tipped over. Unit tests stay milliseconds; this only stops the
+    // network-bound ones failing on a budget that was never theirs.
+    testTimeout: 30000,
+    hookTimeout: 30000,
   },
 });
