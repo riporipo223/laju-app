@@ -66,6 +66,37 @@ struct APIClient: Sendable {
         return try RunSubmissionCoding.makeDecoder().decode(ReconciliationResponse.self, from: data)
     }
 
+    /// T2.20: `GET /api/leaderboard?scope=global` (database-api-spec.md §2.4). `limit` is the top-N window; the
+    /// caller's own rank comes back separately as `me`.
+    func fetchLeaderboard(limit: Int, jwt: String) async throws -> LeaderboardResponse {
+        var components = URLComponents(
+            url: APIConfig.baseURL.appendingPathComponent("api/leaderboard"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "scope", value: "global"),
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+        guard let url = components?.url else { throw APIClientError.invalidResponse }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: body)
+        }
+
+        // Shared decoder: `computed_at` comes from PostgREST with microseconds (see `RunSubmissionCoding`).
+        return try RunSubmissionCoding.makeDecoder().decode(LeaderboardResponse.self, from: data)
+    }
+
     /// T2.16: `GET /api/users/me/progress` (database-api-spec.md §2.3) — server-authoritative points/level,
     /// consumed by `ProgressViewModel`.
     func fetchProgress(jwt: String) async throws -> ProgressResponse {

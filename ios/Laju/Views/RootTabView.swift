@@ -25,6 +25,12 @@ struct RootTabView: View {
             }
             .tabItem { Label(LajuTab.you.title, systemImage: LajuTab.you.symbol) }
             .tag(LajuTab.you)
+
+            NavigationStack {
+                LeaderboardView()
+            }
+            .tabItem { Label(LajuTab.leaderboard.title, systemImage: LajuTab.leaderboard.symbol) }
+            .tag(LajuTab.leaderboard)
         }
         // `LajuApp` already forces `.preferredColorScheme(.dark)` on the whole window, which covers the tab
         // bar too — an explicit `.toolbarBackground(..., for: .tabBar)` here was tried and removed as
@@ -36,17 +42,19 @@ struct RootTabView: View {
 /// Tab identity, kept separate from the view so titles/symbols have one home and future tabs can be added
 /// without touching `RootTabView`'s body shape.
 ///
-/// `social` and `circle` are intentionally absent rather than present-but-disabled: `social` lands with
-/// T2.20's leaderboard (tasks/phase-2), `circle` only if the Fase-4 Circle feature (T4.1) is promoted into
-/// scope, which is not decided. Add the case here and one `tabItem` block above when either ships.
+/// `circle` is intentionally absent rather than present-but-disabled: it lands only if the Fase-4 Circle
+/// feature (T4.1) is promoted into scope, which is not decided. Add the case here and one `tabItem` block
+/// above when it ships. (`leaderboard` arrived with T2.20 — the placeholder called `social` in earlier notes.)
 enum LajuTab: Hashable {
     case track
     case you
+    case leaderboard
 
     var title: String {
         switch self {
         case .track: "Track"
         case .you: "You"
+        case .leaderboard: "Ranks"
         }
     }
 
@@ -54,6 +62,7 @@ enum LajuTab: Hashable {
         switch self {
         case .track: "figure.run"
         case .you: "person.fill"
+        case .leaderboard: "trophy.fill"
         }
     }
 }
