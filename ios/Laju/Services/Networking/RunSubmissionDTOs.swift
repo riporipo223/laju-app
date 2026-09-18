@@ -73,6 +73,19 @@ enum RunSubmissionCoding {
                 return date
             }
 
+            // T2.14d: PostgREST (`GET /api/runs` passes `updated_at`/`resolved_at` through untouched) emits
+            // microseconds (`...30.123456+00:00`), which `ISO8601DateFormatter` rejects — truncate the
+            // fraction to milliseconds and retry. Sub-millisecond loss is harmless for cursor use (see
+            // `ReconciliationCoding.sinceString`).
+            let truncated = dateString.replacingOccurrences(
+                of: #"(\.\d{3})\d+"#,
+                with: "$1",
+                options: .regularExpression
+            )
+            if truncated != dateString, let date = withFractional.date(from: truncated) {
+                return date
+            }
+
             throw DecodingError.dataCorruptedError(
                 in: container,
                 debugDescription: "Invalid ISO 8601 date: \(dateString)"

@@ -37,6 +37,35 @@ struct APIClient: Sendable {
         return try RunSubmissionCoding.makeDecoder().decode(SubmitRunResponse.self, from: data)
     }
 
+    /// T2.14d: `GET /api/runs?since=` (database-api-spec.md §2.2b). `since == nil` omits the parameter
+    /// entirely (server applies its own 90-day default lookback — the only legal first-ever call).
+    func fetchRunStatuses(since: Date?, jwt: String) async throws -> ReconciliationResponse {
+        var components = URLComponents(
+            url: APIConfig.baseURL.appendingPathComponent("api/runs"),
+            resolvingAgainstBaseURL: false
+        )
+        if let since {
+            components?.queryItems = [URLQueryItem(name: "since", value: ReconciliationCoding.sinceString(since))]
+        }
+        guard let url = components?.url else { throw APIClientError.invalidResponse }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: body)
+        }
+
+        return try RunSubmissionCoding.makeDecoder().decode(ReconciliationResponse.self, from: data)
+    }
+
     /// T2.16: `GET /api/users/me/progress` (database-api-spec.md §2.3) — server-authoritative points/level,
     /// consumed by `ProgressViewModel`.
     func fetchProgress(jwt: String) async throws -> ProgressResponse {

@@ -16,12 +16,24 @@ struct LajuApp: App {
     @StateObject private var syncService: SyncService
     /// T2.16: server-authoritative progress (points/level/trust_score) for `ProfileView`. Owned here, not
     /// inside the screen, so `refresh()` stays externally callable (T2.14d's future reconciliation loop).
-    @StateObject private var progressViewModel = ProgressViewModel()
+    @StateObject private var progressViewModel: ProgressViewModel
+    /// T2.14d: status reconciliation loop — triggered from `syncService.onCycleFinished`, which covers both
+    /// app open (`scenePhase == .active` → `syncPendingRuns()`) and connectivity-restored sync cycles.
+    private let reconciliationService: ReconciliationService
 
     init() {
         let controller = PersistenceController.shared
         persistenceController = controller
-        _syncService = StateObject(wrappedValue: SyncService(context: controller.container.viewContext))
+        let progress = ProgressViewModel()
+        _progressViewModel = StateObject(wrappedValue: progress)
+        let reconciliation = ReconciliationService(
+            persistence: controller,
+            onRunsChanged: { await progress.refresh() }
+        )
+        reconciliationService = reconciliation
+        let sync = SyncService(context: controller.container.viewContext)
+        sync.onCycleFinished = { await reconciliation.reconcileIfNeeded() }
+        _syncService = StateObject(wrappedValue: sync)
     }
 
     var body: some Scene {

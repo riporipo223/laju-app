@@ -13,6 +13,9 @@ import Foundation
 @MainActor
 final class SyncService: ObservableObject {
     @Published private(set) var isSyncing = false
+    /// T2.14d: set once at app root to `ReconciliationService.reconcileIfNeeded` — kept as a plain hook so
+    /// this upload queue never depends on (or is affected by) the reconciliation loop's failures.
+    var onCycleFinished: (@MainActor () async -> Void)?
 
     private let context: NSManagedObjectContext
     private let apiClient: APIClient
@@ -49,8 +52,14 @@ final class SyncService: ObservableObject {
     func syncPendingRuns() async {
         guard !isSyncing else { return }
         isSyncing = true
-        defer { isSyncing = false }
+        await performSync()
+        isSyncing = false
+        // T2.14d: "on sync cycles" — runs after the upload pass regardless of its outcome; the hook applies
+        // its own cadence floor and flagged-run precondition.
+        await onCycleFinished?()
+    }
 
+    private func performSync() async {
         let request = Run.fetchRequest()
         request.predicate = NSPredicate(format: "syncStatus == %@ AND endedAt != nil", "pendingSync")
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Run.startedAt, ascending: true)]
