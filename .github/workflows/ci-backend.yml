@@ -27,8 +27,9 @@ jobs:
         env:
           # T2.13: enables app/api/runs/route.integration.test.ts and
           # lib/anti-cheat/resolve-flagged-runs.integration.test.ts (Layer 3, real pipeline against the
-          # real Supabase project). They skip gracefully (not a failure) when these secrets aren't
-          # configured on the repo — see documents/README.md's OPS-2 open item.
+          # real Supabase project). Configured as repository secrets 2026-09-18 — confirmed running for
+          # real in CI (not skipped), see that task's sign-off. They'd skip gracefully, not fail, if these
+          # secrets were ever removed (e.g. a fork or a contributor's PR without repo secret access).
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
