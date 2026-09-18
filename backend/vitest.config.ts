@@ -11,5 +11,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.test.ts"],
+    // The integration files share one real Supabase project — and one global leaderboard, which any of
+    // them can rebuild. Running files in parallel let one file's test users appear inside another file's
+    // rankings (found in T2.19). Serial files remove that whole class of cross-file flake; the unit files
+    // are milliseconds each, so the cost is negligible.
+    fileParallelism: false,
   },
 });
