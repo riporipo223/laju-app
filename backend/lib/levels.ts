@@ -42,3 +42,13 @@ export function currentLevelForPoints(totalPoints: number): number {
   }
   return level;
 }
+
+/**
+ * database-api-spec.md §1: next level's `pointsRequired` minus `totalPoints`. `0` at the top level (v1 has
+ * no cap beyond level 8) — there is no "next" threshold to count toward.
+ */
+export function pointsToNextLevel(totalPoints: number): number {
+  const currentLevel = currentLevelForPoints(totalPoints);
+  const nextThreshold = LEVEL_THRESHOLDS.find((threshold) => threshold.level === currentLevel + 1);
+  return nextThreshold ? nextThreshold.pointsRequired - totalPoints : 0;
+}

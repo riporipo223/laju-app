@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentLevelForPoints, LEVEL_THRESHOLDS } from "./levels";
+import { currentLevelForPoints, LEVEL_THRESHOLDS, pointsToNextLevel } from "./levels";
 
 describe("LEVEL_THRESHOLDS — matches database-api-spec.md §1's table exactly, row for row", () => {
   it("has the exact 8 rows from the spec", () => {
@@ -39,5 +39,23 @@ describe("currentLevelForPoints", () => {
 
   it("stays at level 8 for any points beyond the top threshold — no cap error", () => {
     expect(currentLevelForPoints(999999)).toBe(8);
+  });
+});
+
+describe("pointsToNextLevel", () => {
+  it("counts down to level 2 from zero points", () => {
+    expect(pointsToNextLevel(0)).toBe(100);
+  });
+
+  it("counts down correctly mid-way to the next level", () => {
+    expect(pointsToNextLevel(500)).toBe(200); // level 3 (300), next is level 4 (700)
+  });
+
+  it("is 0 right at the top level's own threshold", () => {
+    expect(pointsToNextLevel(12000)).toBe(0);
+  });
+
+  it("is 0 for any points beyond the top level — no negative countdown", () => {
+    expect(pointsToNextLevel(999999)).toBe(0);
   });
 });
