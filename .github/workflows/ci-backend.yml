@@ -24,3 +24,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+        env:
+          # T2.13: enables app/api/runs/route.integration.test.ts and
+          # lib/anti-cheat/resolve-flagged-runs.integration.test.ts (Layer 3, real pipeline against the
+          # real Supabase project). They skip gracefully (not a failure) when these secrets aren't
+          # configured on the repo — see documents/README.md's OPS-2 open item.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
