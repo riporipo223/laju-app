@@ -12,7 +12,8 @@
  * directly here avoids needing `CRON_SECRET` and a stable deployed URL as additional CI secrets for
  * something this suite doesn't otherwise depend on.
  *
- * Requires real credentials, same as `route.integration.test.ts` — skips gracefully when absent.
+ * Requires real credentials, same as `route.integration.test.ts` (GitHub Actions repo secrets, added
+ * 2026-09-18) — skips gracefully when absent.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
