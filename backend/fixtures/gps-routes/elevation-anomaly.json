@@ -1,0 +1,34 @@
+{
+  "name": "elevation-anomaly",
+  "category": "elevation_anomaly",
+  "source": "synthetic",
+  "description": "100m elevation gain within a single 2-second point-pair, with normal small horizontal movement \u2014 'perubahan elevasi tidak wajar dalam waktu singkat' (tech-spec.md \u00a72.4's Elevation anomaly row). Recorded as an additional signal per the spec, not a standalone exclusion trigger \u2014 a fixture for testing that distinction, not just detection.",
+  "distance_meters": 9.0,
+  "duration_seconds": 6,
+  "gps_route": [
+    {
+      "lat": -6.2,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:00Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1999731,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:02Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1999461,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:04Z",
+      "elevation": 140.0
+    },
+    {
+      "lat": -6.1999192,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:06Z",
+      "elevation": 140.0
+    }
+  ]
+}

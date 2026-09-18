@@ -1,0 +1,28 @@
+{
+  "name": "teleport",
+  "category": "distance_duration_sanity",
+  "source": "synthetic",
+  "description": "A 2km position jump within a 2-second interval \u2014 distance/duration sanity violation (tech-spec.md \u00a72.4's Distance/duration sanity row: 'GPS loncat lokasi jauh dalam interval pendek'). Simulates a GPS fix glitch or spoofed coordinate injection.",
+  "distance_meters": 2010.0,
+  "duration_seconds": 7,
+  "gps_route": [
+    {
+      "lat": -6.2,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:00Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1820338,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:02Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1819439,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:07Z",
+      "elevation": 40.0
+    }
+  ]
+}

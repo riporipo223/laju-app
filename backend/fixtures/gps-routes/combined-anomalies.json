@@ -1,0 +1,220 @@
+{
+  "name": "combined-anomalies",
+  "category": "combined",
+  "source": "synthetic",
+  "description": "One run containing both a pace-cap-breach segment (first 1.5km @ 2:30/km) and a GPS-speed-jump segment (final 5 points @ ~40km/h) \u2014 tests excluded_pct's count-based aggregation across multiple distinct check types on one run (tech-spec.md \u00a72.4's excluded_pct definition), not just single-check isolation.",
+  "distance_meters": 1555.6,
+  "duration_seconds": 230,
+  "gps_route": [
+    {
+      "lat": -6.2,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:00Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1995354,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:07.758621Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1990707,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:15.517241Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1986061,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:23.275862Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1981414,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:31.034483Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1976768,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:38.793103Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1972121,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:46.551724Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1967475,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:54.310345Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1962829,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:02.068966Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1958182,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:09.827586Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1953536,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:17.586207Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1948889,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:25.344828Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1944243,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:33.103448Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1939596,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:40.862069Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.193495,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:48.620690Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1930303,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:01:56.379310Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1925657,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:04.137931Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1921011,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:11.896552Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1916364,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:19.655172Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1911718,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:27.413793Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1907071,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:35.172414Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1902425,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:42.931034Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1897778,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:50.689655Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1893132,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:02:58.448276Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1888486,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:06.206897Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1883839,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:13.965517Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1879193,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:21.724138Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1874546,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:29.482759Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.18699,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:37.241379Z",
+      "elevation": 40.2
+    },
+    {
+      "lat": -6.1865253,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:45Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1864255,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:46Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1863257,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:47Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1862259,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:48Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1861261,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:49Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1860262,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:03:50Z",
+      "elevation": 40.0
+    }
+  ]
+}

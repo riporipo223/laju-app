@@ -1,0 +1,46 @@
+{
+  "name": "gps-speed-jump",
+  "category": "gps_speed_jump",
+  "source": "synthetic",
+  "description": "5 consecutive 1-second point-pairs at a constant ~40 km/h instantaneous speed \u2014 over the 25 km/h cap, sustained more than the required >3 consecutive samples (tech-spec.md \u00a72.4's GPS speed jump row). Simulates a vehicle-speed segment spliced into run data.",
+  "distance_meters": 55.6,
+  "duration_seconds": 5,
+  "gps_route": [
+    {
+      "lat": -6.2,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:00Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1999002,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:01Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1998004,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:02Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1997006,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:03Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1996008,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:04Z",
+      "elevation": 40.0
+    },
+    {
+      "lat": -6.1995009,
+      "lng": 106.8,
+      "timestamp": "2026-09-08T06:00:05Z",
+      "elevation": 40.0
+    }
+  ]
+}
