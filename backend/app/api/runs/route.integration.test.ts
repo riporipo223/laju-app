@@ -5,9 +5,9 @@
  * individual anti-cheat unit tests (which call `resolveRunStatus` directly, not the HTTP handler + DB).
  *
  * Requires real credentials (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
- * `NEXT_PUBLIC_SUPABASE_ANON_KEY`) in the environment — present in CI (GitHub Actions secrets) and locally
- * via `node --env-file=.env.local ./node_modules/.bin/vitest run ...`. Skips gracefully (not a failure)
- * when they're absent, e.g. a contributor's fresh clone with no `.env.local`.
+ * `NEXT_PUBLIC_SUPABASE_ANON_KEY`) in the environment — configured as GitHub Actions repo secrets
+ * (added 2026-09-18) and locally via `node --env-file=.env.local ./node_modules/.bin/vitest run ...`.
+ * Skips gracefully (not a failure) when they're absent, e.g. a contributor's fresh clone with no `.env.local`.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
