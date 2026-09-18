@@ -1,6 +1,6 @@
 import CoreData
 import CoreLocation
-import MapKit
+@preconcurrency import MapKit
 import SwiftUI
 import UIKit
 
