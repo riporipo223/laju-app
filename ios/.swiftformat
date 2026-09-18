@@ -3,3 +3,9 @@
 --semicolons never
 --self remove
 --commas inline
+# Conflicts with SwiftLint's `opening_brace` rule (brace on the same line as the last condition, K&R
+# style) for multiline if/guard conditions — SwiftFormat's default wants the brace on its own line
+# (Allman style) for exactly that case. Found 2026-09-18 when a routine `swiftformat .` run introduced a
+# SwiftLint violation in an unrelated file. Disabled here rather than changing `opening_brace` in
+# .swiftlint.yml, since the rest of the codebase already consistently uses the same-line style.
+--disable wrapMultilineStatementBraces

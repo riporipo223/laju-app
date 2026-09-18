@@ -69,8 +69,7 @@ struct OnboardingSignInStep: View {
             // scary message for a deliberate cancel, just stay on this step silently.
             let nsError = error as NSError
             if nsError.domain == ASAuthorizationError.errorDomain,
-               nsError.code == ASAuthorizationError.canceled.rawValue
-            {
+               nsError.code == ASAuthorizationError.canceled.rawValue {
                 return
             }
             errorMessage = "Gagal masuk: \(error.localizedDescription)"
