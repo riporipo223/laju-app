@@ -10,6 +10,10 @@ settings:
     SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
     DEVELOPMENT_TEAM: NTHHTF27HU
     CODE_SIGN_STYLE: Automatic
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    from: 2.0.0
 targets:
   Laju:
     type: application
@@ -17,6 +21,9 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - path: Laju
+    dependencies:
+      - package: Supabase
+        product: Supabase
     info:
       path: Laju/Info.plist
       properties:
@@ -26,6 +33,11 @@ targets:
         UIBackgroundModes:
           - location
           - audio
+    entitlements:
+      path: Laju/Laju.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.designbyripo.laju

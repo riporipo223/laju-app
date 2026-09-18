@@ -7,16 +7,20 @@ struct LajuApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
     private let streakReminderScheduler = StreakReminderScheduler()
+    /// T2.3: created once at the app root, injected via `.environmentObject` so any screen (starting with
+    /// `OnboardingSignInStep`) can read/act on the current Supabase Auth session.
+    @StateObject private var authService = AuthService()
 
     var body: some Scene {
         WindowGroup {
             Group {
                 if hasCompletedOnboarding {
-                    RunTrackingView()
+                    RootTabView()
                 } else {
                     OnboardingContainerView { hasCompletedOnboarding = true }
                 }
             }
+            .environmentObject(authService)
             .environment(\.managedObjectContext, persistenceController.container.viewContext)
             // Dark-native by brand identity, not by system-appearance-following (design-notes.md §0).
             .preferredColorScheme(.dark)
