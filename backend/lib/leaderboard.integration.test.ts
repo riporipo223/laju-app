@@ -10,6 +10,20 @@ const hasRealCredentials = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+/**
+ * CI's runner occasionally drops the very first request to Supabase (`TypeError: fetch failed`, before any
+ * response) — a transport blip, not a logic failure. Retry only that specific error, a few times; any real
+ * database/logic error still surfaces immediately.
+ */
+async function retryTransport<T extends { error: { message: string } | null }>(call: () => PromiseLike<T>): Promise<T> {
+  let result = await call();
+  for (let attempt = 0; attempt < 3 && result.error?.message.includes("fetch failed"); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    result = await call();
+  }
+  return result;
+}
+
 interface EntryRow {
   user_id: string;
   points: number;
@@ -24,36 +38,36 @@ describe.skipIf(!hasRealCredentials)("rebuild_global_leaderboard — real DB", (
   const tag = `t218-${Date.now()}`;
 
   async function makeUser(label: string, displayName: string | null) {
-    const { data, error } = await admin
-      .from("user")
-      .insert({ email: `${tag}-${label}@laju-test.local`, username: `${tag}${label}`, display_name: displayName })
-      .select("id")
-      .single();
+    const { data, error } = await retryTransport(() =>
+      admin
+        .from("user")
+        .insert({ email: `${tag}-${label}@laju-test.local`, username: `${tag}${label}`, display_name: displayName })
+        .select("id")
+        .single()
+    );
     if (error || !data) throw new Error(`user insert failed: ${error?.message}`);
     userIds.push(data.id);
     return data.id as string;
   }
 
   async function addRun(userId: string, status: string, amount: number, type = "run") {
-    const { data: run, error } = await admin
-      .from("run")
-      .insert({ user_id: userId, status, anomaly_flags: [] })
-      .select("id")
-      .single();
+    const { data: run, error } = await retryTransport(() =>
+      admin.from("run").insert({ user_id: userId, status, anomaly_flags: [] }).select("id").single()
+    );
     if (error || !run) throw new Error(`run insert failed: ${error?.message}`);
     await addTransaction(userId, run.id, amount, type);
     return run.id as string;
   }
 
   async function addTransaction(userId: string, runId: string, amount: number, type = "run") {
-    const { error } = await admin
-      .from("point_transaction")
-      .insert({ user_id: userId, run_id: runId, season_id: seasonId, amount, type });
+    const { error } = await retryTransport(() =>
+      admin.from("point_transaction").insert({ user_id: userId, run_id: runId, season_id: seasonId, amount, type })
+    );
     if (error) throw new Error(`transaction insert failed: ${error.message}`);
   }
 
   async function rebuild() {
-    const { error } = await admin.rpc("rebuild_global_leaderboard");
+    const { error } = await retryTransport(() => admin.rpc("rebuild_global_leaderboard"));
     if (error) throw new Error(`rebuild failed: ${error.message}`);
   }
 
