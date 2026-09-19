@@ -4,6 +4,7 @@
  * cutoff never appears, ranks stay contiguous, and `me` reflects the same board. Skips without credentials.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createTestAuthUser } from "@/test-support/auth";
 
 const hasRealCredentials = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -87,13 +88,9 @@ describe.skipIf(!hasRealCredentials)("GET /api/leaderboard — real DB", () => {
     seasonId = season.id;
 
     const email = `${tag}-caller@laju-test.local`;
-    const password = crypto.randomUUID();
-    const { data: created, error: createError } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-    if (createError || !created.user) throw new Error(`auth user failed: ${createError?.message}`);
-    authUserId = created.user.id;
-    const { data: signIn, error: signInError } = await anon.auth.signInWithPassword({ email, password });
-    if (signInError || !signIn.session) throw new Error(`sign-in failed: ${signInError?.message}`);
-    jwt = signIn.session.access_token;
+    const session = await createTestAuthUser(admin, anon, email);
+    authUserId = session.authUserId;
+    jwt = session.accessToken;
 
     callerId = await makeUser("caller", 1.0, authUserId);
     ({ GET } = await import("./route"));

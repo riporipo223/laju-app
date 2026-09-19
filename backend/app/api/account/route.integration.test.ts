@@ -5,6 +5,7 @@
  * leaderboard exclusion — not asserted in prose. Skips without credentials.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createTestAuthUser } from "@/test-support/auth";
 
 const hasRealCredentials = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -35,13 +36,9 @@ describe.skipIf(!hasRealCredentials)("DELETE /api/account — real DB + real Aut
 
   async function makeIdentity(label: string) {
     const email = `${tag}-${label}@laju-test.local`;
-    const password = crypto.randomUUID();
-    const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-    if (error || !created.user) throw new Error(`auth user failed: ${error?.message}`);
-    authIds.push(created.user.id);
-    const { data: signIn, error: signInError } = await anon.auth.signInWithPassword({ email, password });
-    if (signInError || !signIn.session) throw new Error(`sign-in failed: ${signInError?.message}`);
-    return { authId: created.user.id, email, jwt: signIn.session.access_token };
+    const session = await createTestAuthUser(admin, anon, email);
+    authIds.push(session.authUserId);
+    return { authId: session.authUserId, email, jwt: session.accessToken };
   }
 
   async function makeProfile(identity: { authId: string; email: string }, label: string) {

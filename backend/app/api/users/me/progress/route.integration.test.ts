@@ -5,6 +5,7 @@
  * shape. Requires real credentials, same skip-gracefully pattern as the other integration files.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createTestAuthUser } from "@/test-support/auth";
 
 const hasRealCredentials = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -25,19 +26,10 @@ describe.skipIf(!hasRealCredentials)("GET /api/users/me/progress — real DB", (
     });
 
     const email = `t215-${Date.now()}@laju-test.local`;
-    const password = crypto.randomUUID();
-    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (createError || !created.user) throw new Error(`Could not create test auth user: ${createError?.message}`);
-    authUserId = created.user.id;
-
     const anonClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    const { data: signIn, error: signInError } = await anonClient.auth.signInWithPassword({ email, password });
-    if (signInError || !signIn.session) throw new Error(`Could not sign in test user: ${signInError?.message}`);
-    jwt = signIn.session.access_token;
+    const session = await createTestAuthUser(supabaseAdmin, anonClient, email);
+    authUserId = session.authUserId;
+    jwt = session.accessToken;
 
     const { data: userRow, error: userError } = await supabaseAdmin
       .from("user")

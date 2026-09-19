@@ -10,6 +10,7 @@
  * Skips gracefully (not a failure) when they're absent, e.g. a contributor's fresh clone with no `.env.local`.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createTestAuthUser } from "@/test-support/auth";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -36,19 +37,10 @@ describe.skipIf(!hasRealCredentials)("POST /api/runs — real pipeline against T
     });
 
     const email = `t213-${Date.now()}@laju-test.local`;
-    const password = crypto.randomUUID();
-    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (createError || !created.user) throw new Error(`Could not create test auth user: ${createError?.message}`);
-    authUserId = created.user.id;
-
     const anonClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    const { data: signIn, error: signInError } = await anonClient.auth.signInWithPassword({ email, password });
-    if (signInError || !signIn.session) throw new Error(`Could not sign in test user: ${signInError?.message}`);
-    jwt = signIn.session.access_token;
+    const session = await createTestAuthUser(supabaseAdmin, anonClient, email);
+    authUserId = session.authUserId;
+    jwt = session.accessToken;
 
     const { data: userRow, error: userError } = await supabaseAdmin
       .from("user")
@@ -171,26 +163,17 @@ describe.skipIf(!hasRealCredentials)("GET /api/runs — T2.14c reconciliation, r
   async function createTestIdentity(label: string) {
     const { createClient } = await import("@supabase/supabase-js");
     const email = `t214c-${label}-${Date.now()}@laju-test.local`;
-    const password = crypto.randomUUID();
-    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (createError || !created.user) throw new Error(`Could not create ${label} auth user: ${createError?.message}`);
-
     const anonClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    const { data: signIn, error: signInError } = await anonClient.auth.signInWithPassword({ email, password });
-    if (signInError || !signIn.session) throw new Error(`Could not sign in ${label}: ${signInError?.message}`);
+    const session = await createTestAuthUser(supabaseAdmin, anonClient, email);
 
     const { data: userRow, error: userError } = await supabaseAdmin
       .from("user")
-      .insert({ auth_user_id: created.user.id, email, username: `t214c${label}${Date.now()}` })
+      .insert({ auth_user_id: session.authUserId, email, username: `t214c${label}${Date.now()}` })
       .select("id")
       .single();
     if (userError || !userRow) throw new Error(`Could not create ${label} user row: ${userError?.message}`);
 
-    return { authUserId: created.user.id, userId: userRow.id, jwt: signIn.session.access_token };
+    return { authUserId: session.authUserId, userId: userRow.id, jwt: session.accessToken };
   }
 
   beforeAll(async () => {
