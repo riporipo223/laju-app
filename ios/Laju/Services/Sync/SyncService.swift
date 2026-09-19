@@ -81,9 +81,12 @@ final class SyncService: ObservableObject {
         guard let startedAt = run.startedAt, let endedAt = run.endedAt else { return }
         let gpsRoute = GPSPoint.decodeRoute(from: run.gpsRoute)
         // An empty route would only ever produce a guaranteed 422 from the server (database-api-spec.md
-        // §3) — skip the wasted round-trip rather than burning a retry cycle on a request that can't
-        // succeed. Leaves `syncStatus` as `pendingSync`, same as any other failure (see below).
-        guard !gpsRoute.isEmpty else { return }
+        // §3) — skip the round-trip. A finished run's route can never grow, so this is permanent too:
+        // take it out of the queue instead of re-examining it on every cycle forever.
+        guard !gpsRoute.isEmpty else {
+            markRejectedPermanently(run)
+            return
+        }
 
         let submission = SubmitRunRequest(
             startedAt: startedAt,
@@ -98,10 +101,33 @@ final class SyncService: ObservableObject {
             apply(response, to: run)
             try? context.save()
         } catch {
-            // T2.14 DoD: repeated failures must not drop the run — `syncStatus` is deliberately left
-            // untouched (still `pendingSync`), so it remains in the next `syncPendingRuns()` call's query
-            // set. No separate "failed" state is introduced; retry is simply "try again next trigger."
+            // T2.14 DoD: a *transient* failure (network, 5xx, 401, 409 region-not-set, …) must not drop the
+            // run — `syncStatus` stays `pendingSync`, so it remains in the next cycle's query set.
+            //
+            // A *permanent* rejection is different: the server said this exact payload is invalid
+            // (400 e.g. `distance_meters <= 0`, 413 too large, 422 bad route), and resending the same bytes
+            // can only ever fail again. Retrying it forever costs a request per run per cycle (found in the
+            // Fase 2 audit: 69 of the 127 runs on the test device were such runs). It leaves the *upload*
+            // queue but stays in local history — nothing is deleted.
+            if case let APIClientError.server(statusCode, _) = error, Self.isPermanentRejection(statusCode) {
+                markRejectedPermanently(run)
+            }
         }
+    }
+
+    /// Status codes meaning "this payload will never be accepted". Deliberately narrow: 401/403 (session),
+    /// 409 (region not set yet — fixable by the user), 429 and 5xx (server/limits) are all recoverable.
+    static func isPermanentRejection(_ statusCode: Int) -> Bool {
+        statusCode == 400 || statusCode == 413 || statusCode == 422
+    }
+
+    /// `Run.syncStatus` value for a run the server rejected as invalid. Not `pendingSync`, so
+    /// `syncPendingRuns()`'s query no longer returns it; the row itself is kept.
+    static let rejectedPermanentlyStatus = "rejectedPermanent"
+
+    private func markRejectedPermanently(_ run: Run) {
+        run.syncStatus = Self.rejectedPermanentlyStatus
+        try? context.save()
     }
 
     private func apply(_ response: SubmitRunResponse, to run: Run) {
