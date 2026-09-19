@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requireAuthenticatedIdentityMock = vi.fn();
 const upsertChain = {
@@ -6,6 +6,8 @@ const upsertChain = {
   single: vi.fn(),
 };
 const upsertMock = vi.fn(() => upsertChain);
+const existingUserMock = vi.fn();
+const existingChain = { eq: vi.fn(() => existingChain), maybeSingle: () => existingUserMock() };
 
 vi.mock("@/lib/auth", () => ({
   // Not importOriginal(): vitest's plain resolver can't follow the `@/` tsconfig alias from inside a
@@ -16,7 +18,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/supabase", () => ({
-  supabaseAdmin: { from: () => ({ upsert: upsertMock }) },
+  supabaseAdmin: { from: () => ({ upsert: upsertMock, select: () => existingChain }) },
 }));
 
 const { POST } = await import("./route");
@@ -30,6 +32,11 @@ function request(body: unknown, header = "Bearer valid-jwt") {
 }
 
 describe("POST /api/profile/complete", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    existingUserMock.mockResolvedValue({ data: null, error: null }); // default: no existing row
+  });
+
   it("rejects when unauthenticated (identity check fails first)", async () => {
     requireAuthenticatedIdentityMock.mockResolvedValueOnce({
       response: Response.json({ error: "no" }, { status: 401 }),
@@ -87,5 +94,36 @@ describe("POST /api/profile/complete", () => {
       expect.objectContaining({ auth_user_id: "auth-1", username: "budi_run" }),
       { onConflict: "auth_user_id" }
     );
+  });
+
+  const validBody = {
+    username: "budi",
+    region_kecamatan: "Kebayoran Baru",
+    region_kabupaten_kota: "Jakarta Selatan",
+    region_provinsi: "DKI Jakarta",
+  };
+
+  it("rejects a soft-deleted account with 401 and never writes (T2.22, B7-10: a still-valid JWT must not undo deletion)", async () => {
+    requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+    existingUserMock.mockResolvedValueOnce({ data: { deleted_at: "2026-09-19T00:00:00Z" }, error: null });
+
+    const res = await POST(request(validBody));
+
+    expect(res.status).toBe(401);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("still lets an existing, not-deleted account update its profile", async () => {
+    requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+    existingUserMock.mockResolvedValueOnce({ data: { deleted_at: null }, error: null });
+    upsertChain.single.mockResolvedValueOnce({
+      data: { id: "u1", username: "budi", total_points: 0, current_level: 1 },
+      error: null,
+    });
+
+    const res = await POST(request(validBody));
+
+    expect(res.status).toBe(201);
+    expect(upsertMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -49,6 +49,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "username is required" }, { status: 400 });
   }
 
+  // database-api-spec.md §2.1b point 3 / §3: a JWT stays cryptographically valid after account deletion until
+  // it expires, and this route (unlike every other) does not go through `requireUser`'s `deleted_at` check.
+  // Without this guard a still-valid token could re-populate the just-anonymized username/region — silently
+  // undoing the deletion (Round 7 finding B7-10).
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from("user")
+    .select("deleted_at")
+    .eq("auth_user_id", identity.authUserId)
+    .maybeSingle<{ deleted_at: string | null }>();
+  if (existingError) {
+    return NextResponse.json({ error: "Could not save profile" }, { status: 500 });
+  }
+  if (existing && existing.deleted_at !== null) {
+    return NextResponse.json({ error: "This account has been deleted" }, { status: 401 });
+  }
+
   const { data: userRow, error } = await supabaseAdmin
     .from("user")
     .upsert(
