@@ -20,6 +20,9 @@ struct LajuApp: App {
     /// T2.14d: status reconciliation loop — triggered from `syncService.onCycleFinished`, which covers both
     /// app open (`scenePhase == .active` → `syncPendingRuns()`) and connectivity-restored sync cycles.
     private let reconciliationService: ReconciliationService
+    /// T2.22: in-app account deletion (App Store Guideline 5.1.1(v)) — owned here so it can reset the other
+    /// root-owned state (`progressViewModel`) after a successful deletion.
+    @StateObject private var accountDeletion: AccountDeletionService
 
     init() {
         let controller = PersistenceController.shared
@@ -34,6 +37,10 @@ struct LajuApp: App {
         let sync = SyncService(context: controller.container.viewContext)
         sync.onCycleFinished = { await reconciliation.reconcileIfNeeded() }
         _syncService = StateObject(wrappedValue: sync)
+        _accountDeletion = StateObject(wrappedValue: AccountDeletionService(
+            persistence: controller,
+            onDeleted: { progress.reset() }
+        ))
     }
 
     var body: some Scene {
@@ -47,6 +54,7 @@ struct LajuApp: App {
             }
             .environmentObject(authService)
             .environmentObject(progressViewModel)
+            .environmentObject(accountDeletion)
             .environment(\.managedObjectContext, persistenceController.container.viewContext)
             // Dark-native by brand identity, not by system-appearance-following (design-notes.md §0).
             .preferredColorScheme(.dark)

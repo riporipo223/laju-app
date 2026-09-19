@@ -97,6 +97,24 @@ struct APIClient: Sendable {
         return try RunSubmissionCoding.makeDecoder().decode(LeaderboardResponse.self, from: data)
     }
 
+    /// T2.22: `DELETE /api/account` (database-api-spec.md §2.1b) — soft-deletes the account server-side and
+    /// removes the Auth identity. Throws unless the server answers `200`; callers must not wipe local data on a throw.
+    func deleteAccount(jwt: String) async throws {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/account"))
+        urlRequest.httpMethod = "DELETE"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: body)
+        }
+    }
+
     /// T2.16: `GET /api/users/me/progress` (database-api-spec.md §2.3) — server-authoritative points/level,
     /// consumed by `ProgressViewModel`.
     func fetchProgress(jwt: String) async throws -> ProgressResponse {

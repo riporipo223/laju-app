@@ -15,6 +15,9 @@ struct ProfileView: View {
     /// externally callable. `nil` `serverProgress` (never fetched yet, or offline) falls back to the local
     /// `runs`-derived estimate below — same values this screen showed before T2.16 existed.
     @EnvironmentObject private var progressViewModel: ProgressViewModel
+    @EnvironmentObject private var accountDeletion: AccountDeletionService
+    @State private var showDeleteConfirmation = false
+    @State private var showDeleteFailure = false
 
     /// T1.13 AC2: no dedicated Settings screen exists yet — Profile is the closest existing home for this
     /// toggle. Same `UserDefaults` key `AudioCueService.isEnabled` reads/writes, not a separate flag.
@@ -26,6 +29,7 @@ struct ProfileView: View {
                 streakSection
                 levelSection
                 settingsSection
+                accountSection
                 recentRunsSection
             }
             .padding()
@@ -35,6 +39,26 @@ struct ProfileView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             await progressViewModel.refresh()
+        }
+        // T2.22: two deliberate steps (button, then a destructive confirmation) — never a single-tap
+        // irreversible action.
+        .alert("Hapus akun?", isPresented: $showDeleteConfirmation) {
+            Button("Batal", role: .cancel) {}
+            Button("Hapus permanen", role: .destructive) {
+                Task {
+                    if await accountDeletion.deleteAccount() == false {
+                        showDeleteFailure = true
+                    }
+                }
+            }
+        } message: {
+            Text("Akunmu, poin, dan semua runmu dihapus permanen dan tidak bisa dikembalikan. "
+                + "Riwayat rute di perangkat ini juga dihapus.")
+        }
+        .alert("Gagal menghapus akun", isPresented: $showDeleteFailure) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Akunmu belum dihapus dan datamu masih utuh. Periksa koneksi dan coba lagi.")
         }
     }
 
@@ -164,6 +188,25 @@ struct ProfileView: View {
             .background(LajuColor.surface, in: RoundedRectangle(cornerRadius: 20))
     }
 
+    // MARK: - Account
+
+    /// T2.22 (product-spec.md §4.17): initiate account deletion from inside the app.
+    private var accountSection: some View {
+        Button(role: .destructive) {
+            showDeleteConfirmation = true
+        } label: {
+            HStack {
+                if accountDeletion.isDeleting {
+                    ProgressView().tint(LajuColor.error)
+                }
+                Text(accountDeletion.isDeleting ? "Menghapus akun…" : "Hapus akun")
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .buttonStyle(LajuDestructiveButtonStyle())
+        .disabled(accountDeletion.isDeleting)
+    }
+
     // MARK: - Recent runs
 
     private var recentRunsSection: some View {
@@ -213,6 +256,7 @@ private struct StreakDayDot: View {
         ProfileView()
             .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
             .environmentObject(ProgressViewModel())
+            .environmentObject(AccountDeletionService(persistence: PersistenceController.shared))
     }
     .preferredColorScheme(.dark)
 }

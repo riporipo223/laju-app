@@ -30,6 +30,12 @@ final class ProgressViewModel: ObservableObject {
         self.currentJWT = currentJWT
     }
 
+    /// T2.22: drops the cached server values — used when the account is deleted, so the next user of this
+    /// device never sees the previous user's points/level while their own first fetch is still in flight.
+    func reset() {
+        serverProgress = nil
+    }
+
     /// Re-fetches server-derived progress. On any failure (offline, signed out, server error),
     /// `serverProgress` is left untouched — never cleared to `nil` and never replaced with a fabricated
     /// value — so a caller that already has a last-known-good value keeps showing it, and a caller that
