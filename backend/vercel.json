@@ -1,5 +1,6 @@
 {
   "regions": ["sin1"],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
   "crons": [
     {
       "path": "/api/cron/resolve-flagged-runs",
