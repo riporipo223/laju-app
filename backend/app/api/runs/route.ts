@@ -137,6 +137,13 @@ export async function POST(request: Request) {
   if (typeof duration_seconds !== "number" || duration_seconds <= 0) {
     return NextResponse.json({ error: "duration_seconds must be a positive number" }, { status: 400 });
   }
+  // `run.duration_seconds` is an integer column, but the client measures a real elapsed time (Core Data `Double`, e.g.
+  // 236.83) — found by the first end-to-end run from the actual app: the raw value made the insert fail, every real
+  // run got a 500 and stayed queued forever. Round at the boundary, so the contract is "any positive number of seconds".
+  const durationSeconds = Math.round(duration_seconds);
+  if (durationSeconds < 1) {
+    return NextResponse.json({ error: "duration_seconds must be at least 1 second" }, { status: 400 });
+  }
 
   if (Array.isArray(gps_route) && gps_route.length > MAX_ROUTE_POINTS) {
     return NextResponse.json({ error: `gps_route may hold at most ${MAX_ROUTE_POINTS} points` }, { status: 413 });
@@ -165,7 +172,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const avgPaceSecPerKm = Math.round(duration_seconds / (distance_meters / 1000));
+  const avgPaceSecPerKm = Math.round(durationSeconds / (distance_meters / 1000));
   // Only `validated`/`flagged` ever get a resolved_at at submission time — a still-flagged run's
   // resolved_at stays null until T2.12b resolves it (tech-spec.md §2.4.1); immediate-rejected resolves now.
   const submittedAt = new Date().toISOString();
@@ -189,7 +196,7 @@ export async function POST(request: Request) {
       started_at: typeof started_at === "string" ? started_at : null,
       ended_at: typeof ended_at === "string" ? ended_at : null,
       distance_meters,
-      duration_seconds,
+      duration_seconds: durationSeconds,
       avg_pace_sec_per_km: avgPaceSecPerKm,
       gps_route,
       status: resolution.status,
