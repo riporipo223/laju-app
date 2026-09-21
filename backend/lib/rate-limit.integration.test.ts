@@ -18,7 +18,7 @@ describe.skipIf(!hasRealCredentials)("rate limiter — real database", () => {
   it("is atomic under concurrency: 40 simultaneous calls against a limit of 10 let exactly 10 through", async () => {
     const { hit } = await import("./rate-limit");
     const results = await Promise.all(
-      Array.from({ length: 40 }, () => hit(`user:${tag}-atomic`, { windowSeconds: 60, limit: 10 }))
+      Array.from({ length: 40 }, () => hit(`user:${tag}-atomic`, { windowSeconds: 3600, limit: 10 }))
     );
     expect(results.filter((result) => result.allowed)).toHaveLength(10);
     expect(results.filter((result) => !result.allowed)).toHaveLength(30);
@@ -26,24 +26,28 @@ describe.skipIf(!hasRealCredentials)("rate limiter — real database", () => {
 
   it("refuses over the limit with a Retry-After inside the window, then lets requests through again after it resets", async () => {
     const { hit } = await import("./rate-limit");
-    const window = { windowSeconds: 2, limit: 3 };
-    // Start just after a window boundary so the burst cannot straddle two windows.
-    const msIntoWindow = Date.now() % 2000;
-    if (msIntoWindow > 300) await new Promise((resolve) => setTimeout(resolve, 2000 - msIntoWindow + 50));
+    // A window long enough that a slow CI round-trip (≈0.5 s here, more on a bad day) cannot straddle its end.
+    const window = { windowSeconds: 6, limit: 3 };
+    // Start just after a boundary so the whole burst lands in one window. Concurrent, so its length is one round-trip.
+    const msIntoWindow = Date.now() % 6000;
+    if (msIntoWindow > 500) await new Promise((resolve) => setTimeout(resolve, 6000 - msIntoWindow + 100));
 
-    const burst = [];
-    for (let i = 0; i < 5; i++) burst.push(await hit(`user:${tag}-reset`, window));
-    expect(burst.map((result) => result.allowed)).toEqual([true, true, true, false, false]);
-    expect(burst[3]!.retryAfterSeconds).toBeGreaterThanOrEqual(1);
-    expect(burst[3]!.retryAfterSeconds).toBeLessThanOrEqual(2);
+    const burst = await Promise.all(Array.from({ length: 5 }, () => hit(`user:${tag}-reset`, window)));
+    expect(burst.filter((result) => result.allowed)).toHaveLength(3);
+    const refused = burst.filter((result) => !result.allowed);
+    expect(refused).toHaveLength(2);
+    for (const result of refused) {
+      expect(result.retryAfterSeconds).toBeGreaterThanOrEqual(1);
+      expect(result.retryAfterSeconds).toBeLessThanOrEqual(6);
+    }
 
-    await new Promise((resolve) => setTimeout(resolve, 2100));
+    await new Promise((resolve) => setTimeout(resolve, 6200));
     expect((await hit(`user:${tag}-reset`, window)).allowed).toBe(true);
   }, 60000);
 
   it("isolates keys: one user, one IP, or one route exhausting a limit does not limit another", async () => {
     const { hit } = await import("./rate-limit");
-    const window = { windowSeconds: 60, limit: 2 };
+    const window = { windowSeconds: 3600, limit: 2 };
     for (let i = 0; i < 3; i++) await hit(`user:${tag}-a`, window);
     expect((await hit(`user:${tag}-a`, window)).allowed).toBe(false);
     expect((await hit(`user:${tag}-b`, window)).allowed).toBe(true); // another user
@@ -66,17 +70,27 @@ describe.skipIf(!hasRealCredentials)("rate limiter — real database", () => {
   it("the per-IP layer runs BEFORE the Auth call: 401 until the ceiling, then 429 without ever reaching auth", async () => {
     const { requireAuthenticatedIdentity } = await import("./auth");
     const { IP_RATE_LIMIT } = await import("./rate-limit");
-    const ip = `203.0.113.${(Date.now() % 200) + 1}-${tag}`;
-    const call = () =>
-      requireAuthenticatedIdentity(new Request("https://example.com/api/x", { headers: { "x-forwarded-for": ip } }), "auth.me");
-    const statuses: number[] = [];
-    for (let batch = 0; batch < Math.ceil((IP_RATE_LIMIT.limit + 6) / 20); batch++) {
-      const results = await Promise.all(Array.from({ length: 20 }, call));
-      for (const result of results) statuses.push("response" in result ? result.response.status : 200);
+    // The real ceiling (120/min) is proven against production in T2.20a's live check; here a small one keeps this test
+    // to a second or two, so a slow CI runner cannot let the window roll over mid-test.
+    const original = { ...IP_RATE_LIMIT };
+    Object.assign(IP_RATE_LIMIT, { windowSeconds: 30, limit: 5 });
+    try {
+      const msIntoWindow = Date.now() % 30000;
+      if (msIntoWindow > 15000) await new Promise((resolve) => setTimeout(resolve, 30000 - msIntoWindow + 100));
+      const ip = `203.0.113.7-${tag}`;
+      const statuses: number[] = [];
+      for (let i = 0; i < 8; i++) {
+        const result = await requireAuthenticatedIdentity(
+          new Request("https://example.com/api/x", { headers: { "x-forwarded-for": ip } }),
+          "auth.me"
+        );
+        statuses.push("response" in result ? result.response.status : 200);
+      }
+      // No Authorization header: while under the ceiling the Auth path answers 401; past it, 429 comes first.
+      expect(statuses).toEqual([401, 401, 401, 401, 401, 429, 429, 429]);
+    } finally {
+      Object.assign(IP_RATE_LIMIT, original);
     }
-    const within = statuses.slice(0, IP_RATE_LIMIT.limit);
-    expect(within.every((status) => status === 401)).toBe(true); // no Authorization header → the Auth path answered
-    expect(statuses.slice(IP_RATE_LIMIT.limit).every((status) => status === 429)).toBe(true);
   }, 120000);
 
   it("reports the limiter's own overhead: one database call per counted hit", async () => {
