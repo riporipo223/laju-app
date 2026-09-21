@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requireAuthenticatedIdentityMock = vi.fn();
 const maybeSingleMock = vi.fn();
+const rpcMock = vi.fn();
 const queryChain = {
   select: vi.fn(() => queryChain),
   eq: vi.fn(() => queryChain),
+  is: vi.fn(() => queryChain),
   maybeSingle: (...args: unknown[]) => maybeSingleMock(...args),
 };
 
@@ -14,7 +16,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/supabase", () => ({
-  supabaseAdmin: { from: () => queryChain },
+  supabaseAdmin: { from: () => queryChain, rpc: (...args: unknown[]) => rpcMock(...args) },
 }));
 
 const { GET } = await import("./route");
@@ -26,6 +28,12 @@ function request() {
 }
 
 describe("GET /api/seasons/active", () => {
+  // Default for the caller-profile lookup that follows the season read; tests queue the season with mockResolvedValueOnce.
+  beforeEach(() => {
+    maybeSingleMock.mockReset();
+    maybeSingleMock.mockResolvedValue({ data: null, error: null });
+  });
+
   it("rejects unauthenticated requests", async () => {
     requireAuthenticatedIdentityMock.mockResolvedValueOnce({ response: Response.json({}, { status: 401 }) });
     const res = await GET(request());
@@ -92,5 +100,38 @@ describe("GET /api/seasons/active", () => {
     maybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
     const res = await GET(request());
     expect(res.status).toBe(404);
+  });
+
+  describe("me (T3.7a)", () => {
+    const season = { id: "s1", name: "S", start_at: "2026-01-01T00:00:00Z", end_at: "2099-01-01T00:00:00Z", status: "active" };
+
+    it("returns the caller's season points and league", async () => {
+      requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+      maybeSingleMock.mockResolvedValueOnce({ data: season, error: null });
+      maybeSingleMock.mockResolvedValueOnce({ data: { id: "user-1" }, error: null });
+      rpcMock.mockResolvedValueOnce({ data: 250, error: null });
+      const json = await (await GET(request())).json();
+      expect(rpcMock).toHaveBeenCalledWith("season_points", { p_user: "user-1", p_season: "s1" });
+      expect(json.me).toEqual({ season_points: 250, league: "gold" });
+    });
+
+    it("me is null when the caller has no profile yet — the season still loads", async () => {
+      requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+      maybeSingleMock.mockResolvedValueOnce({ data: season, error: null });
+      maybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
+      const res = await GET(request());
+      expect(res.status).toBe(200);
+      expect((await res.json()).me).toBeNull();
+    });
+
+    it("me is null when the points read fails, instead of failing the whole season call", async () => {
+      requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+      maybeSingleMock.mockResolvedValueOnce({ data: season, error: null });
+      maybeSingleMock.mockResolvedValueOnce({ data: { id: "user-1" }, error: null });
+      rpcMock.mockResolvedValueOnce({ data: null, error: { message: "boom" } });
+      const res = await GET(request());
+      expect(res.status).toBe(200);
+      expect((await res.json()).me).toBeNull();
+    });
   });
 });
