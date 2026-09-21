@@ -53,6 +53,19 @@ describe("requireUser", () => {
     if (isAuthFailure(result)) expect(result.response.status).toBe(401);
   });
 
+  it("marks the no-profile 401 with a machine-readable code, and no other 401 carries it (the app's profile step keys on it)", async () => {
+    getUserMock.mockResolvedValueOnce({ data: { user: { id: "auth-1" } }, error: null });
+    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
+    const noProfile = await requireUser(requestWith("Bearer valid-jwt"));
+    if (!isAuthFailure(noProfile)) throw new Error("expected a failure");
+    expect(await noProfile.response.json()).toMatchObject({ code: "profile_missing" });
+
+    getUserMock.mockResolvedValueOnce({ data: { user: null }, error: { message: "bad" } });
+    const badToken = await requireUser(requestWith("Bearer nope"));
+    if (!isAuthFailure(badToken)) throw new Error("expected a failure");
+    expect(await badToken.response.json()).not.toHaveProperty("code");
+  });
+
   it("rejects a valid JWT for a soft-deleted account (401) — the specific T2.3 DoD claim", async () => {
     getUserMock.mockResolvedValueOnce({ data: { user: { id: "auth-1" } }, error: null });
     maybeSingleMock.mockResolvedValueOnce({

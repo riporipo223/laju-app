@@ -23,8 +23,8 @@ export function isAuthFailure(result: AuthResult | IdentityResult): result is Au
   return "response" in result;
 }
 
-function unauthorized(message: string): AuthFailure {
-  return { response: NextResponse.json({ error: message }, { status: 401 }) };
+function unauthorized(message: string, code?: string): AuthFailure {
+  return { response: NextResponse.json(code ? { error: message, code } : { error: message }, { status: 401 }) };
 }
 
 /**
@@ -99,7 +99,9 @@ export async function requireUser(request: Request, rule?: RateLimitRule): Promi
   if (!userRow) {
     // Authenticated with Supabase, but has no `user` row yet (T2.4's profile-completion endpoint
     // creates it). Not this middleware's job to create one — that would silently do T2.4's work here.
-    return unauthorized("No user profile exists for this identity");
+    // `code` lets the client tell "signed in but no profile yet — show the profile step" from every other 401
+    // without matching on prose (the onboarding profile step keys on it).
+    return unauthorized("No user profile exists for this identity", "profile_missing");
   }
   if (userRow.deleted_at !== null) {
     return unauthorized("This account has been deleted");

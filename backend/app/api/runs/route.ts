@@ -5,6 +5,7 @@ import { type GPSPoint, haversineMeters } from "@/lib/gps-geometry";
 import { calculatePoints } from "@/lib/point-calculation";
 import { MAX_BODY_BYTES, MAX_ROUTE_POINTS } from "@/lib/rate-limit";
 import { recordRunPointsAndUpdateAggregate } from "@/lib/point-transaction";
+import { streakDaysFor } from "@/lib/streak";
 import { supabaseAdmin } from "@/lib/supabase";
 import { recomputeAndPersistTrustScore, trustMultiplierForUser } from "@/lib/trust-score";
 
@@ -102,8 +103,9 @@ function existingRunResponse(run: ExistingRunRow) {
  * immediate `rejected` run gets `final_points_awarded = 0` (no ledger entry is ever written for it, tech-
  * spec.md §2.4.1), and skips the trust-multiplier query entirely since 0 × anything is still 0.
  *
- * `raw_points` uses `streakDays = 0` — server-side streak tracking (T1.1's client-side `priorStreakDays`
- * has no backend equivalent yet) was never in scope for T2.6, T2.11, or this task.
+ * `raw_points` uses the server-derived streak (`lib/streak.ts`, same semantics as the client's `StreakTracker`).
+ * It used to be a hard-coded `streakDays = 0`, so any run with a streak ≥ 1 was awarded less than the client's own
+ * estimate, silently — fixed 2026-09-21 after the first real end-to-end run exposed it.
  *
  * Uses `requireUser` (not `requireAuthenticatedIdentity`, unlike T2.4) — this endpoint needs the caller's
  * region fields already on the resolved row to check the 409 guard below, and by definition a run can only
@@ -184,7 +186,11 @@ export async function POST(request: Request) {
   if (resolution.status !== "rejected") {
     const trustMultiplier = await trustMultiplierForUser(user.id);
     const validDistanceKm = validSegmentsDistanceKm(gps_route, resolution.excludedSegmentIndices);
-    const rawPoints = calculatePoints(validDistanceKm, avgPaceSecPerKm, 0);
+    // Same streak the client's estimate uses (T1.4), derived from the ledger of runs rather than trusted from the
+    // request — the bonus is worth up to 14 points a run, so it cannot be client-asserted. See lib/streak.ts.
+    const startedAtDate = startedAtKey !== null && !Number.isNaN(Date.parse(startedAtKey)) ? new Date(startedAtKey) : new Date();
+    const streakDays = await streakDaysFor(user.id, startedAtDate, distance_meters);
+    const rawPoints = calculatePoints(validDistanceKm, avgPaceSecPerKm, streakDays);
     estimatedPoints = Math.round(rawPoints);
     finalPointsAwarded = Math.round(rawPoints * trustMultiplier);
   }
