@@ -17,7 +17,7 @@ interface ProgressRow {
  * read time, via `lib/levels.ts` (the same module T2.12c already uses for `current_level`).
  */
 export async function GET(request: Request) {
-  const result = await requireUser(request);
+  const result = await requireUser(request, "progress.get");
   if (isAuthFailure(result)) return result.response;
   const { user } = result;
 

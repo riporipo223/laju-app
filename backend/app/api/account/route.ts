@@ -12,7 +12,7 @@ import { isAuthFailure, requireAuthenticatedIdentity } from "@/lib/auth";
  * by the auth check like any other request from a deleted account (§3).
  */
 export async function DELETE(request: Request) {
-  const identity = await requireAuthenticatedIdentity(request);
+  const identity = await requireAuthenticatedIdentity(request, "account.delete");
   if (isAuthFailure(identity)) return identity.response;
 
   try {

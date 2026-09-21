@@ -7,7 +7,7 @@ import { isAuthFailure, requireUser } from "@/lib/auth";
  * this one exists so that claim is provable now, before any of those routes are built.
  */
 export async function GET(request: Request) {
-  const result = await requireUser(request);
+  const result = await requireUser(request, "auth.me");
   if (isAuthFailure(result)) return result.response;
 
   return NextResponse.json({ id: result.user.id, auth_user_id: result.user.auth_user_id });

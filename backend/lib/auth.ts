@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceIpLimit, enforceUserLimit, type RateLimitRule } from "./rate-limit";
 import { supabaseAdmin } from "./supabase";
 
 /** Shape of a row from the `user` table (database-api-spec.md §1 ERD) — only the columns this module reads. */
@@ -42,7 +43,12 @@ function unauthorized(message: string): AuthFailure {
  * miss, at the cost of one network round-trip per request. Acceptable for v1; revisit if p95 latency
  * (tech-spec.md §4 NFR) is ever threatened by it.
  */
-export async function requireAuthenticatedIdentity(request: Request): Promise<IdentityResult> {
+export async function requireAuthenticatedIdentity(request: Request, rule?: RateLimitRule): Promise<IdentityResult> {
+  // T2.20a (SEC-9): the per-IP limit runs BEFORE the Auth call below — an unauthenticated flood otherwise costs
+  // one Supabase Auth request per hit — and the per-user limit right after the caller is known.
+  const ipLimited = await enforceIpLimit(request);
+  if (ipLimited) return { response: ipLimited };
+
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return unauthorized("Missing or malformed Authorization header");
@@ -55,6 +61,11 @@ export async function requireAuthenticatedIdentity(request: Request): Promise<Id
   const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(jwt);
   if (authError || !authData.user) {
     return unauthorized("Invalid or expired token");
+  }
+
+  if (rule) {
+    const userLimited = await enforceUserLimit(authData.user.id, rule);
+    if (userLimited) return { response: userLimited };
   }
 
   return { authUserId: authData.user.id };
@@ -72,8 +83,8 @@ export async function requireAuthenticatedIdentity(request: Request): Promise<Id
  * Built on `requireAuthenticatedIdentity` — this is that same check, plus the `user` row lookup and
  * `deleted_at` gate. Every route except `POST /api/profile/complete` (T2.4) should call this one.
  */
-export async function requireUser(request: Request): Promise<AuthResult> {
-  const identity = await requireAuthenticatedIdentity(request);
+export async function requireUser(request: Request, rule?: RateLimitRule): Promise<AuthResult> {
+  const identity = await requireAuthenticatedIdentity(request, rule);
   if (isAuthFailure(identity)) return identity;
 
   const { data: userRow, error: userError } = await supabaseAdmin

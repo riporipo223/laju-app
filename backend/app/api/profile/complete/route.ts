@@ -23,7 +23,7 @@ function isNonEmptyString(value: unknown): value is string {
  * administrative catalog is explicitly out of scope for v1 (Scope: "Yang TIDAK dikerjakan").
  */
 export async function POST(request: Request) {
-  const identity = await requireAuthenticatedIdentity(request);
+  const identity = await requireAuthenticatedIdentity(request, "profile.complete");
   if (isAuthFailure(identity)) return identity.response;
 
   let body: ProfileCompleteBody;

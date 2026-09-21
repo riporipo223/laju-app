@@ -33,7 +33,7 @@ function badRequest(message: string) {
  * filtering here. `me` is `null` when the caller is not on the board (no counted points yet, or hidden).
  */
 export async function GET(request: Request) {
-  const result = await requireUser(request);
+  const result = await requireUser(request, "leaderboard.get");
   if (isAuthFailure(result)) return result.response;
   const { user } = result;
 

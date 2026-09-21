@@ -3,6 +3,7 @@ import { resolveRunStatus } from "@/lib/anti-cheat/status-resolution";
 import { isAuthFailure, requireUser } from "@/lib/auth";
 import { type GPSPoint, haversineMeters } from "@/lib/gps-geometry";
 import { calculatePoints } from "@/lib/point-calculation";
+import { MAX_BODY_BYTES, MAX_ROUTE_POINTS } from "@/lib/rate-limit";
 import { recordRunPointsAndUpdateAggregate } from "@/lib/point-transaction";
 import { supabaseAdmin } from "@/lib/supabase";
 import { recomputeAndPersistTrustScore, trustMultiplierForUser } from "@/lib/trust-score";
@@ -109,9 +110,17 @@ function existingRunResponse(run: ExistingRunRow) {
  * be submitted by an identity that already completed T2.4's profile step.
  */
 export async function POST(request: Request) {
-  const result = await requireUser(request);
+  const result = await requireUser(request, "runs.post");
   if (isAuthFailure(result)) return result.response;
   const { user } = result;
+
+  // SEC-10 (T2.20a): bound what one request may cost BEFORE parsing or any anti-cheat work. `content-length` is
+  // checked first so an oversized body is refused without being read; the point count below covers a body
+  // that arrives without one. 413 is a permanent rejection to the client (SyncService never resends it).
+  const declaredBytes = Number(request.headers.get("content-length") ?? 0);
+  if (declaredBytes > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  }
 
   let body: RunBody;
   try {
@@ -129,6 +138,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "duration_seconds must be a positive number" }, { status: 400 });
   }
 
+  if (Array.isArray(gps_route) && gps_route.length > MAX_ROUTE_POINTS) {
+    return NextResponse.json({ error: `gps_route may hold at most ${MAX_ROUTE_POINTS} points` }, { status: 413 });
+  }
   if (!Array.isArray(gps_route) || gps_route.length === 0 || !gps_route.every(isValidPoint)) {
     return NextResponse.json(
       { error: "gps_route must be a non-empty array of {lat, lng, timestamp, elevation} points" },
@@ -273,7 +285,7 @@ interface ReconciliationRunRow {
  * separate COUNT query, then trims back to `PAGE_SIZE`.
  */
 export async function GET(request: Request) {
-  const result = await requireUser(request);
+  const result = await requireUser(request, "runs.get");
   if (isAuthFailure(result)) return result.response;
   const { user } = result;
 

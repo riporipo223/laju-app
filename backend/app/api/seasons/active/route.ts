@@ -22,7 +22,7 @@ interface SeasonRow {
  * this only reads whichever row already has `status='active'` (seeded by this task's own migration).
  */
 export async function GET(request: Request) {
-  const identity = await requireAuthenticatedIdentity(request);
+  const identity = await requireAuthenticatedIdentity(request, "seasons.active");
   if (isAuthFailure(identity)) return identity.response;
 
   const { data: season, error } = await supabaseAdmin

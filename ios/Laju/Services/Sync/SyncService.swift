@@ -73,19 +73,23 @@ final class SyncService: ObservableObject {
         }
 
         for run in pendingRuns {
-            await sync(run, jwt: jwt)
+            // T2.20a: a 429 means the whole account is over its limit, not that this run is bad — the rest of
+            // the backlog would only be refused too (a device offline for weeks holds a 100+ run queue), so stop
+            // the batch. Every run stays `pendingSync` and the next cycle retries.
+            guard await sync(run, jwt: jwt) else { return }
         }
     }
 
-    private func sync(_ run: Run, jwt: String) async {
-        guard let startedAt = run.startedAt, let endedAt = run.endedAt else { return }
+    /// - Returns: `false` when the server answered `429` and the batch must stop, `true` otherwise.
+    private func sync(_ run: Run, jwt: String) async -> Bool {
+        guard let startedAt = run.startedAt, let endedAt = run.endedAt else { return true }
         let gpsRoute = GPSPoint.decodeRoute(from: run.gpsRoute)
         // An empty route would only ever produce a guaranteed 422 from the server (database-api-spec.md
         // §3) — skip the round-trip. A finished run's route can never grow, so this is permanent too:
         // take it out of the queue instead of re-examining it on every cycle forever.
         guard !gpsRoute.isEmpty else {
             markRejectedPermanently(run)
-            return
+            return true
         }
 
         let submission = SubmitRunRequest(
@@ -100,6 +104,7 @@ final class SyncService: ObservableObject {
             let response = try await apiClient.submitRun(submission, jwt: jwt)
             apply(response, to: run)
             try? context.save()
+            return true
         } catch {
             // T2.14 DoD: a *transient* failure (network, 5xx, 401, 409 region-not-set, …) must not drop the
             // run — `syncStatus` stays `pendingSync`, so it remains in the next cycle's query set.
@@ -109,11 +114,20 @@ final class SyncService: ObservableObject {
             // can only ever fail again. Retrying it forever costs a request per run per cycle (found in the
             // Fase 2 audit: 69 of the 127 runs on the test device were such runs). It leaves the *upload*
             // queue but stays in local history — nothing is deleted.
-            if case let APIClientError.server(statusCode, _) = error, Self.isPermanentRejection(statusCode) {
-                markRejectedPermanently(run)
+            if case let APIClientError.server(statusCode, _) = error {
+                if Self.isPermanentRejection(statusCode) {
+                    markRejectedPermanently(run)
+                }
+                if statusCode == Self.rateLimitedStatusCode {
+                    return false
+                }
             }
+            return true
         }
     }
+
+    /// `429 Too Many Requests` — T2.20a's per-user/per-IP limit. Recoverable, but it ends the current batch.
+    static let rateLimitedStatusCode = 429
 
     /// Status codes meaning "this payload will never be accepted". Deliberately narrow: 401/403 (session),
     /// 409 (region not set yet — fixable by the user), 429 and 5xx (server/limits) are all recoverable.
