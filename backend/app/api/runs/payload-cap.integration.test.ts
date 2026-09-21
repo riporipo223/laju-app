@@ -45,6 +45,10 @@ describe.skipIf(!hasRealCredentials)("POST /api/runs — payload caps (SEC-10)",
 
   afterAll(async () => {
     if (userId) {
+      // Ledger first: `point_transaction.run_id` references `run`, so deleting the run first fails silently and leaks
+      // the whole user (this once left seven test users on the real global leaderboard).
+      await admin.from("point_transaction").delete().eq("user_id", userId);
+      await admin.from("leaderboard_entry").delete().eq("user_id", userId);
       await admin.from("run").delete().eq("user_id", userId);
       await admin.from("user").delete().eq("id", userId);
     }
