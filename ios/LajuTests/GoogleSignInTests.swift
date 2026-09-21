@@ -1,5 +1,6 @@
 import AuthenticationServices
 @testable import Laju
+import Supabase
 import XCTest
 
 /// The OAuth round-trip itself needs a browser and a Google account, so it is verified by hand (see the T2.3 notes).
@@ -22,6 +23,14 @@ final class GoogleSignInTests: XCTestCase {
     func testCancellingSignInWithAppleIsStillACancellation() {
         let error = NSError(domain: ASAuthorizationError.errorDomain, code: ASAuthorizationError.canceled.rawValue)
         XCTAssertTrue(AuthService.isUserCancellation(error))
+    }
+
+    /// Only a genuinely absent session may skip the profile step; a flaky connection must not.
+    func testOnlyAMissingSessionCountsAsNoSession() {
+        XCTAssertTrue(AuthService.isNoSession(AuthError.sessionMissing))
+        XCTAssertFalse(AuthService.isNoSession(URLError(.notConnectedToInternet)))
+        XCTAssertFalse(AuthService.isNoSession(URLError(.timedOut)))
+        XCTAssertFalse(AuthService.isNoSession(APIClientError.notAuthenticated))
     }
 
     func testRealFailuresAreNotSwallowed() {

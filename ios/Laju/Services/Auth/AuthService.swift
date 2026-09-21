@@ -69,6 +69,20 @@ final class AuthService: ObservableObject {
             && nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue
     }
 
+    /// A current access token, refreshed by the SDK if it has expired — authoritative even in the instant after a
+    /// sign-in, before `session` (fed asynchronously by `authStateChanges`) has caught up. Throws when nobody is signed
+    /// in.
+    func freshAccessToken() async throws -> String {
+        try await client.auth.session.accessToken
+    }
+
+    /// True only for "nobody is signed in" (the SDK's `sessionMissing`) — NOT for a failed refresh, a dropped
+    /// connection or any other error while fetching a token, which say nothing about whether a session exists.
+    nonisolated static func isNoSession(_ error: Error) -> Bool {
+        guard let authError = error as? AuthError, case .sessionMissing = authError else { return false }
+        return true
+    }
+
     func signOut() async throws {
         try await client.auth.signOut()
     }
