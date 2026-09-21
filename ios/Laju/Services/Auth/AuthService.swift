@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Combine
 import Foundation
 import Supabase
@@ -43,6 +44,29 @@ final class AuthService: ObservableObject {
         try await client.auth.signInWithIdToken(
             credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken)
         )
+    }
+
+    /// Where Supabase sends the browser back after Google's consent screen. Must appear, exactly, in the project's
+    /// Auth → URL Configuration → Redirect URLs allow-list. Only its scheme is registered with
+    /// `ASWebAuthenticationSession`; no Info.plist URL type is needed for that.
+    nonisolated static let oauthRedirectURL = URL(string: "com.designbyripo.laju://auth-callback")!
+
+    /// Google Sign-In through Supabase's generic OAuth flow (PKCE, `ASWebAuthenticationSession`) — deliberately not
+    /// Google's own iOS SDK: one code path in the same `client.auth`, so the session lands in exactly the same place as
+    /// the Apple one (`authStateChanges` → `session`) and nothing downstream can tell the providers apart.
+    func signInWithGoogle() async throws {
+        try await client.auth.signInWithOAuth(provider: .google, redirectTo: Self.oauthRedirectURL)
+    }
+
+    /// True when the user closed the system sheet themselves (Apple's `.canceled`, or the browser session's
+    /// `.canceledLogin`) — not a failure worth an error message.
+    nonisolated static func isUserCancellation(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == ASAuthorizationError.errorDomain, nsError.code == ASAuthorizationError.canceled.rawValue {
+            return true
+        }
+        return nsError.domain == ASWebAuthenticationSessionError.errorDomain
+            && nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue
     }
 
     func signOut() async throws {
