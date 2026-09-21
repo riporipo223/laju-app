@@ -47,11 +47,19 @@ describe.skipIf(!hasRealCredentials)("season lifecycle — real database", () =>
   const advance = (nowMs: number) => admin.rpc("advance_seasons", { p_now: iso(nowMs) });
   const transition = (id: string, to: string) => admin.rpc("transition_season", { p_season: id, p_to: to });
 
+  /** Transitions write a leaderboard_scope row per season (T3.7), which blocks deleting the season until it is removed too. */
+  async function deleteTestSeasons() {
+    const { data } = await admin.from("season").select("id").like("name", "T36-%");
+    const ids = (data ?? []).map((row: { id: string }) => row.id);
+    if (ids.length) await admin.from("leaderboard_scope").delete().in("season_id", ids);
+    await admin.from("season").delete().like("name", "T36-%");
+  }
+
   /** Puts the real seasons back exactly as they were, and removes every test season. Order matters: the unique index. */
   async function restore() {
     await admin.from("season").update({ status: "ended" }).like("name", "T36-%");
     for (const season of real) await admin.from("season").update({ status: season.status }).eq("id", season.id);
-    await admin.from("season").delete().like("name", "T36-%");
+    await deleteTestSeasons();
   }
 
   beforeAll(async () => {
@@ -59,7 +67,7 @@ describe.skipIf(!hasRealCredentials)("season lifecycle — real database", () =>
     admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    await admin.from("season").delete().like("name", "T36-%"); // leftovers of an interrupted earlier run
+    await deleteTestSeasons(); // leftovers of an interrupted earlier run
     const { data } = await admin.from("season").select("*").order("start_at");
     real = (data ?? []) as SeasonRow[];
     const active = real.filter((season) => season.status === "active");
