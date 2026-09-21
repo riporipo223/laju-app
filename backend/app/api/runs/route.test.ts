@@ -48,6 +48,8 @@ const recordRunPointsAndUpdateAggregateMock = vi.fn();
 // Fixed 1km per segment regardless of actual coordinates — real haversine correctness is covered by
 // gps-geometry's own callers (pace-cap.test.ts etc.), not this route's orchestration tests.
 const haversineMetersMock = vi.fn((..._args: unknown[]) => 1000);
+// lib/streak reads the run history from the database (covered by streak.integration.test.ts); here it is a plain number.
+const streakDaysForMock = vi.fn((..._args: unknown[]): Promise<number> => Promise.resolve(0));
 
 vi.mock("@/lib/auth", () => ({
   isAuthFailure: (result: unknown) => typeof result === "object" && result !== null && "response" in result,
@@ -69,6 +71,10 @@ vi.mock("@/lib/anti-cheat/status-resolution", () => ({
 
 vi.mock("@/lib/point-transaction", () => ({
   recordRunPointsAndUpdateAggregate: (...args: unknown[]) => recordRunPointsAndUpdateAggregateMock(...args),
+}));
+
+vi.mock("@/lib/streak", () => ({
+  streakDaysFor: (...args: unknown[]) => streakDaysForMock(...args),
 }));
 
 vi.mock("@/lib/gps-geometry", () => ({
@@ -189,6 +195,30 @@ describe("/api/runs", () => {
     expect(json.final_points_awarded).toBe(2);
     expect(recordRunPointsAndUpdateAggregateMock).toHaveBeenCalledWith("usr-1", "run_456", 2);
     expect(recomputeAndPersistTrustScoreMock).toHaveBeenCalledWith("usr-1");
+  });
+
+  it("scores the run with the server-derived streak (2 days → +4 points), not a client-supplied one", async () => {
+    requireUserMock.mockResolvedValueOnce({ user: completeUser });
+    resolveRunStatusMock.mockReturnValueOnce(validated());
+    trustMultiplierForUserMock.mockResolvedValueOnce(1.0);
+    recomputeAndPersistTrustScoreMock.mockResolvedValueOnce(1.0);
+    recordRunPointsAndUpdateAggregateMock.mockResolvedValueOnce({ totalPoints: 6, currentLevel: 1 });
+    insertChain.single.mockResolvedValueOnce({ data: { id: "run_streak" }, error: null });
+    streakDaysForMock.mockResolvedValueOnce(2);
+    const res = await POST(
+      request({
+        started_at: "2026-09-08T06:00:00Z",
+        ended_at: "2026-09-08T06:32:10Z",
+        distance_meters: 10000,
+        duration_seconds: 3600,
+        gps_route: twoSegmentRoute,
+        streak_days: 7, // a client trying to claim more must be ignored
+      })
+    );
+    expect(res.status).toBe(201);
+    // 2 km × 1.0 + streak 2 × 2 points = 6 (not 2, and not the 7-day claim's 16)
+    expect((await res.json()).final_points_awarded).toBe(6);
+    expect(streakDaysForMock).toHaveBeenCalledWith("usr-1", new Date("2026-09-08T06:00:00Z"), 10000);
   });
 
   it("applies trust_multiplier < 1.0 to reduce final_points_awarded — T2.11", async () => {
