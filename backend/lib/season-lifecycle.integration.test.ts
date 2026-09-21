@@ -51,7 +51,10 @@ describe.skipIf(!hasRealCredentials)("season lifecycle — real database", () =>
   async function deleteTestSeasons() {
     const { data } = await admin.from("season").select("id").like("name", "T36-%");
     const ids = (data ?? []).map((row: { id: string }) => row.id);
-    if (ids.length) await admin.from("leaderboard_scope").delete().in("season_id", ids);
+    if (ids.length) {
+      await admin.from("season_result").delete().in("season_id", ids); // frozen when a season ends (T3.8)
+      await admin.from("leaderboard_scope").delete().in("season_id", ids);
+    }
     await admin.from("season").delete().like("name", "T36-%");
   }
 

@@ -80,7 +80,9 @@ describe.skipIf(!hasRealCredentials)("season league — real database", () => {
     const testSeasonIds = (testSeasons ?? []).map((row: { id: string }) => row.id);
     await admin.from("season").update({ status: "ended" }).like("name", "T37A-%");
     for (const season of real) await admin.from("season").update({ status: season.status }).eq("id", season.id);
+    if (testSeasonIds.length) await admin.from("season_result").delete().in("season_id", testSeasonIds); // T3.8
     if (userIds.length) {
+      await admin.from("season_result").delete().in("user_id", userIds);
       await admin.from("point_transaction").delete().in("user_id", userIds);
       await admin.from("leaderboard_entry").delete().in("user_id", userIds);
       await admin.from("run").delete().in("user_id", userIds);

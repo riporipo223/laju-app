@@ -25,6 +25,7 @@ export const RATE_LIMIT_RULES = {
   "leaderboard.get": [{ windowSeconds: 60, limit: 60 }],
   "progress.get": [{ windowSeconds: 60, limit: 60 }],
   "seasons.active": [{ windowSeconds: 60, limit: 60 }],
+  "seasons.history": [{ windowSeconds: 60, limit: 60 }],
   "auth.me": [{ windowSeconds: 60, limit: 60 }],
   "profile.complete": [{ windowSeconds: 3600, limit: 10 }],
   "account.delete": [{ windowSeconds: 3600, limit: 3 }],
