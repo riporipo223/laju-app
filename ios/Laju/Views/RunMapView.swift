@@ -35,7 +35,7 @@ struct RunMapView: UIViewRepresentable {
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
         updateAnnotation(on: mapView, coordinator: context.coordinator)
-        updatePolyline(on: mapView)
+        updatePolyline(on: mapView, coordinator: context.coordinator)
         centerIfNeeded(on: mapView, coordinator: context.coordinator)
     }
 
@@ -43,52 +43,84 @@ struct RunMapView: UIViewRepresentable {
         Coordinator()
     }
 
+    static func dismantleUIView(_: MKMapView, coordinator: Coordinator) {
+        coordinator.motion.stop()
+    }
+
     /// Mutates one persistent annotation in place (coordinate + heading)
     /// rather than remove/re-add every update — removing and re-adding
     /// an `MKPointAnnotation` on every GPS fix (a few times/second at
     /// worst) causes the default annotation-add animation to replay each
     /// time, a visible "pop" the user would see on every live update.
+    ///
+    /// The *coordinate* is not assigned here: `RunMapMotion` glides the marker to each new fix over a few
+    /// hundred ms (display only — the fix itself, and everything computed from it, is untouched).
     private func updateAnnotation(on mapView: MKMapView, coordinator: Coordinator) {
         guard let currentCoordinate else {
             if let existing = coordinator.userAnnotation {
                 mapView.removeAnnotation(existing)
                 coordinator.userAnnotation = nil
             }
+            coordinator.motion.reset(on: mapView)
             return
         }
         if let existing = coordinator.userAnnotation {
-            existing.coordinate = currentCoordinate
             existing.headingDegrees = headingDegrees
             (mapView.view(for: existing) as? UserLocationAnnotationView)?.updateHeading(headingDegrees)
+            coordinator.motion.moveMarker(to: currentCoordinate, annotation: existing, in: mapView)
         } else {
             let annotation = UserLocationAnnotation()
             annotation.coordinate = currentCoordinate
             annotation.headingDegrees = headingDegrees
             coordinator.userAnnotation = annotation
             mapView.addAnnotation(annotation)
+            coordinator.motion.moveMarker(to: currentCoordinate, annotation: annotation, in: mapView)
         }
     }
 
     /// Two overlays with identical coordinates — a wide, low-alpha "glow" underlay added first, then the
     /// crisp core line on top (design-notes.md §3: route line glow effect). `GlowPolyline` is just a marker
     /// subclass so the renderer can tell which pass it's drawing.
-    private func updatePolyline(on mapView: MKMapView) {
-        mapView.removeOverlays(mapView.overlays)
-        guard routeCoordinates.count > 1 else { return }
-        mapView.addOverlay(GlowPolyline(coordinates: routeCoordinates, count: routeCoordinates.count))
-        mapView.addOverlay(MKPolyline(coordinates: routeCoordinates, count: routeCoordinates.count))
+    ///
+    /// While live, the newest segment is NOT part of these overlays: it is `RunMapMotion`'s `TailOverlay`,
+    /// drawn from the previous fix to the gliding marker so the line grows smoothly instead of appearing whole.
+    /// Only rebuilt when the route actually changed (SwiftUI also re-runs this for unrelated state).
+    private func updatePolyline(on mapView: MKMapView, coordinator: Coordinator) {
+        let gliding = endsAtCurrentCoordinate && routeCoordinates.count >= 2
+        let committed = gliding ? Array(routeCoordinates.dropLast()) : routeCoordinates
+        let key = RunMapRouteKey(
+            count: routeCoordinates.count,
+            lastLatitude: routeCoordinates.last?.latitude,
+            lastLongitude: routeCoordinates.last?.longitude,
+            gliding: gliding
+        )
+        if key != coordinator.renderedRouteKey {
+            mapView.removeOverlays(coordinator.committedOverlays)
+            coordinator.committedOverlays = []
+            if committed.count > 1 {
+                let glow = GlowPolyline(coordinates: committed, count: committed.count)
+                let core = MKPolyline(coordinates: committed, count: committed.count)
+                coordinator.committedOverlays = [glow, core]
+                mapView.addOverlays(coordinator.committedOverlays)
+            }
+            coordinator.renderedRouteKey = key
+        }
+        coordinator.motion.setTail(anchor: gliding ? committed.last : nil, on: mapView)
+    }
+
+    /// Live tracking: the marker's target is the route's newest point (RunViewModel appends the fix to the
+    /// route and publishes it as `currentCoordinate` together). Anything else — a pre-run preview fix, a
+    /// paused/finished run — draws the route in full with no gliding tail.
+    private var endsAtCurrentCoordinate: Bool {
+        guard let currentCoordinate, let last = routeCoordinates.last else { return false }
+        return last.latitude == currentCoordinate.latitude && last.longitude == currentCoordinate.longitude
     }
 
     private func centerIfNeeded(on mapView: MKMapView, coordinator: Coordinator) {
-        if let currentCoordinate {
-            // Live tracking (T1.8): re-center on every update, following
-            // the user's current position.
-            let region = MKCoordinateRegion(
-                center: currentCoordinate,
-                latitudinalMeters: 500,
-                longitudinalMeters: 500
-            )
-            mapView.setRegion(region, animated: true)
+        if currentCoordinate != nil {
+            // Live tracking (T1.8): stay centered on the user's current position. While a glide is running the
+            // camera is moved by the same display link as the marker; this only covers the idle case.
+            coordinator.motion.recenterIfIdle(on: mapView)
             return
         }
         // Static map (T1.9, product-spec.md §4.9): no live position — fit
@@ -104,11 +136,18 @@ struct RunMapView: UIViewRepresentable {
         coordinator.hasFitStaticRoute = true
     }
 
+    @MainActor
     final class Coordinator: NSObject, MKMapViewDelegate {
         var hasFitStaticRoute = false
         var userAnnotation: UserLocationAnnotation?
+        let motion = RunMapMotion()
+        var committedOverlays: [MKOverlay] = []
+        var renderedRouteKey: RunMapRouteKey?
 
         func mapView(_: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if overlay is TailOverlay {
+                return TailRenderer(overlay: overlay, accent: UIColor(LajuColor.accent))
+            }
             guard let polyline = overlay as? MKPolyline else {
                 return MKOverlayRenderer(overlay: overlay)
             }
@@ -135,6 +174,15 @@ struct RunMapView: UIViewRepresentable {
             return view
         }
     }
+}
+
+/// What the committed route overlays were last built from — lets `updatePolyline` skip a rebuild when SwiftUI
+/// re-runs `updateUIView` for unrelated state (the elapsed-time tick).
+struct RunMapRouteKey: Equatable {
+    let count: Int
+    let lastLatitude: Double?
+    let lastLongitude: Double?
+    let gliding: Bool
 }
 
 /// Marker subclass distinguishing the glow-underlay pass from the crisp core line — see `updatePolyline`.
