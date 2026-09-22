@@ -109,7 +109,9 @@ final class SeasonInfoTests: XCTestCase {
         XCTAssertEqual(viewModel.liveDaysRemaining(now: endAt.addingTimeInterval(-1 * 86400 - 1)), 2)
         XCTAssertEqual(viewModel.liveDaysRemaining(now: endAt.addingTimeInterval(-1)), 1)
         XCTAssertEqual(viewModel.liveDaysRemaining(now: endAt), 0)
-        XCTAssertEqual(viewModel.liveDaysRemaining(now: endAt.addingTimeInterval(3600)), 0, "never goes negative past end")
+        XCTAssertEqual(
+            viewModel.liveDaysRemaining(now: endAt.addingTimeInterval(3600)), 0, "never goes negative past end"
+        )
     }
 
     func testLiveDaysRemainingIsNilBeforeAnyLoad() {
