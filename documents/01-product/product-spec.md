@@ -250,11 +250,21 @@ punya konteks visual dari lari saya, bukan cuma angka.
 
 ### 4.11 Auto-Pause
 
-**Sebagai** runner, **saya ingin** app otomatis pause kalau saya berhenti
-bergerak (mis. nunggu lampu merah), **supaya** waktu/pace saya tidak
-tercemar oleh waktu diam yang tidak sengaja.
+> **Feature removed, 2026-09-22 (PM sign-off).** Auto-pause — automatically pausing a run after
+> ~60s of no confirmed movement — is removed entirely from v1, not disabled. Product decision, no
+> stated rationale beyond the sign-off itself. This AC and its task (T1.11,
+> tasks/phase-1-core-loop-offline.md) are kept here, struck through, for history rather than
+> deleted outright — see `security-review.md`/`code-quality-audit.md`'s convention for reversed
+> decisions. **What is NOT removed**: the underlying `stationaryAnchor` drift-guard GPS filtering
+> (ADR 0004, tech-spec.md §2.1b) stays — T1.11 only reused it as a user-facing pause trigger; the
+> drift guard itself is core GPS noise filtering used elsewhere (distance calculation, CQ-2's fix)
+> and was never in scope for removal.
 
-- AC1: Kalau user diam melebihi ambang waktu tertentu saat run aktif, app
+~~**Sebagai** runner, **saya ingin** app otomatis pause kalau saya berhenti
+bergerak (mis. nunggu lampu merah), **supaya** waktu/pace saya tidak
+tercemar oleh waktu diam yang tidak sengaja.~~
+
+~~- AC1: Kalau user diam melebihi ambang waktu tertentu saat run aktif, app
   otomatis masuk state Pause yang sama seperti Pause manual (§4.2 AC3) —
   bukan sekadar diam-diam menahan distance seperti mekanisme drift-guard
   yang sudah ada sebelumnya (tech-spec.md §2.1b). Deteksi ini adalah
@@ -262,20 +272,20 @@ tercemar oleh waktu diam yang tidak sengaja.
   terkonfirmasi, BUKAN reaktif terhadap fix GPS berikutnya (tech-spec.md
   §2.1b, koreksi 2026-09-13/Round 7 finding B7-3 — device diam total
   nyaris tidak menerima fix GPS baru sama sekali, jadi trigger reaktif
-  tidak akan pernah menyala pada kasus yang justru paling jelas).
-- AC2: UI menampilkan indikator jelas bahwa pause ini terjadi otomatis
+  tidak akan pernah menyala pada kasus yang justru paling jelas).~~
+~~- AC2: UI menampilkan indikator jelas bahwa pause ini terjadi otomatis
   (mis. label "Auto-paused"), berbeda dari Pause manual, supaya user
-  tidak bingung kenapa run berhenti sendiri.
-- AC3: User bisa Resume manual kapan saja setelah auto-pause, sama
+  tidak bingung kenapa run berhenti sendiri.~~
+~~- AC3: User bisa Resume manual kapan saja setelah auto-pause, sama
   seperti resume dari pause manual — **auto-resume tidak ada di v1**
   (GPS berhenti sepenuhnya selama pause, sama seperti T1.2b, supaya
   tidak ada titik palsu di antara pause dan resume — lihat T2.9 —
   sehingga app tidak bisa mendeteksi sendiri kapan user mulai bergerak
-  lagi tanpa GPS aktif; ini keterbatasan yang disengaja, bukan bug).
-- AC4: Waktu yang dihabiskan dalam auto-pause dikecualikan dari
+  lagi tanpa GPS aktif; ini keterbatasan yang disengaja, bukan bug).~~
+~~- AC4: Waktu yang dihabiskan dalam auto-pause dikecualikan dari
   `durationSeconds`/pace yang ditampilkan, persis seperti pause manual
   (tech-spec.md §2.4 — `duration_seconds` tetap client-asserted, tidak
-  di-cross-check ulang terhadap rentang waktu `gps_route`).
+  di-cross-check ulang terhadap rentang waktu `gps_route`).~~
 
 ### 4.12 Elevation Gain/Loss
 

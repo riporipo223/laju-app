@@ -75,9 +75,6 @@ private extension RunTrackingView {
                 }
                 Spacer()
                 VStack(spacing: 16) {
-                    if viewModel.model?.isAutoPaused == true {
-                        autoPausedBanner
-                    }
                     statsCard
                     actionButtons
                 }
@@ -245,19 +242,6 @@ private extension RunTrackingView {
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(gpsStatus.color, in: Capsule())
-    }
-
-    /// T1.11 (product-spec §4.11 AC2): a distinct indicator so the user isn't confused why the run stopped by
-    /// itself — the Pause/Resume button alone always just says "Resume" regardless of why it's paused.
-    /// `warning` amber (design-notes.md §1) — not `accent`, so it never competes with the brand hero color.
-    private var autoPausedBanner: some View {
-        Label("Auto-paused — kamu berhenti bergerak", systemImage: "pause.circle.fill")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(LajuColor.textPrimary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .background(LajuColor.warning, in: Capsule())
     }
 
     // MARK: - Stats card

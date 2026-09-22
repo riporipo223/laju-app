@@ -536,7 +536,19 @@ implementation.
 
 ---
 
-### T1.11 — Auto-pause (user-facing)
+### T1.11 — Auto-pause (user-facing) — **REMOVED 2026-09-22 (PM sign-off)**
+
+> **Feature removed, not disabled.** Product decision — auto-pause is cut from v1 entirely. Kept
+> here, unstruck below, as a historical record of what was built and later removed (matching
+> product-spec.md §4.11's convention for the same change) rather than deleted from the file. The
+> removed code (`RoutePointBuffer`/`LocationTrackingService` are NOT part of this — see below) was
+> `ios/Laju/ViewModels/AutoPauseWatchdog.swift`, `AutoPauseThreshold.swift`, their two test files,
+> and the wiring inside `RunViewModel.swift` (`isAutoPaused`, `autoPauseWatchdog`,
+> `autoPauseThresholdSeconds`) and `RunTrackingView.swift` (the "Auto-paused" banner). **What was
+> NOT touched**: the `stationaryAnchor` drift-guard GPS filtering this task reused (ADR 0004,
+> tech-spec.md §2.1b) — that logic stays, unchanged, as core GPS noise filtering used elsewhere
+> (distance calculation, and CQ-2's fix in `code-quality-audit.md`). T1.17's gate below no longer
+> depends on this task or lists it among the items to exercise.
 
 **Objective:** Close product-spec.md §4.11 — REUSES the existing
 `stationaryAnchor`/`stationaryRadiusMeters` drift guard (T0.9/T1.2b,
@@ -988,13 +1000,14 @@ starting backend work.
 - Yang dikerjakan: complete a manual multi-day test (real or
   time-manipulated) of doing several runs, confirming points/level/streak
   accumulate consistently and correctly against the formula, and that the
-  9 additions (T1.8-T1.16) behave correctly together in that same
+  8 remaining additions (T1.8-T1.16, excluding T1.11 — auto-pause,
+  **removed 2026-09-22**) behave correctly together in that same
   multi-day usage (not just in isolation); log any discrepancy as a bug
   against the relevant task, not a new feature.
 - Yang TIDAK dikerjakan: any new functionality — this is verification
   only.
 
-**Depends on:** T1.2b, T1.4, T1.5, T1.6, T1.8, T1.9, T1.10, T1.11, T1.12,
+**Depends on:** T1.2b, T1.4, T1.5, T1.6, T1.8, T1.9, T1.10, T1.12,
 T1.13, T1.14, T1.15, T1.16
 
 **Reference:** [development-plan.md](../development-plan.md) Fase 1 DoD
@@ -1004,10 +1017,11 @@ T1.13, T1.14, T1.15, T1.16
       producing correct points/level/streak per the formula
 - [ ] No data loss or calculation inconsistency observed across app
       restarts
-- [ ] Live map, static map, splits, auto-pause, elevation, audio cues,
-      crash recovery, permission flow, and streak reminder (T1.8-T1.16)
-      all exercised at least once during this pass with no regression to
-      the core points/level/streak loop
+- [ ] Live map, static map, splits, elevation, audio cues, crash
+      recovery, permission flow, and streak reminder (T1.8-T1.16 minus
+      T1.11 auto-pause, removed 2026-09-22) all exercised at least once
+      during this pass with no regression to the core points/level/streak
+      loop
 - [ ] **Every row in [deferred-manual-tests.md](../../04-quality-security/deferred-manual-tests.md)
       belonging to a Fase-1 task is either Pass, or explicitly documented
       as an accepted limitation** (the pattern T0.9's battery item already

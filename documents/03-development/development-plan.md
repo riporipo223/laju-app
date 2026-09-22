@@ -54,14 +54,18 @@ phase or any scheduled phase.
   personas) that the original breakdown missed, not new scope creep. All
   client-only, no backend needed: live map during tracking + static route
   map on Summary/History (MapKit, reverses the prior "route map" Non-goal
-  — see tech-spec.md §5.1), splits per kilometer, auto-pause (reusing the
+  — see tech-spec.md §5.1), splits per kilometer, ~~auto-pause (reusing the
   existing `stationaryAnchor` drift guard as an explicit user-facing
-  trigger, not new detection logic), elevation gain/loss, audio cues
+  trigger, not new detection logic)~~ **[removed 2026-09-22, PM sign-off —
+  see product-spec.md §4.11 and tasks/phase-1-core-loop-offline.md T1.11;
+  the reused `stationaryAnchor` drift guard itself was NOT removed, only
+  its use as a pause trigger]**, elevation gain/loss, audio cues
   (`AVSpeechSynthesizer`), crash/interrupt recovery flow, refined location
   permission handling (While Using vs Always vs Denied), and a local
   streak-reminder notification (`UNUserNotificationCenter`, no server —
-  streak is already tracked on-device since T1.1/T1.4). See
-  tasks/phase-1-core-loop-offline.md T1.8-T1.16 for the full breakdown.
+  streak is already tracked on-device since T1.1/T1.4). Now **8 items**
+  after the auto-pause removal. See tasks/phase-1-core-loop-offline.md
+  T1.8-T1.16 for the full breakdown.
 
 **Definition of Done:**
 - A user can complete multiple runs fully offline and see points/level
@@ -70,12 +74,13 @@ phase or any scheduled phase.
 - This is the first point at which the core hypothesis in product-spec §1
   ("progression without social features is rewarding") becomes testable —
   internal dogfooding should start here, before backend exists.
-- The 9 items added 2026-09-12 (live map, static map, splits, auto-pause,
+- The 8 remaining items added 2026-09-12 (live map, static map, splits,
   elevation, audio cues, crash recovery, permission-flow refinement,
-  streak reminder) all work correctly together during that same dogfood
-  pass, not just individually (added 2026-09-13, Round 7 finding N7-P7 —
-  T1.17's DoD already required this; this phase-level DoD is the source
-  T1.17 cites and needed the same bullet).
+  streak reminder — auto-pause **removed 2026-09-22**, PM sign-off) all
+  work correctly together during that same dogfood pass, not just
+  individually (added 2026-09-13, Round 7 finding N7-P7 — T1.17's DoD
+  already required this; this phase-level DoD is the source T1.17 cites
+  and needed the same bullet).
 
 **Dependency note:** the point formula implemented here must be identical
 to what ships server-side in Fase 2 — since client (Swift) and server

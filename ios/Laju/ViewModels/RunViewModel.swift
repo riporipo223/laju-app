@@ -9,9 +9,6 @@ import Foundation
 final class RunViewModel: ObservableObject {
     @Published private(set) var isRunning = false
     @Published private(set) var isPaused = false
-    /// T1.11: true only when the current pause was auto-triggered, not manual — drives the "Auto-paused"
-    /// indicator (§4.11 AC2). Cleared on every `resume()`.
-    @Published private(set) var isAutoPaused = false
     @Published private(set) var pointCount = 0
     @Published private(set) var distanceMeters: Double = 0
 
@@ -41,7 +38,6 @@ final class RunViewModel: ObservableObject {
     private var lastLocation: CLLocation?
     private var cancellables = Set<AnyCancellable>()
     private var flushTimerCancellable: AnyCancellable?
-    private let autoPauseWatchdog = AutoPauseWatchdog()
 
     /// T1.2b: `durationSeconds` excludes paused time — completed segments (`accumulatedActiveDuration`) plus
     /// time since the current one began (`currentSegmentStartedAt`), set at Start/Resume, cleared at Pause/Stop.
@@ -78,8 +74,6 @@ final class RunViewModel: ObservableObject {
     /// disk-writing `context.save()`. A kill within one interval of a resume still loses that segment (its own
     /// timer restarts from 0) — disclosed limitation. Injectable so tests can verify the REAL timer.
     private let flushIntervalSeconds: TimeInterval
-    /// T1.11 — injectable so tests don't wait the real 60s (`AutoPauseThreshold.seconds`) default.
-    private let autoPauseThresholdSeconds: TimeInterval
     /// T1.13 — injectable so tests can assert on a spy instead of driving real `AVSpeechSynthesizer` output.
     let audioCueService: AudioCueAnnouncing
     /// T1.16 — injectable so tests don't touch real `UNUserNotificationCenter` state.
@@ -89,14 +83,12 @@ final class RunViewModel: ObservableObject {
         locationService: LocationTrackingService,
         context: NSManagedObjectContext,
         flushIntervalSeconds: TimeInterval = 5,
-        autoPauseThresholdSeconds: TimeInterval = AutoPauseThreshold.seconds,
         audioCueService: AudioCueAnnouncing = AudioCueService(),
         streakReminderScheduler: StreakReminderScheduler = StreakReminderScheduler()
     ) {
         self.locationService = locationService
         self.context = context
         self.flushIntervalSeconds = flushIntervalSeconds
-        self.autoPauseThresholdSeconds = autoPauseThresholdSeconds
         self.audioCueService = audioCueService
         self.streakReminderScheduler = streakReminderScheduler
 
@@ -140,7 +132,6 @@ final class RunViewModel: ObservableObject {
         // the next fix goes through the SAME distance-from-anchor pipeline as any other point, no special case.
         let lastKnownLocation = seed.route.last?.asCLLocation()
         stationaryAnchor = lastKnownLocation
-        autoPauseWatchdog.reset(lastConfirmedMovementAt: lastKnownLocation != nil ? Date() : nil)
         lastLocation = lastKnownLocation
         splitTracker.reset(distanceMeters: seed.distanceMeters, activeDuration: seed.duration)
         accumulatedActiveDuration = seed.duration
@@ -150,7 +141,6 @@ final class RunViewModel: ObservableObject {
         updateCurrentEstimatedPoints()
         isRunning = true
         isPaused = false
-        isAutoPaused = false
         locationService.resetSessionFilterState()
         locationService.startTracking()
 
@@ -162,24 +152,15 @@ final class RunViewModel: ObservableObject {
             .sink { [weak self] _ in
                 self?.periodicFlush()
             }
-
-        autoPauseWatchdog
-            .start(thresholdSeconds: autoPauseThresholdSeconds) { [weak self] in self?.performPause(auto: true) }
     }
 
     /// T1.2b. `CLLocationManager` updates stop here (not "keep receiving but ignore") — the gap to the first
     /// post-resume point is a real time gap with no fabricated points, so T2.9's (Fase 2) teleport check can't
     /// misread it as a spurious jump.
     func pause() {
-        performPause(auto: false)
-    }
-
-    /// T1.11: same mechanics as manual `pause()`, only `isAutoPaused` differs — called by `AutoPauseWatchdog`.
-    private func performPause(auto: Bool) {
         guard isRunning, !isPaused else { return }
         finalizeActiveSegment()
         isPaused = true
-        isAutoPaused = auto
         locationService.stopTracking()
         if let run = activeRun {
             run.durationSeconds = accumulatedActiveDuration
@@ -191,13 +172,6 @@ final class RunViewModel: ObservableObject {
         guard isRunning, isPaused else { return }
         currentSegmentStartedAt = Date()
         isPaused = false
-        isAutoPaused = false
-        // Fresh grace window (T1.11): GPS was fully stopped during the pause, so there's no way to know
-        // whether the user has since moved — reset the clock rather than let a stale timestamp re-trigger
-        // auto-pause on the very next watchdog tick.
-        if stationaryAnchor != nil {
-            autoPauseWatchdog.confirmMovement()
-        }
         locationService.startTracking()
     }
 
@@ -205,7 +179,6 @@ final class RunViewModel: ObservableObject {
         guard let run = activeRun else { return }
         flushTimerCancellable?.cancel()
         flushTimerCancellable = nil
-        autoPauseWatchdog.stop()
         routeBuffer.flush(into: run)
         run.endedAt = Date()
         finalizeActiveSegment()
@@ -247,7 +220,6 @@ final class RunViewModel: ObservableObject {
         locationService.stopTracking()
         isRunning = false
         isPaused = false
-        isAutoPaused = false
         completedRunSummary = RunSummary(
             distanceMeters: run.distanceMeters,
             durationSeconds: run.durationSeconds,
@@ -289,11 +261,8 @@ final class RunViewModel: ObservableObject {
             // doc); a poor first fix must not seed a bad reference. Either way the raw point is recorded.
             if location.horizontalAccuracy <= Self.anchorAccuracyThresholdMeters {
                 stationaryAnchor = location
-                autoPauseWatchdog.confirmMovement()
                 lastLocation = location
                 updateCurrentEstimatedPoints()
-            } else {
-                autoPauseWatchdog.deferPauseForDegradedSignal() // degraded signal, not silence — AutoPauseWatchdog doc
             }
             appendPoint(location, to: run)
             return
@@ -303,23 +272,13 @@ final class RunViewModel: ObservableObject {
         if distanceFromAnchor <= stationaryRadiusMeters {
             // Within the anchor's noise radius — recorded raw, but does NOT count toward distance and does
             // NOT move the anchor/lastLocation. Keeping the anchor fixed is what stops it drifting (class doc).
-            //
-            // Poor accuracy here is genuinely ambiguous (could be real standing-still, could be a degraded fix
-            // that only LOOKS close to the anchor) — don't let it accumulate as confirmed-stationary evidence.
-            // Good accuracy within radius is the one case that's a reliable "actually not moving" signal, so
-            // it's deliberately left to just let the watchdog's clock keep running, unchanged.
-            if location.horizontalAccuracy > Self.anchorAccuracyThresholdMeters {
-                autoPauseWatchdog.deferPauseForDegradedSignal()
-            }
             appendPoint(location, to: run)
             return
         }
 
         guard location.horizontalAccuracy <= Self.anchorAccuracyThresholdMeters else {
             // Beyond the radius, but this fix itself is poor — don't trust it as the new anchor. Wait for a
-            // better fix; the raw point is still recorded. Same degraded-signal reasoning as above: a fix
-            // this far from the anchor, even an untrusted one, is real evidence against "stationary."
-            autoPauseWatchdog.deferPauseForDegradedSignal()
+            // better fix; the raw point is still recorded.
             appendPoint(location, to: run)
             return
         }
@@ -329,7 +288,6 @@ final class RunViewModel: ObservableObject {
         distanceMeters += location.distance(from: lastLocation ?? anchor)
         run.distanceMeters = distanceMeters
         stationaryAnchor = location
-        autoPauseWatchdog.confirmMovement()
         lastLocation = location
         let activeDuration = liveActiveDuration()
         updateCurrentEstimatedPoints(activeDuration: activeDuration)
