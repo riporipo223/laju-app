@@ -26,7 +26,7 @@ Findings are numbered `SEC-n`. Items marked **VERIFIED COVERED** are not finding
 
 The most sensitive data this app handles. A `gps_route` is a precise, timestamped trace of where a real person physically was — its first and last points are, for most users, their home address.
 
-### SEC-1 — No retention policy exists for GPS route data, anywhere — **Blocker**
+### SEC-1 — No retention policy exists for GPS route data, anywhere — ~~**Blocker**~~ **DECIDED 2026-09-22: indefinite retention**
 
 A grep across the entire document set for retention language (`retention`, `berapa lama`, `disimpan selama`, automatic deletion) returns **zero** matches relating to run or location data. The only deletion path specified for `gps_route` is user-initiated account deletion (`database-api-spec.md` §2.1b point 5, which nulls `RUN.gps_route` server-side).
 
@@ -64,7 +64,7 @@ The trade-off is real and is the reason this is a Warning rather than a Blocker:
 
 `lean-canvas.md` §9 states the strategic position directly: "Banyak user = banyak data," supporting more accurate leaderboards, more relevant local competition, fairer season tier placement, and performance-based matchmaking.
 
-Checked against the technical specs: there is **no** anonymization design, no aggregation pipeline spec, no k-anonymity or minimum-cohort threshold, and no separation between identified operational data and de-identified analytical data anywhere in `tech-spec.md`, `database-api-spec.md`, or `architecture.md`. The nearest thing that exists is `LEADERBOARD_SCOPE.insufficient_data` — a minimum-user-count threshold below which a scope is not shown. That is a *product* guard (a leaderboard of two people is not interesting), but it incidentally functions as a small-cohort privacy guard, and it is the only mechanism in the entire system that does.
+Checked against the technical specs: there is **no** anonymization design, no aggregation pipeline spec, no k-anonymity or minimum-cohort threshold, and no separation between identified operational data and de-identified analytical data anywhere in `tech-spec.md`, `database-api-spec.md`, or `architecture.md`. The nearest thing that exists is `LEADERBOARD_SCOPE.insufficient_data` — a minimum-user-count threshold below which a scope is not shown. That is a *product* guard (a leaderboard of two people is not interesting), but it incidentally functions as a small-cohort privacy guard, and it is the only mechanism in the entire system that does. **Update 2026-09-22: that last mechanism is now gone.** The Local Leaderboard was cancelled permanently and the regional scopes with it (product-spec.md §4.6), so `insufficient_data` is permanently `false` for `global`, the only remaining scope — no small cohort is ever computed, so the incidental guard has nothing to guard. This does not create a new exposure today (no aggregate feature ships), but it removes the one accidental mitigation this finding could previously point to, which matters if an aggregate-analytics feature is ever scoped.
 
 So, to answer the question as posed: **the security of the aggregate-insight strategy is not designed. It is currently only an idea.**
 

@@ -120,9 +120,11 @@ Not built. **Introduces the one genuinely new pattern in the product** — a den
 
 ---
 
-## 6. Local Leaderboard (screen 12) — DEFERRED to v1.1 / Fase 4
+## 6. Local Leaderboard (screen 12) — ~~DEFERRED to v1.1 / Fase 4~~ **CANCELLED PERMANENTLY 2026-09-22**
 
-> **Not part of MVP v1 (product decision, 2026-09-21).** Kept as a reference for when the feature is scheduled; no design work is needed now. Reason: it needs high user density to be useful — with few early users a kecamatan is nearly empty. Tasks: T3.2–T3.5 in tasks/phase-4-backlog.md. It used to be labelled "Fase 3".
+> ~~**Not part of MVP v1 (product decision, 2026-09-21).** Kept as a reference for when the feature is scheduled; no design work is needed now. Reason: it needs high user density to be useful — with few early users a kecamatan is nearly empty. Tasks: T3.2–T3.5 in tasks/phase-4-backlog.md. It used to be labelled "Fase 3".~~
+>
+> **CANCELLED PERMANENTLY 2026-09-22 (PM sign-off)** — not deferred, never to be scheduled. Reason given: scope too broad for the leaderboard logic needed. This section is a historical record; do not design against it. See product-spec.md §4.6.
 
 Screen 11 plus scope selection. Design 11 first.
 
@@ -149,7 +151,14 @@ Screen 11 plus scope selection. Design 11 first.
 
 ---
 
-## 8. Region picker (screen 10, Fase 2/3)
+## 8. Region picker (screen 10, Fase 2/3) — **CANCELLED 2026-09-22, never to be built**
+
+> **CANCELLED PERMANENTLY 2026-09-22 (PM sign-off).** Decision D1 (region mandatory) is reversed:
+> region is removed entirely from onboarding and the database, not redesigned. The cascading picker
+> specified below will never be built, and the "why we ask" copy problem (item 4) dissolves with the
+> question itself. The existing free-text region fields in `OnboardingProfileStep` are being deleted
+> (Task C). Everything below is a historical record — do not design or build against it. Replacement
+> for leaderboard access: a location-permission gate, product-spec.md §4.5 AC5.
 
 > **Interim implementation (2026-09-21):** the app already has a profile step (`OnboardingProfileStep`) with the username and the three region fields as **plain free-text fields** — there is no region catalog to pick from. It is what makes the app call `POST /api/profile/complete`. The cascading picker specified below (T3.1) replaces those three fields; until then the same place can be typed several ways, which the deferred Local Leaderboard will have to normalize.
 

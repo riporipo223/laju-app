@@ -25,8 +25,12 @@ Depends on: [product-spec.md](../01-product/product-spec.md)
 
 Firebase (Firestore) familiar buat developer, tapi:
 - Leaderboard lokal granular (per kecamatan/kabupaten-kota/provinsi, per
-  season — *ditunda ke v1.1 / Fase 4, keputusan 2026-09-21; v1 hanya Global,
-  alasan ini dipertahankan sebagai dasar pemilihan Postgres untuk saat itu*) butuh
+  season — *~~ditunda ke v1.1 / Fase 4, keputusan 2026-09-21; v1 hanya Global,
+  alasan ini dipertahankan sebagai dasar pemilihan Postgres untuk saat itu~~
+  **DIBATALKAN PERMANEN 2026-09-22** — leaderboard Global-only selamanya.
+  Ini TIDAK membatalkan pilihan Postgres: query ranking/aggregation Global
+  per-season masih jauh lebih natural di relational DB; ADR-0006 tetap
+  berlaku, hanya salah satu argumen pendukungnya yang gugur*) butuh
   query semacam "top N per region, sorted by points, dengan tie-break" —
   ini native di SQL (`ORDER BY`, `PARTITION BY`, materialized view), tapi di
   Firestore butuh precompute manual + denormalisasi berlapis, lebih rawan

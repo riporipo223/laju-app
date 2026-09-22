@@ -2,6 +2,14 @@
 
 Source: [development-plan.md](../development-plan.md) Fase 3
 
+> **FILE-WIDE CORRECTION, 2026-09-22 (PM sign-off).** Two decisions this file was written under
+> have since been reversed: (1) Local Leaderboard is **cancelled permanently**, not "deferred to
+> Fase 4 / v1.1" — every "deferred"/"ditunda" phrasing about it below is stale, including inside
+> completed-task prose (T3.6/T3.7's dependency notes, T3.10's sign-off text), which is left as
+> written because those are historical records of what was true when each task closed; (2) decision
+> D1 (region mandatory) is **reversed** — region is being removed entirely, so T3.1 is superseded
+> and needs rework (see its own banner below). Current spec: product-spec.md §4.1, §4.5 AC5, §4.6.
+>
 > **Renamed 2026-09-21** from `phase-3-local-leaderboard-season.md`. The
 > Local Leaderboard was cut from MVP v1 and deferred to Fase 4 / v1.1
 > (product decision — it needs high user density to be useful; see
@@ -22,7 +30,17 @@ over from Fase 2 shows up here.
 
 ---
 
-### T3.1 — Mobile onboarding UX blocking run-start until region is set
+### T3.1 — Mobile onboarding UX blocking run-start until region is set — **SUPERSEDED 2026-09-22, needs rework**
+
+> **SUPERSEDED 2026-09-22 (PM sign-off), same day this phase closed.** Decision D1 (region
+> mandatory) is **reversed** and Local Leaderboard is **cancelled permanently** (product-spec.md
+> §4.1 / §4.6) — so the entire premise of this task is gone: region is being removed from
+> onboarding and from the database, not merely left unused. Everything below is the **shipped,
+> signed-off implementation as built** (`8002079`, 2026-09-21) and is kept verbatim as a historical
+> record; it is **not** the current spec. The rework — remove the region step, gate Leaderboard
+> visibility on granted location permission instead (product-spec.md §4.5 AC5) — is Task C of the
+> reversal and is **not done yet**. Do not treat this task's DoD below as describing current
+> intended behavior.
 
 **Objective:** Give users a clean client-side experience around the
 region requirement — the backend guarantee itself (`409 Conflict` on
@@ -40,14 +58,20 @@ re-implementing enforcement that already exists.
   Fase 2) or the profile completion endpoint itself (T2.4) — this task is
   mobile-only.
 
-> **Note 2026-09-21:** the Local Leaderboard that motivated collecting
+> ~~**Note 2026-09-21:** the Local Leaderboard that motivated collecting
 > region is deferred to Fase 4 (product-spec.md §4.6), so no v1 screen
 > reads region yet. This task stays in v1 as-is because the shipped backend
 > guard (T2.5) still requires a region, and without this UI a new user
 > could never submit a run. **Region stays mandatory in v1 — decision D1 is
 > FINAL (2026-09-21):** low cost (one field), clear benefit (data ready for
-> the Local Leaderboard, no re-onboarding of existing users later). This task
-> and T2.5's guard stand unchanged.
+> the Local Leaderboard, no re-onboarding of existing users later).~~ **D1
+> REVERSED 2026-09-22 — this note no longer holds: Local Leaderboard is
+> cancelled permanently (not deferred), so there is no future feature to
+> prepare region data for, and region is being removed from onboarding and
+> the schema entirely. See the SUPERSEDED banner at the top of this task.**
+> ~~This task
+> and T2.5's guard stand unchanged.~~ **(Both are now being removed — T2.5's
+> region `409` guard is replaced in Task C.)**
 
 **Depends on:** T2.4
 
@@ -77,10 +101,13 @@ one is set, satisfying DoD item 1 by construction. Backend `409` fallback
 
 ---
 
-### T3.2–T3.5 — moved to Fase 4 (Local Leaderboard, deferred)
+### T3.2–T3.5 — ~~moved to Fase 4 (Local Leaderboard, deferred)~~ **CANCELLED PERMANENTLY 2026-09-22**
 
 Not part of this phase. See [phase-4-backlog.md](./phase-4-backlog.md),
 section "Deferred from MVP v1 — Local Leaderboard". IDs kept as-is.
+**Update 2026-09-22 (PM sign-off): cancelled permanently, not deferred** —
+scope too broad for the leaderboard logic needed. These four will never be
+scheduled; the section in phase-4-backlog.md is a historical record only.
 
 ---
 

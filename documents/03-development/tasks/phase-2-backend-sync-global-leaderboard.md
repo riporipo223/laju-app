@@ -254,7 +254,16 @@ runs on.
 
 ---
 
-### T2.4 — POST /api/profile/complete endpoint
+### T2.4 — POST /api/profile/complete endpoint — **region half SUPERSEDED 2026-09-22**
+
+> **Partially superseded 2026-09-22 (PM sign-off).** Decision D1 is reversed: region
+> (kecamatan/kabupaten_kota/provinsi) is removed entirely from onboarding and the schema
+> (product-spec.md §4.1, §4.6). This task's **"minimal region validation"** — all 3 region fields
+> required, non-empty, `400` if any is missing — is therefore being removed, along with the region
+> columns themselves (Task B: migration; Task C: endpoint rework). The rest of this task
+> (username/display_name profile completion, the endpoint itself, its `profile_missing` 401 flow)
+> is **unaffected and stays**. Everything below is the shipped implementation as built, kept as a
+> historical record — the region assertions in its DoD no longer describe intended behavior.
 
 **Objective:** Capture the region data leaderboard features depend on
 later in this phase and in Fase 3.
@@ -307,7 +316,15 @@ later in this phase and in Fase 3.
 
 ---
 
-### T2.5 — POST /api/runs endpoint — ingestion only (no calc/anti-cheat yet)
+### T2.5 — POST /api/runs endpoint — ingestion only (no calc/anti-cheat yet) — **region `409` guard SUPERSEDED 2026-09-22**
+
+> **Partially superseded 2026-09-22 (PM sign-off).** This task's **"basic region guard"** — `409
+> Conflict` if the submitting user has no region set — is being removed with the region columns
+> themselves (D1 reversed; product-spec.md §4.1). Task C replaces it: leaderboard *visibility* is
+> gated on granted location permission (§4.5 AC5) rather than run *submission* being gated on
+> region. Note the shape change: the old guard blocked submitting a run; the replacement does not —
+> it only gates what the user can see. Everything else in this task is unaffected. Text below is the
+> shipped implementation, kept as a historical record.
 
 **Objective:** Get a run payload from device to database, as a foundation
 to build validation on top of.
@@ -1952,7 +1969,7 @@ prescribes — leaderboard reads must never aggregate live.
   onward, not an absent row (database-api-spec.md §1).
 - Yang TIDAK dikerjakan: per-region scopes (kecamatan/kabupaten_kota/
   provinsi) — that's T3.2, explicitly deferred (Fase 3 until 2026-09-21;
-  now Fase 4 / v1.1 together with the whole Local Leaderboard, see
+  now CANCELLED PERMANENTLY 2026-09-22 together with the whole Local Leaderboard — was "Fase 4 / v1.1 deferred"; see
   phase-4-backlog.md).
 
 **Depends on:** T2.12b, T2.17
@@ -2021,7 +2038,7 @@ immediately.
 
 **Scope:**
 - Yang dikerjakan: endpoint per database-api-spec.md §2.4, `scope=global`
-  only for this task (region filters are T3.4 — deferred to Fase 4 / v1.1,
+  only for this task (region filters are T3.4 — CANCELLED PERMANENTLY 2026-09-22, was deferred to Fase 4 / v1.1,
   phase-4-backlog.md).
 - Yang TIDAK dikerjakan: region-scoped queries.
 
@@ -2093,7 +2110,7 @@ toward.
 - Yang dikerjakan: screen consuming `GET /api/leaderboard?scope=global`,
   showing top N + the current user's own rank even if outside top N
   (product-spec AC 4.5.1).
-- Yang TIDAK dikerjakan: region filter UI (T3.5 — deferred to Fase 4 / v1.1, phase-4-backlog.md).
+- Yang TIDAK dikerjakan: region filter UI (T3.5 — CANCELLED PERMANENTLY 2026-09-22, was deferred to Fase 4 / v1.1, phase-4-backlog.md).
 
 **Depends on:** T2.19
 
