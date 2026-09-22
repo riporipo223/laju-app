@@ -41,17 +41,20 @@ Formula: Lari → dapat Poin → Placing → Level/Rank → Leaderboard
 
 ## 5. Core Product Loop
 Track Run → Poin bertambah → Naik level → Positioning di Leaderboard
-(Global; Local — Kecamatan → Kabupaten/Kota → Provinsi — ditunda ke v1.1, keputusan 2026-09-21) → Progress terbentuk →
+(Global saja — ~~Local: Kecamatan → Kabupaten/Kota → Provinsi, ditunda ke v1.1, keputusan
+2026-09-21~~ **dibatalkan permanen 2026-09-22**, lihat §8) → Progress terbentuk →
 Run again
 
 ## 6. Assumptions to Validate (v1)
 - Progress runner mau lari lagi hanya karena naik poin/level, tanpa elemen
   sosial — ini asumsi paling kritikal, jadi fokus utama testing MVP
 - ~~Leaderboard lokal (granular sampai kecamatan) punya cukup kepadatan user
-  di fase awal untuk terasa relevan, bukan kosong~~ — **tidak lagi diuji di
-  v1 (2026-09-21):** asumsi ini dijawab dengan keputusan produk, bukan dengan
-  eksperimen — Local Leaderboard ditunda ke v1.1 justru karena kepadatan awal
-  hampir pasti terlalu rendah. Leaderboard Global tetap diuji.
+  di fase awal untuk terasa relevan, bukan kosong~~ — **tidak lagi relevan
+  (dibatalkan permanen 2026-09-22):** asumsi ini awalnya dijawab dengan
+  keputusan produk "ditunda" (2026-09-21, kepadatan awal terlalu rendah),
+  lalu fiturnya sendiri dibatalkan permanen (bukan cuma ditunda) — scope
+  terlalu luas untuk logic leaderboard yang benar-benar dibutuhkan. Leaderboard
+  Global tetap diuji.
 - Background GPS tracking native (`CLLocationManager`, iOS) cukup reliable
   & battery-efficient untuk use case run 30-60 menit tanpa user komplain
   drain baterai — divalidasi lewat T0.9 (physical device test)
@@ -67,11 +70,15 @@ Run again
 ## 8. Future Development
 - Circle/Clan system dan Club War
 - Matchmaking antar club berdasarkan performa
-- Local leaderboard 3-tier (kecamatan/kabupaten-kota/provinsi) — **v1.1 /
-  Fase 4**, dipindah dari Fase 3 pada 2026-09-21 (butuh kepadatan user
+- ~~Local leaderboard 3-tier (kecamatan/kabupaten-kota/provinsi) — v1.1 /
+  Fase 4, dipindah dari Fase 3 pada 2026-09-21 (butuh kepadatan user
   tinggi; task T3.2–T3.5 disimpan di tasks/phase-4-backlog.md). Setelah itu:
   ekspansi hyperlocal di luar kecamatan/kabupaten-kota/provinsi (mis.
-  kelurahan/desa) begitu density user cukup.
+  kelurahan/desa) begitu density user cukup.~~ **Dibatalkan permanen
+  2026-09-22** (PM sign-off) — bukan ditunda. Alasan: scope terlalu luas
+  untuk logic leaderboard yang dibutuhkan. Task T3.2–T3.5
+  (tasks/phase-4-backlog.md) dan tiga AC di product-spec.md §4.6 disimpan
+  sebagai catatan sejarah, tidak akan pernah dikerjakan.
 - Monetisasi Premium & B2B (dashboard club/EO)
 - Android support — ditunda tanpa timeline (bukan technical debt; keputusan
   platform, lihat tech-spec.md §1)

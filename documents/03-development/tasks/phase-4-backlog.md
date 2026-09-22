@@ -13,12 +13,16 @@ Non-goals explains why each is deferred).
 **T3.2–T3.5**, moved here from Fase 3 on 2026-09-21, are kept in full detail
 (Objective / Scope / Depends on / DoD) in the section at the bottom, because
 they were already specified and audited before the product decision to defer
-them — see "Deferred from MVP v1 — Local Leaderboard". They are still
-**not scheduled**.
+them — see "Deferred from MVP v1 — Local Leaderboard". **Update 2026-09-22:
+CANCELLED PERMANENTLY, not deferred** (PM sign-off — scope too broad for the
+leaderboard logic needed). Kept in full detail below as a historical record
+only, per this repo's convention for reversed decisions — will not be
+implemented.
 
-- **T3.2–T3.5 — Local Leaderboard** (region-scope precompute,
-  `insufficient_data`, `GET /api/leaderboard` scope filters, screen).
-  Deferred to v1.1; detail at the bottom of this file.
+- ~~**T3.2–T3.5 — Local Leaderboard** (region-scope precompute,
+  `insufficient_data`, `GET /api/leaderboard` scope filters, screen).~~
+  **CANCELLED PERMANENTLY 2026-09-22**, not deferred to v1.1 — see product-spec.md
+  §4.6. Detail kept at the bottom of this file for historical record only.
 
 - **T4.1 — Circle / Clan / Club** (data model + UI). Depends on the `club_id`
   field already reserved on `User` (database-api-spec.md §1) and the
@@ -76,15 +80,24 @@ them — see "Deferred from MVP v1 — Local Leaderboard". They are still
 
 ---
 
-## Deferred from MVP v1 — Local Leaderboard (T3.2–T3.5)
+## ~~Deferred from MVP v1~~ CANCELLED PERMANENTLY — Local Leaderboard (T3.2–T3.5)
 
-> **Moved here from Fase 3 on 2026-09-21. Deferred to v1.1 — NOT cancelled.**
-> Product decision: the local leaderboard is cut from MVP v1 (v1 = Global
+> **Moved here from Fase 3 on 2026-09-21. ~~Deferred to v1.1 — NOT cancelled.~~**
+> ~~Product decision: the local leaderboard is cut from MVP v1 (v1 = Global
 > Leaderboard only). It needs high user density to be useful — with few
 > early users a kecamatan holds a handful of people and the board is
 > empty/uncompetitive, while a Global board already feels "local" at small
 > scale. The value appears *after* there are many users; it is not a launch
-> prerequisite.
+> prerequisite.~~
+>
+> **CANCELLED PERMANENTLY, 2026-09-22 (PM sign-off) — supersedes the above.**
+> Rationale: scope too broad for the leaderboard logic actually needed, a
+> scope decision rather than a density/timing one — will not be
+> implemented, ever. The region data collected for this feature (User's
+> kecamatan/kabupaten_kota/provinsi, `LEADERBOARD_SCOPE`'s regional
+> `scope_type` values) is itself being removed from the schema — see
+> tasks/phase-3-season.md T3.1 and database-api-spec.md. Everything below
+> is kept verbatim as a historical record only.
 >
 > **Why these four are written out in full** even though the rest of this
 > file is high-level only: they were already specified and audited across

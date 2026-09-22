@@ -70,8 +70,8 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 | Fase 0 — Setup | Closed. |
 | Fase 1 — Core Loop Offline | Code complete. Gate (T1.17) open — needs physical-device dogfood runs only the user can do. |
 | Fase 2 — Backend + Sync + Global Leaderboard | 26/33 closed, 4 PARTIAL. All 4 PARTIAL items blocked on the Apple Developer Program (see §4) or a real device. |
-| **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. |
-| Fase 4 — Backlog (Local Leaderboard, etc.) | **Not scheduled. Do not build without explicit user go-ahead.** |
+| **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. **Superseded same day**: T3.1 (region onboarding) needs reworking — region removed entirely, see §5. |
+| Fase 4 — Backlog (T4.1+, Circle/Club/monetization/etc.) | **Not scheduled. Do not build without explicit user go-ahead.** Local Leaderboard (former T3.2–T3.5) is a separate case: **cancelled permanently 2026-09-22**, not part of this "not scheduled, ask first" backlog — it will never be scheduled, don't offer it as an option. |
 
 ---
 
@@ -100,11 +100,16 @@ build." Do not guess and start building something from Fase 4. Tell the user whe
 and ask which of the following they want tackled — each still needs either a user decision or
 something only the user can physically do:
 
-- **CQ-2 (Blocker, code written, evidence pending)** — see the update above.
+- ~~**CQ-2 (Blocker, code written, evidence pending)**~~ — **closed 2026-09-22**, see the update above; stale by the time you're reading this bullet.
 - **T1.17 gate** — needs physical-device dogfood sessions (battery-with-map-on-screen, audio cue
   with screen locked, ≥5 runs across ≥3 days). User-only; you cannot do this.
-- **T2.3/T2.4/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
-- **Fase 4 backlog** (Local Leaderboard: T3.2–T3.5) — only if the user explicitly asks to start it.
+- **T2.3/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
+  (T2.4 dropped from this list — its region-`409`-guard scope is being reworked/removed, not
+  blocked on Apple; see §5's D1 reversal.)
+- ~~**Fase 4 backlog** (Local Leaderboard: T3.2–T3.5) — only if the user explicitly asks to start
+  it.~~ **No longer an option to offer as of 2026-09-22** — Local Leaderboard is cancelled
+  permanently, not part of the "ask first" Fase 4 backlog. Other Fase 4 items (Circle, monetization,
+  etc.) are still "ask first."
 
 Full detail on all of these: `documents/README.md` §1 and §3.
 
@@ -144,12 +149,24 @@ One-liners only. Full rationale: `documents/02-architecture/adr/README.md` (13 A
 - Append-only `point_transaction` ledger + a separately precomputed leaderboard table — never
   derive the leaderboard live from the ledger on read (ADR 0013).
 - **Apple AND Google Sign-In**, not Apple-only — Google added 2026-09-21 as a second provider.
-- **Leaderboard is Global-only in v1.** Local/regional scopes (T3.2–T3.5) are deferred to Fase 4 —
-  moved intact, not cancelled, waiting on user density.
+- **Leaderboard is Global-only, permanently — Local/regional leaderboard (T3.2–T3.5) is
+  CANCELLED, not deferred** — reversed 2026-09-22 (PM sign-off) from the prior "moved intact,
+  waiting on user density" position. Rationale: scope too broad for the leaderboard logic needed,
+  not a density/timing problem. `product-spec.md` §4.6, `tasks/phase-4-backlog.md` T3.2–T3.5 kept
+  struck through as historical record; will never be built.
 - **"Tier" = Season League** — a division computed from points earned *in the current season
   only*, resets every season. It is not Level (lifetime) and not Rank. `tech-spec.md` §2.5.
-- **Region (kecamatan/kabupaten/provinsi) is mandatory in v1 onboarding**, free text for now — no
-  catalog/cascading picker exists yet (that's T3.1's deferred picker work, not built).
+- **Region (kecamatan/kabupaten/provinsi) is REMOVED from v1 entirely** — reverses the prior
+  "mandatory in v1 onboarding" decision (D1, 2026-09-21), reversed 2026-09-22 (PM sign-off) as a
+  direct consequence of the Local Leaderboard cancellation above (region was collected specifically
+  to prepare for that feature). Not replaced with GPS-based text detection — just removed.
+- **Global leaderboard visibility is gated on granted location permission, not on region** —
+  decided 2026-09-22, the replacement mechanism for the region removal above. Boolean/status only
+  (`CLLocationManager` authorization state) — no place name, no reverse geocoding, no admin
+  hierarchy stored anywhere. Reuses the existing run-tracking location-permission infrastructure,
+  no second permission flow. See `product-spec.md` §4.5 AC5 — its permission-denied fallback (a
+  locked Leaderboard tab + Settings CTA) is flagged there as the PM's stated assumption, not yet
+  confirmed in detail.
 - `resolve-flagged-runs` cron runs **daily**, not ≤12h — Vercel Hobby plan limitation, accepted
   (OPS-1). Revisit only if/when the project upgrades to Vercel Pro.
 - `POST /api/runs` p95 latency currently **does not** meet the 1.5s budget (PERF-1) — accepted

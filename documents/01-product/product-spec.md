@@ -68,11 +68,19 @@ Non-goals).
 ## 4. User Stories & Acceptance Criteria (Must-have v1)
 
 ### 4.1 Account & Profile
+
+> **Update 2026-09-22 (PM sign-off):** Local Leaderboard is now **cancelled permanently** (§4.6),
+> not deferred — the region-collection rationale below (AC2/D1) no longer applies and has been
+> reversed. Region (kecamatan/kabupaten_kota/provinsi) is being **removed entirely** from
+> onboarding and the database, replaced by a location-permission-granted gate on Global leaderboard
+> visibility — see the new mechanism note under §4.5 AC5.
+
 **Sebagai** calon pengguna, **saya ingin** membuat akun dan mengisi region
 saya, **supaya** progres saya tersimpan dan saya muncul di leaderboard.
 (Sampai 2026-09-21 kalimat ini berbunyi "leaderboard lokal yang benar" —
 Local Leaderboard di-defer ke v1.1, lihat §4.6; region tetap dikumpulkan
-sekarang sebagai data yang disiapkan untuk fitur itu.)
+sekarang sebagai data yang disiapkan untuk fitur itu. **Sejak 2026-09-22
+kalimat ini sudah tidak berlaku — lihat catatan di atas.**)
 
 - AC1: User bisa daftar dengan **Sign in with Apple** atau **Google** dalam
   ≤3 langkah. Nol email/password (SEC-15), nol provider lain.
@@ -93,16 +101,32 @@ sekarang sebagai data yang disiapkan untuk fitur itu.)
   > emailnya sama, dan Apple sering memakai email relay — orang yang sama bisa
   > punya dua akun. Tidak ada penggabungan akun di v1 (security-review.md
   > SEC-16). Detail teknis: tech-spec.md §6.
-- AC2: User wajib set region (minimal kecamatan + kabupaten/kota) sebelum
-  run pertama bisa disubmit ke server.
-  > **Keputusan FINAL D1 (2026-09-21): region tetap wajib di v1.** Setelah
+~~- AC2: User wajib set region (minimal kecamatan + kabupaten/kota) sebelum
+  run pertama bisa disubmit ke server.~~
+  > **Keputusan FINAL D1 (2026-09-21): region tetap wajib di v1.** ~~Setelah
   > Local Leaderboard di-defer (§4.6), memang tidak ada layar v1 yang memakai
   > region. Tetap diwajibkan karena biayanya rendah (satu field di
   > onboarding/profil) dan manfaatnya jelas: data region user sudah lengkap
   > saat Local Leaderboard dikerjakan, sehingga tidak perlu re-onboarding
   > seluruh user lama. Tidak ada perubahan kode maupun AC: backend `409`
   > tanpa region (T2.5) tetap berlaku, AC ini tetap Must-have, T3.1 tetap di
-  > v1. Ini bukan lagi pertanyaan terbuka.
+  > v1. Ini bukan lagi pertanyaan terbuka.~~
+  >
+  > **D1 REVERSED 2026-09-22 (PM sign-off).** Region collection is **removed
+  > entirely** from onboarding and the database — not replaced with GPS-based
+  > text detection, just removed. Rationale: D1's own justification ("data
+  > region user sudah lengkap saat Local Leaderboard dikerjakan") no longer
+  > applies now that Local Leaderboard is cancelled permanently (§4.6), not
+  > deferred — there is no future feature left to prepare this data for.
+  > **Replacement mechanism**: Global leaderboard visibility is now gated on
+  > whether the user has **granted location permission** (boolean/status
+  > only — no place name, no reverse geocoding, no administrative hierarchy
+  > stored anywhere) — see §4.5 AC5. This reuses the location-permission
+  > infrastructure that already exists for run tracking (`CLLocationManager`);
+  > no second, separate permission flow. AC2 above is struck through; backend
+  > `409`-without-region (T2.5) and T3.1's onboarding step are being removed
+  > (tasks/phase-3-season.md T3.1, tasks/phase-2-backend-sync-global-leaderboard.md
+  > T2.5 — see Task B/C of this reversal for the implementation work).
 - AC3: Login persist di device (tidak perlu login ulang tiap buka app).
 
 ### 4.2 GPS Run Tracking
@@ -169,10 +193,25 @@ pengguna, **supaya** saya termotivasi kompetitif.
   filter-per-liga belum dibangun (Fase 4). Yang SUDAH masuk v1 sebagai
   fondasi: penurunan liga dari poin season dan tampilan liga sendiri (task
   T3.7a, Fase 3). AC ini bukan requirement Must-have v1.
+- AC5 (added 2026-09-22, replaces region-based access — see §4.1 D1
+  reversal): **Leaderboard visibility is gated on whether the user has
+  granted location permission**, not on a stored region. `CLLocationManager`
+  authorization status only (`authorizedWhenInUse`/`authorizedAlways`) —
+  boolean/status, no place name, no reverse geocoding, no admin hierarchy
+  stored anywhere. Reuses the location-permission infrastructure already
+  built for run tracking; no second, separate permission flow.
+  **Fallback if permission is denied/not granted** (flagged explicitly: this
+  is the PM's stated assumption as of 2026-09-22, not yet confirmed in
+  detail — correct this AC if the actual intent differs): the Leaderboard
+  tab shows a locked state with a CTA to enable location in Settings, same
+  pattern as the existing "tracking background tidak optimal" +
+  Settings-button flow already in onboarding (user-flow.md §2.1). The rest
+  of the app stays usable — this gate affects Leaderboard visibility only,
+  not run tracking, points, or level.
 
-### 4.6 Leaderboard — Local (DEFERRED ke v1.1 / Fase 4 — bukan Must-have v1)
+### 4.6 Leaderboard — Local (~~DEFERRED ke v1.1 / Fase 4~~ **CANCELLED PERMANENTLY, 2026-09-22**)
 
-> **Status (2026-09-21): ditunda, bukan dibatalkan.** Alasan: leaderboard
+> **Status (2026-09-21): ditunda, bukan dibatalkan.** ~~Alasan: leaderboard
 > per kecamatan/kabupaten baru berguna kalau kepadatan user tinggi — dengan
 > user awal yang sedikit, satu kecamatan hanya berisi beberapa orang dan
 > leaderboard-nya kosong/tidak kompetitif. Nilainya muncul SETELAH ada
@@ -180,19 +219,30 @@ pengguna, **supaya** saya termotivasi kompetitif.
 > natural saat user masih sedikit. Tiga AC di bawah DIPERTAHANKAN utuh
 > sebagai spesifikasi untuk saat fitur ini dikerjakan (tasks T3.2–T3.5,
 > dipindah ke tasks/phase-4-backlog.md); tidak ada task v1 yang
-> memverifikasinya, jadi tidak ada di AC Coverage Matrix sebagai Must-have.
+> memverifikasinya, jadi tidak ada di AC Coverage Matrix sebagai Must-have.~~
+>
+> **CANCELLED PERMANENTLY, 2026-09-22 (PM sign-off) — reverses the status
+> above.** Rationale: scope too broad for the leaderboard logic actually
+> needed — not a density/timing problem to revisit later, a scope decision.
+> The three AC below are kept, struck through, as a historical record of
+> what was specified (same pattern as auto-pause's removal, §4.11) — they
+> will **not** be implemented, ever, not even in v1.1/Fase 4. Tasks
+> T3.2–T3.5 (tasks/phase-4-backlog.md) are cancelled, not deferred. The
+> region data this feature was the reason to collect is itself being
+> removed (§4.1 D1 reversal) — replaced by a location-permission gate on
+> Global leaderboard visibility (§4.5 AC5).
 
 **Sebagai** runner, **saya ingin** melihat posisi saya dibanding runner di
 daerah saya, **supaya** kompetisinya terasa relevan dan achievable.
 
-- AC1: User bisa filter leaderboard by kecamatan, kabupaten/kota, atau
+~~- AC1: User bisa filter leaderboard by kecamatan, kabupaten/kota, atau
   provinsi (hierarki administratif: kecamatan ada di dalam satu
-  kabupaten/kota, kabupaten/kota ada di dalam satu provinsi).
-- AC2: Jika data user di region tersebut terlalu sedikit (< threshold,
+  kabupaten/kota, kabupaten/kota ada di dalam satu provinsi).~~
+~~- AC2: Jika data user di region tersebut terlalu sedikit (< threshold,
   misal 5 user), UI menampilkan pesan "belum cukup data" alih-alih
-  leaderboard kosong yang terkesan buggy.
-- AC3: Region ditentukan dari profil user, bukan dari GPS run per-run
-  (mencegah leaderboard shopping dengan pindah-pindah region tiap run).
+  leaderboard kosong yang terkesan buggy.~~
+~~- AC3: Region ditentukan dari profil user, bukan dari GPS run per-run
+  (mencegah leaderboard shopping dengan pindah-pindah region tiap run).~~
 
 ### 4.7 Season System
 **Sebagai** runner, **saya ingin** kompetisi reset berkala, **supaya** saya
