@@ -77,17 +77,32 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 
 ## 3. If the user types "Lanjutkan" right now
 
-**There is no task auto-queued.** Fase 3 just closed; Fase 4 is explicitly "do not build." Do not
-guess and start building something from Fase 4. Instead, tell the user where things stand and ask
-which of the following they want tackled — all of these are genuinely open and each needs either a
-user decision or something only the user can physically do:
+**Update, 2026-09-22**: CQ-2 and SEC-1 below were both acted on this session, and both are now
+**closed**. CQ-2: this project is worked across two machines — this Windows session implements
+against the docs/specs, and CI (not a local Mac run) ended up providing the real evidence, via a PR
+opened specifically to trigger `ci-ios.yml`'s `pull_request` check (a plain push to `luvfr` doesn't
+trigger CI — its `push` trigger is scoped to `main` only). One real bug was caught and fixed on a
+same-day re-read before the first push: the first pass used `assertionFailure` on the failure
+paths, which would have crashed any Debug build (including `xcodebuild test` and T1.17
+dogfooding) — removed in favor of `print`-only logging. A second real bug then surfaced from actual
+CI (not caught locally, since this machine has no SwiftFormat either): a `redundantThrows` lint
+violation in the new test file, fixed and amended into the same commit. Final CI run
+([35717568035](https://github.com/riporipo223/laju-app/actions/runs/35717568035)) passed clean:
+191/191 tests. See CQ-2's status block in `code-quality-audit.md` for full detail.
+[PR #1](https://github.com/riporipo223/laju-app/pull/1) is **open, not merged** — that decision is
+the user's. **SEC-1 is closed** — indefinite retention was chosen (see security-review.md SEC-1's
+decision block, 2026-09-22) and propagated to `database-api-spec.md`, `tech-spec.md`,
+`pre-launch-checklist.md`, and the live Privacy Policy text (`backend/lib/legal.ts`, verified via
+`lib/legal.test.ts` 6/6).
 
-- **CQ-2 (Blocker)** — `RoutePointBuffer.flush` can silently destroy a recorded route. Fix is
-  understood; needs the user's go-ahead to touch it. See `documents/04-quality-security/code-quality-audit.md`.
+Original guidance, kept for what's still open: Fase 3 just closed; Fase 4 is explicitly "do not
+build." Do not guess and start building something from Fase 4. Tell the user where things stand
+and ask which of the following they want tackled — each still needs either a user decision or
+something only the user can physically do:
+
+- **CQ-2 (Blocker, code written, evidence pending)** — see the update above.
 - **T1.17 gate** — needs physical-device dogfood sessions (battery-with-map-on-screen, audio cue
   with screen locked, ≥5 runs across ≥3 days). User-only; you cannot do this.
-- **SEC-1 (Blocker)** — no GPS retention policy defined yet. Blocks writing the Privacy Policy,
-  which blocks App Store submission. Needs a product decision from the user.
 - **T2.3/T2.4/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
 - **Fase 4 backlog** (Local Leaderboard: T3.2–T3.5) — only if the user explicitly asks to start it.
 
@@ -139,6 +154,18 @@ One-liners only. Full rationale: `documents/02-architecture/adr/README.md` (13 A
   (OPS-1). Revisit only if/when the project upgrades to Vercel Pro.
 - `POST /api/runs` p95 latency currently **does not** meet the 1.5s budget (PERF-1) — accepted
   limitation pending a possible Supabase Pro upgrade, not being actively optimized right now.
+- **GPS route retention is indefinite, until account deletion** — decided 2026-09-22 (SEC-1), both
+  server-side (`RUN.gps_route`) and locally (`Run.gpsRoute`). Deliberate: full run history is a
+  core product feature. Revisit only if UU PDP legal review (SEC-12, still open) or a real incident
+  changes the calculus — see `security-review.md` SEC-1 for the alternatives considered.
+- **Auto-pause (T1.11, product-spec.md §4.11) is removed from v1 entirely** — decided 2026-09-22
+  (PM sign-off), not disabled: code deleted (`AutoPauseWatchdog.swift`, `AutoPauseThreshold.swift`,
+  their tests, and the wiring in `RunViewModel.swift`/`RunTrackingView.swift`). The
+  `stationaryAnchor` drift-guard GPS filtering it reused (ADR 0004) was **not** touched — that
+  logic stays, it's core GPS noise filtering used elsewhere. T1.17's gate no longer covers it (now
+  8 items, not 9). Correction while acting on this: the removal request cited T1.10, but T1.10 is
+  actually splits-per-km — auto-pause is T1.11 (verified against tasks/phase-1-core-loop-offline.md
+  before touching any code).
 
 ---
 

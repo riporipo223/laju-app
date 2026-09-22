@@ -56,10 +56,10 @@ tracked, not silently treated as done.
 | 4.10.1 | Per-km splits list with pace | T1.10 | Yes |
 | 4.10.2 | Partial final split clearly marked, not rounded/hidden | T1.10 | Yes |
 | 4.10.3 | Sum of split distances equals total run distance | T1.10 | Yes |
-| 4.11.1 | Sustained no-movement auto-transitions to Pause (time-based, not fix-reactive) | T1.11 | Yes |
-| 4.11.2 | Auto-pause visibly distinct from manual pause in UI | T1.11 | Yes |
-| 4.11.3 | Resume from auto-pause behaves like resume from manual pause (auto-resume out of scope) | T1.11 | Yes |
-| 4.11.4 | Auto-paused time excluded from duration/pace like manual pause | T1.11 | Yes |
+| 4.11.1 | ~~Sustained no-movement auto-transitions to Pause (time-based, not fix-reactive)~~ | T1.11 | **Removed 2026-09-22** — feature cut (PM sign-off), not deferred; was Yes. See product-spec.md §4.11 |
+| 4.11.2 | ~~Auto-pause visibly distinct from manual pause in UI~~ | T1.11 | **Removed 2026-09-22** — same as 4.11.1 |
+| 4.11.3 | ~~Resume from auto-pause behaves like resume from manual pause (auto-resume out of scope)~~ | T1.11 | **Removed 2026-09-22** — same as 4.11.1 |
+| 4.11.4 | ~~Auto-paused time excluded from duration/pace like manual pause~~ | T1.11 | **Removed 2026-09-22** — same as 4.11.1 |
 | 4.12.1 | Total elevation gain/loss shown on Run Summary | T1.12 | Yes |
 | 4.12.2 | Altitude noise doesn't materially inflate gain/loss on a flat route | T1.12 | Yes |
 | 4.13.1 | Audio announces distance+pace once per km crossed | T1.13 | Yes |
@@ -164,7 +164,7 @@ way for tests to quietly never happen.
 
 Concrete ordering, because this is the phase actually in progress:
 
-1. T1.1-T1.6, T1.9-T1.12, T1.14-T1.16 — **closed**, all DoD items checked. Note that "closed" does not mean every one was fully device-verified: T1.12, T1.15, and T1.16 each carry a note in their own DoD text that a real on-device pass is still desirable (elevation on a real hilly run, the permission banner rendering, the reminder firing after real elapsed time). Those notes were judged non-blocking when the items were checked; the T1.17 dogfood sessions are the natural place to confirm them.
+1. T1.1-T1.6, T1.9-T1.12, T1.14-T1.16 — **closed**, all DoD items checked. Note that "closed" does not mean every one was fully device-verified: T1.12, T1.15, and T1.16 each carry a note in their own DoD text that a real on-device pass is still desirable (elevation on a real hilly run, the permission banner rendering, the reminder firing after real elapsed time). Those notes were judged non-blocking when the items were checked; the T1.17 dogfood sessions are the natural place to confirm them. **T1.11 (within that range) was subsequently REMOVED 2026-09-22** (PM sign-off, feature cut) — it was genuinely closed/verified before removal, but no longer needs T1.17 dogfood exercise since the feature no longer exists; see product-spec.md §4.11.
 2. T1.8 and T1.13 — code complete, one deferred device row each.
 3. **One dogfood session block** covering all three remaining items at once:
    start a run screen-on with the map visible (closes T1.8's battery row),
@@ -189,8 +189,13 @@ T2.3 onward assumes Fase 1 is closed.
 Open findings from [security-review.md](../../04-quality-security/security-review.md)
 and [code-quality-audit.md](../../04-quality-security/code-quality-audit.md)
 are **not** phase gates and do not block the sequence above. They are
-tracked in their own registers, with SEC-1 and SEC-9 flagged as blocking
-App Store submission and Fase 2 launch respectively.
+tracked in their own registers. All of both registers' original Blockers
+are now resolved: SEC-9 (rate limiting) by T2.20a, 2026-09-21; SEC-1 (GPS
+retention policy) by an explicit decision — indefinite retention — made
+2026-09-22; and `code-quality-audit.md`'s CQ-2 (`RoutePointBuffer.flush`
+could silently destroy a route) fixed and resolved 2026-09-22, verified via
+real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
+191/191 tests passing, PR left open/unmerged for the user's own review).
 
 ## Fase 0 — Setup
 - [x] T0.1 — Init repo scaffolding (monorepo: ios/ + backend/) (lihat [phase-0-setup.md](./phase-0-setup.md))
@@ -215,7 +220,7 @@ App Store submission and Fase 2 launch respectively.
 - [ ] T1.8 — Live map during tracking (MapKit) — **PARTIAL**, DoD 1-3/4 done, item 4 (battery re-measurement) DEFERRED to [deferred-manual-tests.md](../../04-quality-security/deferred-manual-tests.md) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.9 — Static route map (Run Summary & History) — all 3 DoD items verified on physical device + on-device Core Data store (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.10 — Splits per kilometer (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
-- [x] T1.11 — Auto-pause (user-facing) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
+- [x] ~~T1.11 — Auto-pause (user-facing)~~ **REMOVED 2026-09-22** (PM sign-off, feature cut not deferred; code deleted, drift-guard GPS filtering it reused stays intact) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.12 — Elevation gain/loss — both DoD items verified; `ElevationTracker.compute(points:)` called from `RunViewModel.stop()` and `RunRecovery.finalize`, noise-rejection proven against a synthetic noisy-flat fixture (`ElevationTrackerTests`), not only a real hilly route (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [ ] T1.13 — Audio cues — **PARTIAL**, DoD 3/4 done (once-per-km content, global disable toggle, jitter-dedupe inherited from `SplitTracker`); item 4 (screen-locked/backgrounded device verification) outstanding, tracked in [deferred-manual-tests.md](../../04-quality-security/deferred-manual-tests.md) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.14 — Crash/interrupt recovery flow (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
