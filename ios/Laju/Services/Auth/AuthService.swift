@@ -20,6 +20,16 @@ final class AuthService: ObservableObject {
 
     init(client: SupabaseClient = SupabaseConfig.client) {
         self.client = client
+        #if DEBUG
+            // Debug builds only: lets an end-to-end check run on a build that cannot carry Sign in with Apple (a
+            // free Personal Team, or the Simulator without a paid capability). The tokens are a REAL Supabase session
+            // for a throwaway test user, passed in the launch environment — nothing here bypasses server-side auth.
+            let environment = ProcessInfo.processInfo.environment
+            if let access = environment["LAJU_DEBUG_ACCESS_TOKEN"],
+               let refresh = environment["LAJU_DEBUG_REFRESH_TOKEN"] {
+                Task { try? await client.auth.setSession(accessToken: access, refreshToken: refresh) }
+            }
+        #endif
         authStateTask = Task { [weak self] in
             guard let self else { return }
             for await (_, session) in client.auth.authStateChanges {

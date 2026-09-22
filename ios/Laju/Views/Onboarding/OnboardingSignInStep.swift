@@ -50,6 +50,14 @@ struct OnboardingSignInStep: View {
             Button("Sign in with Google", action: signInWithGoogle)
                 .buttonStyle(LajuSecondaryButtonStyle())
                 .disabled(isSigningIn)
+
+            #if DEBUG
+                // Debug builds only (never compiled into Release): a free Personal Team cannot carry the Sign in
+                // with Apple capability, so this step would otherwise block the whole app on such a build.
+                Button("Lewati (build debug)", action: onContinue)
+                    .font(.footnote)
+                    .foregroundStyle(LajuColor.textSecondary)
+            #endif
         }
         .padding(24)
     }
