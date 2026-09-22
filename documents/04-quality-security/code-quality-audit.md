@@ -1,0 +1,252 @@
+# Laju App — Swift Concurrency & Pattern Audit (Fase 1 code)
+
+Created 2026-09-17. A retrospective audit of the Fase 1 Swift code as it exists on disk — not a review of planned work, and **not a rewrite**. No source file was modified as part of this audit. Every finding below is a report awaiting a decision.
+
+Depends on: [tech-spec.md](../02-architecture/tech-spec.md), [architecture.md](../02-architecture/architecture.md), [adr/README.md](../02-architecture/adr/README.md), [security-review.md](./security-review.md)
+
+**Method**: the three ECC skills `swift-concurrency-6-2`, `swiftui-patterns`, and `swift-actor-persistence` were applied as review lenses, supplemented by direct reading of every file in the tracking path and by a real build. §6 states exactly which finding came from which lens and which were manual.
+
+---
+
+## 0. Baseline: the project already passes the bar most Swift 6 audits are looking for
+
+Before any finding, the most important verified fact, because it sets the severity ceiling for everything below.
+
+`project.yml` sets, for every target:
+
+```yaml
+SWIFT_VERSION: "6.0"
+SWIFT_STRICT_CONCURRENCY: complete
+SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+```
+
+A full build was run against this configuration as part of this audit:
+
+```
+** BUILD SUCCEEDED **
+```
+
+Zero errors, zero warnings. This is Swift 6 language mode with complete strict-concurrency checking and warnings promoted to errors — the strictest standard configuration available at this Swift version.
+
+**The direct consequence: there is no compiler-detectable data race anywhere in this codebase.** Every question in this audit's brief of the form "is there a data race in X" has already been answered `no` by the compiler, under a configuration that makes such a race a build failure rather than a warning. That is a genuinely strong baseline and not the common case.
+
+What follows is therefore **not** a list of races. It is a list of places where safety currently rests on an assumption the compiler was never asked to check, plus a set of correctness and performance findings that strict concurrency does not model at all.
+
+---
+
+## 1. Severity convention
+
+Same three-tier scale as [security-review.md](./security-review.md) §0, for consistency across both documents produced in this round.
+
+| Tier | Meaning |
+|---|---|
+| **Blocker** | A real defect with a concrete failure path that silently defeats a guarantee the project has explicitly designed for. |
+| **Warning** | A real exposure or fragility. Correct today, but correct by assumption or by accident rather than by construction. |
+| **Note** | Recorded for completeness — an accepted constraint, a forward-looking observation, or a verification that an area is sound. |
+
+Findings are numbered `CQ-n`.
+
+---
+
+## 2. Concurrency and isolation
+
+### CQ-1 — Main-thread safety is assumed everywhere and declared nowhere — **Warning**
+
+No type in the GPS → state → persistence path carries any isolation annotation:
+
+| Type | File | Isolation |
+|---|---|---|
+| `RunViewModel` | `ios/Laju/ViewModels/RunViewModel.swift:9` | none |
+| `LocationTrackingService` | `ios/Laju/Services/Location/LocationTrackingService.swift:8` | none |
+| `AutoPauseWatchdog` | `ios/Laju/ViewModels/AutoPauseWatchdog.swift:7` | none |
+| `RoutePointBuffer` | `ios/Laju/ViewModels/RoutePointBuffer.swift:6` | none |
+
+All four are plain non-`Sendable` `final class`es, and all four mutate `@Published` state or Core Data objects.
+
+They pass complete strict-concurrency checking **not because their isolation was proven correct, but because they never cross an isolation boundary the compiler examines.** The GPS data path is `CLLocationManagerDelegate` → `PassthroughSubject.send` → `.sink { }`, and Combine's `sink` closure is not `@Sendable`, so no boundary check ever occurs. The code is single-threaded, so the compiler has nothing to complain about — and equally, nothing to verify.
+
+The actual main-thread guarantee is a runtime convention with two links, both currently sound:
+
+1. `CLLocationManager` delivers delegate callbacks on the queue/run loop on which the manager was created. The manager is created in `LocationTrackingService.init()` (`LocationTrackingService.swift:19`), and every production construction site is a SwiftUI `@StateObject` initializer — `RunTrackingView.swift:15` and `OnboardingContainerView.swift:14` — i.e. on the main thread. So callbacks arrive on main.
+2. The two timers both specify `on: .main` explicitly (`RunViewModel.swift:160`, `AutoPauseWatchdog.swift:28`).
+
+Link 2 is declared in code. **Link 1 is not written down anywhere, and is not enforced by anything.** If any future code constructs `LocationTrackingService` off the main thread — a background prewarm, a `Task.detached`, a future headless sync path — every `@Published` mutation in both classes silently moves off-main. SwiftUI's main-thread requirement is then violated, the symptom is intermittent UI corruption or a crash in a release build, and **the build stays green**, because nothing in the type system was ever told the assumption existed.
+
+The fix is close to free, since everything already runs on main: annotate `RunViewModel` and `LocationTrackingService` `@MainActor`. One wrinkle is worth stating so the fix is not mis-scoped — `CLLocationManagerDelegate` is a non-isolated protocol, so under Swift 6.0 a `@MainActor` `LocationTrackingService` must mark its delegate methods `nonisolated` and enter main-actor context explicitly via `MainActor.assumeIsolated { }`. That is the correct outcome rather than a workaround: it converts today's invisible assumption into a documented, runtime-checked one. §6's toolchain note describes an option that removes the wrinkle entirely.
+
+### CQ-2 — `RoutePointBuffer.flush` can silently destroy an entire recorded route, by two independent paths — **Blocker**
+
+`ios/Laju/ViewModels/RoutePointBuffer.swift:24-30`:
+
+```swift
+func flush(into run: Run) {
+    guard !pending.isEmpty else { return }
+    var existing = GPSPoint.decodeRoute(from: run.gpsRoute)
+    existing.append(contentsOf: pending)
+    run.gpsRoute = try? JSONEncoder().encode(existing)
+    pending.removeAll()
+}
+```
+
+This is the single write path for `Run.gpsRoute`, and it is the mechanism T1.14's crash-recovery design depends on. It has two independent silent-total-loss paths:
+
+**(a) Decode failure silently truncates the route to just the pending points.** `GPSPoint.decodeRoute` ends in `?? []` — any decode failure returns an empty array rather than signalling. `flush` cannot distinguish "this run has no points yet" from "this run's existing points could not be read." In the second case it appends `pending` to an empty array and writes the result back, **replacing the entire prior route with only the last ≤20 points.** No error, no log, and the run continues looking healthy. This path needs no exotic trigger — any partial write, any future model change, any corruption is sufficient.
+
+**(b) Encode failure nils the route entirely.** `try?` on the assignment means a throw assigns `nil` to `run.gpsRoute`, discarding every point ever recorded for that run — and the very next line, `pending.removeAll()`, discards the in-memory copy too. Both copies gone in two consecutive statements. `GPSPoint`'s `lat`, `lng`, and `elevation` are plain `Double`, and `JSONEncoder`'s default `nonConformingFloatEncodingStrategy` is `.throw`, so a non-finite value throws. The upstream accuracy filter (`horizontalAccuracy < 0`, `LocationTrackingService.swift:164`) rejects most invalid fixes, which makes this path unlikely — but not structurally impossible, and the consequence does not scale with the likelihood.
+
+Rated **Blocker** on path (a), which requires no unusual precondition and defeats the exact guarantee T1.14 was built to provide: that a run survives a force-kill. A durability mechanism whose failure mode is silent, total, and indistinguishable from success is the wrong shape regardless of how often it fires.
+
+Recording clearly, per the audit-only instruction: **no fix was applied.** The shape of a fix is straightforward — make `flush` fail loudly rather than lossily, distinguish "empty" from "unreadable", and never overwrite a non-`nil` `gpsRoute` with `nil` — but that is a code change awaiting a decision, not part of this audit.
+
+### CQ-3 — `@unchecked Sendable` on `StreakReminderScheduler` extends a safety promise to types it does not control — **Warning**
+
+`ios/Laju/ViewModels/StreakReminderScheduler.swift:14` declares `final class StreakReminderScheduler: @unchecked Sendable`, justified in the doc comment (lines 10-13) as: "all stored state (`notifications`, `calendar`) is set once at init and never mutated afterward."
+
+That justification is true of the *references* — both are `let` — but `@unchecked Sendable` is a claim about safe concurrent access to the *referents*. The stored `notifications` is of type `any NotificationScheduling`, and `ios/Laju/ViewModels/NotificationScheduling.swift:6` declares that protocol with **no `Sendable` constraint**. The unchecked conformance therefore silently extends the Sendable promise to whatever conforms.
+
+- **Production is sound**: `SystemNotificationScheduler` wraps `UNUserNotificationCenter`, which is thread-safe, and holds no mutable state of its own.
+- **Tests are not**: both spies conforming to this protocol hold mutable state — `LajuTests/StreakReminderSchedulerTests.swift:6-12` declares `scheduledIdentifiers: [String]`, `scheduledDateComponents: [String: DateComponents]`, `requestAuthorizationCallCount`, `var authorizationResult`, `var authorizationStatusToReturn`; `LajuTests/RunViewModelStreakReminderTests.swift:6-8` similarly. Each is mutated from the scheduler's calls while the enclosing type advertises itself as `Sendable`.
+
+The correct assertion is one word — `protocol NotificationScheduling: Sendable` — which would make the compiler verify what the comment currently asserts on the compiler's behalf, and would flag the spies so they can be made explicitly safe. As written, the `@unchecked` escape hatch is doing more work than its justification covers.
+
+### CQ-4 — `PersistenceController`'s `nonisolated(unsafe)` is correctly reasoned — **Note**
+
+Recorded as a positive verification so it is not re-flagged. `ios/Laju/Services/Persistence/PersistenceController.swift:22` declares `private nonisolated(unsafe) static let model: NSManagedObjectModel`, with an unusually complete justification (lines 8-21) covering both *why the shared instance is necessary* (re-parsing `Laju.momd` per `init` yields distinct model objects, breaking Core Data's `+entity` resolution when the app's `.shared` and a test's in-memory controller coexist) and *why the unsafe annotation is sound* (`NSManagedObjectModel` is immutable once loaded but not `Sendable`, so the compiler cannot verify it).
+
+Both halves check out. The model is only ever read — passed to `NSPersistentContainer(name:managedObjectModel:)` at line 33 and never mutated after the initializing closure returns. This is the escape hatch used correctly: a narrow exception, documented with its reason, rather than a blanket suppression.
+
+---
+
+## 3. Core Data persistence
+
+### CQ-5 — There are no background contexts, so the cross-context race class does not exist yet — **Note**
+
+The brief asks whether `PersistenceController`'s actor isolation and background-context handling are safe from race conditions. Verified directly across the whole app target:
+
+```
+grep -rn "performBackgroundTask\|newBackgroundContext\|\.perform" Laju/   →   no matches
+```
+
+There are **no background contexts and no `perform`/`performAndWait` calls anywhere.** Every Core Data operation — `PersistenceController`'s five static query helpers, and all seven `context.save()` sites — runs on `container.viewContext`, on the main thread, per CQ-1's convention.
+
+So the honest answer is that the risk the question targets is not present, because the structure that creates it has not been built. All Core Data access is single-threaded and therefore trivially free of cross-context races.
+
+One forward-looking observation, which is the part worth acting on. `PersistenceController.swift:42` sets:
+
+```swift
+container.viewContext.automaticallyMergesChangesFromParent = true
+```
+
+Nothing currently writes to a parent or background context, so this line is **inert today**. It becomes live the moment Fase 2's sync layer introduces its first background write — at which point merge behaviour activates silently, with no code change at the call site and no signal that the concurrency model just changed. That is the point at which context confinement needs an actual design, and it will arrive without announcing itself. Worth a note in the Fase 2 sync task now, while the reason is fresh.
+
+### CQ-6 — Seven `try? context.save()` sites discard persistence failures — **Note**
+
+All seven save sites swallow their error:
+
+| Site | Purpose |
+|---|---|
+| `RunViewModel.swift:118` | initial `Run` row at Start |
+| `RunViewModel.swift:186` | duration persist on pause |
+| `RunViewModel.swift:239` | final points/duration at stop |
+| `RunViewModel.swift:281` | `periodicFlush` — the durability timer |
+| `RunViewModel.swift:382` | count-triggered flush |
+| `RunRecovery.swift:67` | recovery finalization |
+| `PersistenceController.swift:55` | `SyncMeta` creation |
+
+A failed save is indistinguishable from a successful one at every one of them, including `periodicFlush`, whose entire documented purpose is durability against force-kill.
+
+Rated **Note** rather than Warning, deliberately: saves on a healthy main-queue `viewContext` rarely fail, and the periodic flush retries implicitly on its next tick, so a transient failure self-heals. The real gap is diagnostic — a *persistent* failure (disk full, store corruption, migration failure) would produce a run that appears to be recording normally and is in fact persisting nothing, with no log line anywhere to explain it afterwards. Logging the error at these sites costs nothing and would make that scenario debuggable. Contrast with CQ-2, which is a Blocker precisely because its failure is not transient and not self-healing.
+
+### CQ-7 — Full-route re-encode on every flush is O(n²) main-thread work — **Warning**
+
+`RoutePointBuffer.flush` decodes the entire existing route, appends the pending points, and re-encodes the entire route (`RoutePointBuffer.swift:24-30`). It is called from two triggers, both on the main thread:
+
+- every 20 accepted points (`saveEveryNPoints`, `RunViewModel.swift:379`)
+- every 5 seconds (`flushIntervalSeconds`, `RunViewModel.swift:277`)
+
+and each call is followed by `context.save()`, which writes the whole re-encoded blob — a Core Data Binary attribute — to disk.
+
+Cost with the project's own longest real run as the reference point (the 24km calibration run, pk=81). `distanceFilter` is 10m (`LocationTrackingService.swift:67`), so 24km yields on the order of 2,400 fixes before the accuracy and jitter filters reject any. That gives roughly 120 count-triggered flushes, plus one every 5 seconds for the run's full duration, each handling an average of half the accumulated route — on the order of several hundred thousand point encode/decode operations across the run, all on the main thread. The *last* flushes are the expensive ones: each decodes ~2,400 points, re-encodes ~2,400 points, and writes a blob on the order of 200KB, synchronously, while the user is looking at a live-updating map and stats screen.
+
+It scales quadratically with run length, so it degrades exactly where it is least acceptable — a marathon is roughly four times worse than this already-measured case. If any late-run UI hitching has been observed on device, this is the first thing to look at.
+
+Worth noting what is *not* wrong here: the incremental-flush design itself is correct and well-reasoned (it exists so a force-kill loses at most one interval, per the class documentation and Round 7 B7-2). The finding is narrowly about the append implementation — full decode/re-encode of an accumulating array — not about the flush strategy.
+
+---
+
+## 4. SwiftUI patterns
+
+### CQ-8 — `ObservableObject`/`@Published`/`@StateObject` is legacy-by-constraint, not by oversight — **Note**
+
+The `swiftui-patterns` lens flags `ObservableObject`, `@Published`, `@StateObject`, and `@EnvironmentObject` as anti-patterns in new code, to be migrated to the `@Observable` macro. This codebase uses the older wrappers throughout.
+
+**That migration is unavailable here.** The Observation framework requires iOS 17, and the deployment target is locked at iOS 16.0 (`project.yml`, both targets). That is the same constraint already recorded in ADR-0011, where it forced `MKMapView` over SwiftUI's `Map` because `MapPolyline` is iOS 17+.
+
+Recorded explicitly so a future reviewer applying a generic SwiftUI checklist does not file this as tech debt: the current pattern is the *correct* consequence of a deliberate, documented platform decision (ADR-0001). It becomes reconsiderable only if the deployment target rises, and at that point it should be evaluated as a real migration rather than a lint fix — `@Observable`'s property-level change tracking would be a genuine win for `RunViewModel`, whose many `@Published` properties currently invalidate every observing view on any change.
+
+### CQ-9 — Two independent `LocationTrackingService` instances can exist — **Note**
+
+`RunTrackingView.swift:15` and `OnboardingContainerView.swift:14` each declare their own `@StateObject private var locationService = LocationTrackingService()`, so two instances — and therefore two `CLLocationManager` objects — can exist in one process.
+
+Harmless in practice: onboarding's instance exists only for the permission step and is released when onboarding completes, and the two are never active simultaneously in a way that affects tracking. Recorded because authorization state is consequently tracked in two places, and because the pattern does not extend — a third surface needing location (a settings screen re-checking permission, say) would make the duplication a real source of divergent `authorizationStatus` readings. A single shared instance injected through the environment would be the natural shape if that happens.
+
+---
+
+## 5. Findings summary
+
+| ID | Area | Finding | Severity |
+|---|---|---|---|
+| CQ-2 | Persistence | `RoutePointBuffer.flush` can silently destroy an entire route — decode-failure truncation and encode-failure nil | **Blocker** |
+| CQ-1 | Concurrency | Main-thread safety assumed but never declared; no `@MainActor` anywhere in the tracking path | **Warning** |
+| CQ-3 | Concurrency | `@unchecked Sendable` on `StreakReminderScheduler` covers an unconstrained protocol; test spies hold mutable state | **Warning** |
+| CQ-7 | Performance | Full-route decode/re-encode per flush is O(n²) main-thread work; ~200KB synchronous writes late in a 24km run | **Warning** |
+| CQ-4 | Concurrency | `PersistenceController`'s `nonisolated(unsafe)` is correctly reasoned and sound | **Note** |
+| CQ-5 | Persistence | No background contexts exist, so no cross-context race exists; `automaticallyMergesChangesFromParent` is inert until Fase 2 | **Note** |
+| CQ-6 | Persistence | Seven `try? context.save()` sites discard errors; diagnostic gap, not a correctness one | **Note** |
+| CQ-8 | SwiftUI | `ObservableObject` pattern is forced by the iOS 16 target (ADR-0001/ADR-0011), not an oversight | **Note** |
+| CQ-9 | SwiftUI | Two `LocationTrackingService` instances can coexist; harmless now, does not extend | **Note** |
+| — | Build | **Swift 6 language mode, complete strict concurrency, warnings-as-errors — builds clean** | **Verified sound** |
+
+**One Blocker, three Warnings, five Notes.**
+
+No code was changed. CQ-2 is the only finding that warrants action before further Fase 1 work; the rest are safely deferrable, and CQ-1 is best done together with the toolchain question below.
+
+### A note on what the Blocker is not
+
+CQ-2 is not a concurrency defect, and neither are CQ-6 or CQ-7. That is the shape of this audit's result overall: the project's strict-concurrency configuration genuinely worked, and the compiler caught the entire class of problem it exists to catch. What it cannot model — error handling that discards information, and algorithmic cost — is where every real finding landed. Strict concurrency is necessary and it is doing its job here; it is not sufficient, and this codebase is a clean illustration of the boundary.
+
+---
+
+## 6. Which lens produced which finding
+
+Stated explicitly, per the audit brief.
+
+| Finding | Source |
+|---|---|
+| CQ-1 | `swift-concurrency-6-2` — its "protect globals/statics with MainActor" and "`nonisolated` to suppress errors without understanding isolation" anti-patterns prompted checking *declared* isolation rather than trusting the clean build. |
+| CQ-3 | `swift-concurrency-6-2` — same anti-pattern lens, applied to `@unchecked Sendable` as the escape hatch rather than `nonisolated`. |
+| CQ-4 | `swift-concurrency-6-2` — verification pass on the remaining escape hatch. |
+| CQ-8 | `swiftui-patterns` — its `@Observable` migration guidance flagged the pattern; the iOS 16 constraint that makes it correct was manual (cross-referenced to ADR-0001/ADR-0011). |
+| CQ-9 | `swiftui-patterns` — state-ownership and DI guidance. |
+| CQ-2 | **Manual.** No skill covers error-discarding (`try?` / `?? []`) as a durability defect; found by reading the write path end to end. |
+| CQ-6 | **Manual**, same reason. |
+| CQ-7 | **Manual.** `swiftui-patterns`' "avoid expensive work in `body`" is adjacent but does not apply — the cost is in a timer callback, not a view body. Found by tracing `flush`'s algorithmic cost against the project's own longest real run. |
+| CQ-5 | **Manual**, with `swift-actor-persistence` as a partial lens — see below. |
+
+**On `swift-actor-persistence` specifically**: its core pattern (an `actor` wrapping an in-memory cache over file-backed JSON) **does not apply to this codebase**, and adopting it would be wrong. Core Data has its own concurrency model — context confinement with `perform`/`performAndWait` — and wrapping an `NSManagedObjectContext` in an actor is a known anti-pattern that fights the framework rather than using it. The skill's *principles* were still useful, and did real work: its emphasis on atomic writes preventing partial-write corruption on crash is what prompted examining `flush`'s write path in the first place, which is how CQ-2 was found. Recorded honestly: the skill's pattern was rejected as unsuitable, its durability principle was applied and productive.
+
+**On `swift-concurrency-6-2` and the toolchain — one recommendation that came from the skill and has no finding number**, because it is a configuration decision rather than a defect:
+
+The skill documents Swift **6.2**'s Approachable Concurrency — specifically MainActor default isolation (SE-0466), under which every type in an app target is main-actor-isolated by default. The project is on `SWIFT_VERSION: "6.0"`, so none of it is currently available.
+
+This matters because MainActor-by-default is a precise description of what this codebase already does by convention. Adopting it would convert CQ-1's undocumented, unenforced assumption into a compiler-enforced guarantee with close to zero code changes — the code already runs entirely on main. It also removes CQ-1's one awkward edge: Swift 6.2's isolated conformances allow `extension LocationTrackingService: @MainActor CLLocationManagerDelegate` directly, instead of the `nonisolated` + `MainActor.assumeIsolated` dance that a 6.0 fix requires.
+
+This is a toolchain and build-settings decision with its own risk surface (a Swift version bump touches everything), so it is raised as an option to evaluate deliberately, not a recommendation to act on immediately. But if CQ-1 is going to be addressed at all, the two questions should be decided together rather than fixing CQ-1 twice.
+
+---
+
+## 7. Relationship to the security review
+
+One finding in [security-review.md](./security-review.md) is a code-level concern that belongs to both documents, and is recorded there rather than duplicated here: **SEC-2**, the absence of an explicit `NSFileProtection` class on the Core Data store. It is a security finding by consequence (precise location history at rest) and a persistence-configuration finding by mechanism, and its resolution is constrained by the same background-write requirement that shapes this document's concurrency picture — a store that must accept writes while the device is locked cannot use `NSFileProtectionComplete`.
+
+No finding in this document changes any finding in that one. CQ-5's confirmation that all Core Data access is main-thread and single-context does, however, *simplify* SEC-2's eventual fix: with no background context to coordinate, the protection-class choice applies to exactly one store description and one access pattern.
