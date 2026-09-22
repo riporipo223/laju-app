@@ -6,7 +6,14 @@
 # Path corrected 2026-09-17: docs moved from Laju/documents/ to documents/
 # at repo root during the 6-folder reorganization; the old pattern silently
 # stopped matching anything, leaving documents/ untracked-but-not-ignored.
-documents/
+# `documents/*` (not `documents/`) so the two `!` exceptions below can re-include specific files —
+# git cannot un-ignore a path inside a directory excluded by a plain directory-matching pattern.
+documents/*
+# Narrow exception (2026-09-22, explicit user decision): these two files need to reach a new
+# Claude Code session on a different device via `git clone` — everything else in documents/ (20+
+# files, lean canvas, MVP report, full tech spec) stays local-only, unchanged from the rule above.
+!documents/HANDOFF.md
+!documents/README.md
 
 # Claude Code local session/agent config — not project source
 .claude/
