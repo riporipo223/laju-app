@@ -49,7 +49,7 @@ erDiagram
         float distance_meters
         int duration_seconds
         int avg_pace_sec_per_km
-        jsonb gps_route "array of {lat, lng, timestamp, elevation} per-point samples — NOT a 2D GeoJSON LineString; timestamp+elevation required per point for anti-cheat (tech-spec.md §2.4)"
+        jsonb gps_route "array of {lat, lng, timestamp, elevation} per-point samples — NOT a 2D GeoJSON LineString; timestamp+elevation required per point for anti-cheat (tech-spec.md §2.4). Retention (SEC-1, decided 2026-09-22): kept indefinitely while the account exists — no time-based deletion — because full route history is a core product feature (run history, map thumbnails); nulled only on account deletion (§2.1b point 5). Local Run.gpsRoute in Core Data follows the same indefinite policy"
         string status "validated|flagged|approved|rejected — see tech-spec.md §2.4.1"
         string flag_confidence "low|high — set the moment status becomes flagged; RETAINED (not nulled) through approved/rejected-from-flagged as a historical record of why points were held; null only for validated and immediate-rejected (never flagged)"
         json anomaly_flags "list of anti-cheat checks triggered"
@@ -306,7 +306,10 @@ physically break the soft-delete or leave data un-wiped):
    `pendingSync`/`failed` and upload them under the new account.
 5. **`RUN.gps_route` is nulled (not the row)** for all of this user's
    runs — keeps `PointTransaction.run_id` valid while removing the
-   precise-location history server-side too.
+   precise-location history server-side too. Until deletion, retention is
+   indefinite (ERD §1, SEC-1 decided 2026-09-22) — deletion is the only
+   removal mechanism, by deliberate choice, not a placeholder awaiting a
+   future retention window.
 6. **In-flight `flagged` runs are terminally resolved at deletion time**,
    not left pending: any run still `flagged` (either confidence) is
    resolved to `rejected` via the same compensating-transaction path

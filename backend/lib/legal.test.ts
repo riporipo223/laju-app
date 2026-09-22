@@ -35,9 +35,9 @@ describe("privacy policy text", () => {
     expect(sectionText("tidak-dikumpulkan")).toMatch(/tidak menjual/);
   });
 
-  it("does not invent a retention period — no time-based deletion exists (SEC-1 is still an open decision)", () => {
+  it("states the decided retention policy — indefinite, deliberately (SEC-1, decided 2026-09-22) — with no invented period", () => {
     expect(sectionText("retensi")).not.toMatch(/\b\d+\s*(hari|bulan|minggu|tahun|days|months|years)\b/i);
-    expect(sectionText("retensi")).toMatch(/belum menerapkan penghapusan otomatis/);
+    expect(sectionText("retensi")).toMatch(/sengaja tidak menerapkan penghapusan otomatis/);
   });
 
   /**

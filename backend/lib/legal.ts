@@ -5,15 +5,16 @@
  *  - what is collected: `POST /api/runs`, `POST /api/profile/complete`, the Supabase Auth identity (database-api-spec.md §1);
  *  - what deletion does: `lib/account-deletion.ts` (route erased, personal fields cleared, ledger kept, identity removed);
  *  - where it runs: Supabase project in ap-southeast-1 and Vercel functions pinned to sin1 (Singapore) — i.e. outside Indonesia;
- *  - retention: there is NO time-based deletion today (security-review.md SEC-1 is still an open decision), so the policy
- *    states the real behaviour — kept until the user deletes the account — rather than an invented period.
+ *  - retention: decided 2026-09-22 (security-review.md SEC-1) — indefinite, deliberately, until the user deletes their
+ *    account; there is no automatic time-based deletion, and this is a stated product choice (full route history is a
+ *    core feature), not an unexamined default. No specific retention period is invented because none exists.
  *
  * This is the developer's draft, not legal advice: it has to be reviewed by the owner (and, ideally, by someone who knows
  * UU PDP No. 27/2022) before the app ships.
  */
 
 export const CONTACT_EMAIL = "designbyripo@gmail.com";
-export const PRIVACY_LAST_UPDATED = "21 September 2026";
+export const PRIVACY_LAST_UPDATED = "22 September 2026";
 export const APP_NAME = "Laju";
 
 export interface PolicySection {
@@ -83,7 +84,7 @@ export const privacySections: PolicySection[] = [
     id: "retensi",
     title: "7. Berapa lama data disimpan",
     paragraphs: [
-      "Saat ini kami belum menerapkan penghapusan otomatis berdasarkan waktu. Data lari, termasuk jalur GPS, disimpan di perangkatmu selama app terpasang dan di server kami selama akunmu ada. Semuanya dihapus atau dianonimkan saat kamu menghapus akun (lihat bagian berikut). Jika kebijakan penyimpanan berjangka diterapkan, halaman ini akan diperbarui sebelum berlaku.",
+      "Kami sengaja tidak menerapkan penghapusan otomatis berdasarkan waktu. Data lari, termasuk jalur GPS, disimpan di perangkatmu selama app terpasang dan di server kami selama akunmu ada — riwayat lari lengkap (termasuk peta rute lamamu) adalah bagian inti dari Laju, jadi kami tidak membatasi berapa lama itu bisa kamu akses. Semuanya dihapus atau dianonimkan saat kamu menghapus akun (lihat bagian berikut); itu satu-satunya cara datamu dihapus.",
     ],
   },
   {
@@ -133,6 +134,6 @@ export const privacyEnglishSummary: string[] = [
   "We collect: your Apple or Google sign-in identifier and email, a nickname and region you enter, precise location and the GPS route of each run (only to record it), and run statistics with anti-cheat results.",
   "We do not show ads, use third-party analytics or trackers, or sell personal data. Your nickname and points are visible to other users on the leaderboard; your GPS route and region are not.",
   "Processors: Supabase (database and authentication, Singapore), Vercel (API hosting, Singapore), Apple and Google (sign-in), Apple Maps (maps). Data is therefore processed outside Indonesia.",
-  "Retention: there is no automatic time-based deletion today. Run data is kept on your device while the app is installed and on our servers while your account exists; deleting your account erases all GPS routes, clears your nickname, display name, email and region, removes your sign-in identity, and keeps only an identity-free points ledger.",
+  "Retention: we deliberately do not apply automatic time-based deletion. Run data, including GPS routes, is kept on your device while the app is installed and on our servers while your account exists — full run history is a core part of Laju. Deleting your account erases all GPS routes, clears your nickname, display name, email and region, removes your sign-in identity, and keeps only an identity-free points ledger; that is the only way your data is deleted.",
   `You can delete your account inside the app (Profile → Hapus akun). For access, copy, correction or any other request: ${CONTACT_EMAIL}.`,
 ];

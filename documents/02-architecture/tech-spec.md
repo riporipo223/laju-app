@@ -219,6 +219,14 @@ pertama untuk jarak jauh dan durasi berkelanjutan panjang:
   fix) murni karakteristik desain yang sudah ada, dicatat di sini sebagai
   data kalibrasi, bukan bug baru — lihat §2.4 untuk implikasi anti-cheat.
 
+**Retensi data `gps_route`/`gpsRoute` (SEC-1, diputuskan 2026-09-22):**
+disimpan tanpa batas waktu selama akun ada — tidak ada penghapusan
+otomatis berbasis waktu, baik di server maupun di Core Data lokal;
+satu-satunya mekanisme penghapusan adalah penghapusan akun. Pernyataan
+lengkap ada di `database-api-spec.md` §1 ERD (field `gps_route`) dan §2.1b
+poin 5 — dicatat sebagai keputusan produk yang disengaja (riwayat lari
+lengkap adalah fitur inti), bukan default yang tidak pernah diperiksa.
+
 ### 2.1c Unit display: kilometer, bukan meter (keputusan)
 
 Data internal — storage (`Run.distanceMeters` di Core Data,
