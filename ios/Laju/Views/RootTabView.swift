@@ -4,7 +4,8 @@ import SwiftUI
 ///
 /// Built now rather than with the first leaderboard screen because T2.20 (global leaderboard), T3.5 (local
 /// leaderboard) and T3.9 (season info) each build a screen with no way to reach it until this exists; the
-/// audit that found that gap noted all three were unreachable-by-construction.
+/// audit that found that gap noted all three were unreachable-by-construction. T3.9's `SeasonInfoView` has
+/// no tab of its own — it is reached from a toolbar button on `LeaderboardView`.
 ///
 /// **Only tabs with real content are shown.** `LajuTab` carries the future cases so adding one is a two-line
 /// change (an `enum` case plus its `tabItem` block) rather than a restructure, but a case with no screen

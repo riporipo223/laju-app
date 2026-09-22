@@ -97,6 +97,25 @@ struct APIClient: Sendable {
         return try RunSubmissionCoding.makeDecoder().decode(LeaderboardResponse.self, from: data)
     }
 
+    /// T3.9: `GET /api/seasons/active` (database-api-spec.md §2.5, T2.17).
+    func fetchActiveSeason(jwt: String) async throws -> ActiveSeasonResponse {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/seasons/active"))
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: body)
+        }
+
+        return try RunSubmissionCoding.makeDecoder().decode(ActiveSeasonResponse.self, from: data)
+    }
+
     /// T2.22: `DELETE /api/account` (database-api-spec.md §2.1b) — soft-deletes the account server-side and
     /// removes the Auth identity. Throws unless the server answers `200`; callers must not wipe local data on a throw.
     func deleteAccount(jwt: String) async throws {

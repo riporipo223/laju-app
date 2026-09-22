@@ -30,6 +30,16 @@ struct LeaderboardView: View {
         .background(LajuColor.background.ignoresSafeArea())
         .navigationTitle("Leaderboard")
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            // T3.9: only reachable entry point for the season info screen — no tab of its own (RootTabView.swift).
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink {
+                    SeasonInfoView()
+                } label: {
+                    Image(systemName: "calendar")
+                }
+            }
+        }
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
     }
