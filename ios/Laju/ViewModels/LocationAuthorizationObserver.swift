@@ -32,11 +32,15 @@ final class LocationAuthorizationObserver: NSObject, ObservableObject {
 }
 
 extension LocationAuthorizationObserver: CLLocationManagerDelegate {
-    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    /// The delegate-supplied parameter is intentionally unused: it is non-Sendable and task-isolated, so
+    /// reading it inside the MainActor closure below is a Swift 6 data-race error ("sending 'manager'
+    /// risks causing data races"). `self.manager` is the same object but already MainActor-isolated as a
+    /// stored property, so read that instead.
+    nonisolated func locationManagerDidChangeAuthorization(_: CLLocationManager) {
         // Re-published live: a user can revoke permission in Settings and come back to a still-open
         // Leaderboard tab, and the gate has to close behind them.
         MainActor.assumeIsolated {
-            status = manager.authorizationStatus
+            status = self.manager.authorizationStatus
         }
     }
 }
