@@ -2518,6 +2518,15 @@ feature actually needs)
   cleartext, and a fresh sign-up on the same device would upload the
   old runs under the new identity. `PointTransaction` rows are never
   rewritten or deleted (append-only ledger, tech-spec.md §4 NFR).
+- **Added AC, 2026-09-23 (product-spec.md §4.23 decided #12 / AC13) —
+  applies once Premium (T4.20) ships; it is not a regression of what
+  T2.22 already shipped, since no subscription can exist before then:**
+  if the account being deleted has an active Premium subscription, the
+  deletion flow shows an explicit notice before the final confirmation:
+  *"Menghapus akun tidak membatalkan langganan Apple Anda — batalkan
+  terpisah lewat pengaturan App Store, atau Anda tetap ditagih untuk
+  langganan yang sudah tidak bisa dipakai."* What happens to that
+  account's `subscription` rows is **not decided** (flagged in §4.23).
 - Yang TIDAK dikerjakan: a "pause"/"deactivate" distinct from full
   deletion (not required by the Guideline, not requested); any admin-side
   tooling for deletion requests beyond the in-app self-service flow;
