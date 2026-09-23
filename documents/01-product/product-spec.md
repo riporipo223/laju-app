@@ -190,7 +190,10 @@ pengguna, **supaya** saya termotivasi kompetitif.
   Global — tidak ada lagi perbandingan Global-vs-Local di v1. Poin dan rank
   sendiri sama persis untuk keduanya (user-flow.md §1). Berlaku bersama tier
   Premium itu sendiri, yang masih Non-goal v1 (§5 Monetisasi) — gating
-  filter-per-liga belum dibangun (Fase 4). Yang SUDAH masuk v1 sebagai
+  filter-per-liga belum dibangun (Fase 4). **Dependency (2026-09-23):**
+  gating ini butuh infrastruktur Premium yang belum ada sama sekali —
+  §4.23 / task T4.20; backend yang memutuskan data semua-liga, bukan klaim
+  dari client (§4.23 AC4). Yang SUDAH masuk v1 sebagai
   fondasi: penurunan liga dari poin season dan tampilan liga sendiri (task
   T3.7a, Fase 3). AC ini bukan requirement Must-have v1.
 - AC5 (added 2026-09-22, replaces region-based access — see §4.1 D1
@@ -464,6 +467,8 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   **active Premium subscription**. It is not a separate Club tier and has no subscription of its own
   — a Club's Premium status is derived from its owner's subscription at the moment it's checked, so
   it lapses if the owner's Premium lapses. (Was undefined until 2026-09-23 despite being used above.)
+  **Added 2026-09-23:** a lapse during an **active** war has its own rule — Premium lapse forfeit,
+  point 4 Phase 2 below and AC10; subscription infrastructure itself is §4.23 (task T4.20).
 - **One club per user — a deliberate design decision, not an accident of the schema** (PM, 2026-09-23).
   A user belongs to at most one Club at a time. Reason: it keeps the Participation Rate precompute
   and the Club War participant snapshot simple and correct — a user can never be counted for two
@@ -500,12 +505,18 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
      never started. (Resolved 2026-09-23, PM decision, after this was flagged as a genuine
      ambiguity between this rule and the Phase 2 forfeit rule below — see rationale note after AC9.)
    - **Phase 2 — active (every invited club has accepted; the 48-hour scoring period is running).**
-     Two rules apply only once a war has reached this phase:
+     ~~Two rules apply only once a war has reached this phase:~~ **Three rules** apply only once a
+     war has reached this phase (third added 2026-09-23 with §4.23):
      - **Tie** (Participation Rate exactly equal between the leading clubs): broken by a secondary
        metric — the tied clubs' total combined distance/points during the war period, highest wins.
      - **Total inactivity forfeit**: a club with zero participating members during the war period
        forfeits automatically; the other entered club(s) win. This **is** a real, recorded
        win/loss outcome, because the war genuinely started — unlike Phase 1's dissolution.
+     - **Premium lapse forfeit** (added 2026-09-23, PM decision — see §4.23): if the owner of a club
+       whose Premium Club status the war relies on loses active Premium while the war is `active`,
+       the war ends **for that club** immediately with a forfeit — a real, recorded loss, the same
+       kind of outcome as the inactivity forfeit above (not a Phase 1 dissolution). The war continues
+       for the remaining club(s); in a 2-club war the other club wins by forfeit.
 5. **Anti-farming — deliberately none in v1.** No cooldown between the same pair of clubs
    re-warring, no tier/strength-based restriction on who can be challenged. This is a conscious
    decision, not an oversight — revisit only if real usage data shows an actual exploitation
@@ -538,6 +549,20 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   Record" — see that section for the record's own reset cadence (every 60 days, starting Season 2).
   AC7's dissolved-challenge case produces no such outcome, consistent with §4.20 Section 2's own
   rule that a club which has never fought is unranked, not zero.
+- AC10 (added 2026-09-23, with §4.23): if, while a war is `active`, the owner of a club whose
+  Premium Club status the war relies on stops having active Premium, that club forfeits
+  immediately — a recorded loss, same outcome type as AC6's inactivity forfeit, not an AC7
+  dissolution. The war continues for the remaining club(s); in a 2-club war the other club wins.
+  "Immediately" is bounded by how fast the server learns of the lapse — see §4.23's flagged note
+  (App Store Server Notifications are blocked for now).
+  **NOT decided — flagged, not invented:**
+  - **Which clubs this applies to.** §4.19 requires Premium Club status only of the **inviting**
+    club (its owner/admin sends the challenge); nothing says invited clubs must be Premium Clubs.
+    Read literally, AC10 can then only ever trigger for the inviter. Confirm that, or decide that
+    invited clubs must be Premium Clubs too.
+  - **A lapse while the challenge is still `pending`** (Phase 1). The decision covers `active`
+    only. Does the challenge dissolve (AC7-style, no record), stay pending, or something else?
+  - **What counts as "lapsed"** (billing retry / grace period) — §4.23's flagged note.
 
 **AC7 rationale (PM decision, 2026-09-23):** consistent with §4.20 Section 2's own principle ("a
 club that has never fought a Club War is unranked, not zero — absent from the list entirely") — a
@@ -803,6 +828,87 @@ Not scoped into a real task (no T4.x DoD written) because "does the watch ever t
 is a scope-defining fork, same category as T4.21's "what is an event" — answering it changes the
 size of the work by an order of magnitude, so it is not a detail to fill in during implementation.~~
 
+### 4.23 Premium Subscription Infrastructure (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+
+**Status: decided 2026-09-23** (PM decisions, 8 points, after options were presented; not built).
+Task: **T4.20** in tasks/phase-4-backlog.md. (Task number and section number differ — task IDs and
+section numbers are separate numbering spaces in this repo; T4.20 has nothing to do with §4.20.)
+
+**Why this section exists:** a codebase check on 2026-09-23 found **no Premium infrastructure at
+all** — no StoreKit, no entitlement logic, no subscription table or reserved column; "premium" in
+the code is only a color name. Three already-decided things depend on it: the Premium Club check
+(§4.19), the Freemium/Premium league-visibility split (§4.5 AC4), and every Premium feature
+(T4.4–T4.7). This is the foundation they sit on, built before any of them.
+
+**Decided:**
+1. **Hybrid verification.** StoreKit 2 on the device drives the UI (Premium shows the moment a
+   purchase completes, from StoreKit's own locally-verified entitlement). The **backend is the source
+   of truth** for anything with consequences — the Premium Club check (§4.19) and serving all-league
+   leaderboard data (§4.5 AC4) — and never trusts a Premium flag sent by a client. (A client-only
+   design was rejected: it cannot check *another* user's subscription, which the Premium Club rule
+   requires — an admin sends the challenge, but it's the owner's Premium that counts.)
+2. **A separate `subscription` table with transaction history** — not a scalar column on `user`.
+   Append-only, the same ledger pattern as `point_transaction` (ADR-0013): a status change is a new
+   row, never an UPDATE; a subscription's current status is its most recent row. Minimal fields:
+   `user_id`, `original_transaction_id`, `product_id`, `status`, `expires_at`, `environment`
+   (`sandbox` | `production`).
+3. **App Store Server Notifications are the target design for real-time status sync, but are NOT
+   implemented now** — blocked by the Apple Developer Program not yet being enrolled, the same
+   accepted-blocked category as Sign in with Apple (HANDOFF.md §4).
+4. **Restore Purchases, full:** any device, any time. An App Store requirement, not a product option.
+5. **Account linking: `appAccountToken = user.id`** set on every purchase
+   (`Product.PurchaseOption.appAccountToken(_:)`, StoreKit 2). **One Apple ID = one active Premium
+   Laju account.** If an Apple ID that already backs an active Premium subscription for one Laju
+   account is used by a second Laju account, the second account is **not** granted Premium. Apple does
+   not enforce this — its docs describe `appAccountToken` only as a UUID it echoes back, with no
+   uniqueness rule — so the check is ours, server-side. Verified endpoint (Apple docs, 2026-09-23):
+   `GET /inApps/v2/history/{anyTransactionId}` returns the customer's full in-app purchase history for
+   the app, in any state, 20 per page with a `revision` token; each transaction carries the
+   `appAccountToken` set at purchase.
+6. **Premium lapsing during an active Club War forfeits that club** — written into §4.19 itself
+   (Phase 2 rules and AC10), since it changes Club War's own state machine.
+7. **v1 packaging: monthly only, $7.99** (regional prices via App Store Connect tiers, decided
+   earlier, §5 Monetisasi row). **No annual plan and no free trial in v1 — a deliberate scope limit,
+   not an oversight.** Don't reopen without the PM.
+8. **Task number T4.20.**
+
+**Acceptance Criteria:**
+- AC1: The store offers exactly one product: a monthly auto-renewable subscription at the $7.99
+  reference price, regionalized by App Store Connect price tiers. No annual plan, no free trial or
+  introductory offer.
+- AC2: Every purchase is made with `appAccountToken` set to the purchasing Laju account's `user.id`.
+- AC3: Right after a successful purchase, the app shows the user as Premium from StoreKit 2's local
+  verified entitlement, without waiting on the backend.
+- AC4: Every server-side Premium decision (§4.19 Premium Club check, §4.5 AC4 all-league data) reads
+  only the backend's `subscription` records — a Premium claim from the client is never trusted.
+- AC5: The backend verifies a transaction with the App Store Server API before recording it as
+  active.
+- AC6: `subscription` rows are never updated or deleted by application code; each status change is a
+  new row, and current status is the most recent row for an `original_transaction_id`.
+- AC7: If a verified transaction's Apple ID already backs an active Premium subscription attributed
+  (by `appAccountToken`) to a different Laju account, the second account is not granted Premium.
+- AC8: Restore Purchases is available at any time and restores Premium, on any device, for the Laju
+  account the subscription belongs to.
+- AC9: No App Store Server Notifications endpoint ships in this version (target design, blocked —
+  HANDOFF.md §4).
+
+**NOT decided — flagged, not invented:**
+- **What "lapsed" means.** Apple reports states beyond active/expired — e.g. billing retry and
+  **Billing Grace Period** (status `4` in the App Store Server API). Whether a user in billing retry
+  or grace period still counts as Premium is undecided. It matters most for §4.19 AC10 (a lapse
+  there is a recorded loss).
+- **How the server learns of a lapse while notifications are blocked.** Without App Store Server
+  Notifications, the backend only learns a subscription ended by polling
+  (`GET /inApps/v1/subscriptions/{anyTransactionId}`) or by checking `expires_at` when it next looks.
+  How often it checks decides how "immediate" §4.19 AC10's forfeit can actually be.
+- **What the second Laju account (AC7) sees**, and whether moving Premium from one Laju account to
+  another on the same Apple ID is ever allowed. (Apple has a server endpoint to change a
+  transaction's `appAccountToken`, so it's technically possible — the product decision isn't made.)
+- **Account deletion (T2.22) with an active subscription** — whether the deletion flow must tell the
+  user their Apple subscription keeps billing until cancelled in Apple's settings (believed to be an
+  App Store expectation — needs checking against current guidelines), and what happens to that
+  account's `subscription` rows.
+
 ## 5. Non-Goals (v1) — dan alasannya
 
 | Non-goal | Alasan |
@@ -810,7 +916,7 @@ size of the work by an order of magnitude, so it is not a detail to fill in duri
 | ~~Circle~~ **Club** / Matchmaking | mvp-report eksplisit: loop individual harus tervalidasi dulu sebelum lapisan sosial ditambahkan — supaya tidak menutupi apakah core loop benar-benar rewarding tanpa teman. **Renamed "Circle" → "Club" 2026-09-23** (PM decision) — the DB schema already used `club_id` (database-api-spec.md §1), so this brings docs into alignment with existing code, not the reverse. **Club War specifically is now CONFIRMED TO BUILD** (2026-09-23, reversed from "nice to have v2+"/Non-goal) — see the new §4.19 below. Still not v1/Fase 4-scheduled; only the eventual shape is now decided, not the timing. Matchmaking (circle-to-circle) stays a Non-goal, undecided shape. |
 | Social Feed (post pencapaian, like, comment) | Sama alasannya dengan Club di atas — draft di user-flow.md (belum direkonsiliasi ke dokumen manapun sampai 2026-09-12) menggabungkan Social Feed dengan Circle/Club-feed; keduanya sama-sama lapisan sosial yang sengaja ditunda sampai core loop individual tervalidasi. Rekomendasi: Fase 4 backlog (T4.15), bukan Fase 3 — lihat tasks/phase-4-backlog.md. |
 | Leaderboard Lokal (kecamatan / kabupaten-kota / provinsi) | ~~**Ditunda ke v1.1 / Fase 4 (2026-09-21) — bukan dibatalkan.** Butuh kepadatan user tinggi supaya berguna: dengan user awal sedikit, satu kecamatan hanya berisi beberapa orang dan leaderboard-nya kosong/tidak kompetitif. Global-only untuk MVP terasa "lokal" secara natural saat user masih sedikit. Kerja yang sudah ada (hierarki wilayah, skema `LEADERBOARD_SCOPE`, task T3.2–T3.5) disimpan sebagai referensi, ditandai deferred — lihat §4.6 dan tasks/phase-4-backlog.md.~~ **DIBATALKAN PERMANEN 2026-09-22 (PM sign-off)** — bukan ditunda. Alasan: scope terlalu luas untuk logic leaderboard yang dibutuhkan. Hierarki wilayah di `User` dan nilai `scope_type` regional di `LEADERBOARD_SCOPE` justru **dihapus** dari skema, bukan disimpan sebagai referensi (Task B). Lihat §4.6 dan tasks/phase-4-backlog.md. |
-| ~~Monetisasi (Premium, B2B dashboard)~~ | ~~Fokus v1 = retention/validasi core loop, bukan revenue. Monetisasi baru relevan setelah ada basis user aktif.~~ **Premium pricing DECIDED 2026-09-23** (PM decision): $7.99/bulan (harga referensi USD), harga regional lewat App Store Connect's price-tier localization sendiri — bukan sistem konversi kurs custom, ini sebagian besar tugas konfigurasi store, bukan engineering. Ini bukan berarti Premium sudah dijadwalkan untuk dibangun v1/Fase 4 — cuma bentuk harganya yang sudah tidak terbuka lagi. B2B dashboard (EO) tetap Non-goal v1; modelnya sendiri direframe 2026-09-23, lihat lean-canvas.md §2/§6. |
+| ~~Monetisasi (Premium, B2B dashboard)~~ | ~~Fokus v1 = retention/validasi core loop, bukan revenue. Monetisasi baru relevan setelah ada basis user aktif.~~ **Premium pricing DECIDED 2026-09-23** (PM decision): $7.99/bulan (harga referensi USD), harga regional lewat App Store Connect's price-tier localization sendiri — bukan sistem konversi kurs custom, ini sebagian besar tugas konfigurasi store, bukan engineering. Ini bukan berarti Premium sudah dijadwalkan untuk dibangun v1/Fase 4 — cuma bentuk harganya yang sudah tidak terbuka lagi. ~~B2B dashboard (EO) tetap Non-goal v1; modelnya sendiri direframe 2026-09-23, lihat lean-canvas.md §2/§6.~~ **Konsep EO diganti total 2026-09-23** — sekarang Laju Branded Events (§4.21, sponsorship fee), bukan dashboard EO. **Paket Premium v1 (2026-09-23):** bulanan saja, tanpa paket tahunan dan tanpa free trial — keputusan sadar membatasi scope. Infrastruktur langganannya (StoreKit/verifikasi server) belum ada sama sekali: §4.23 / task T4.20. |
 | Android support | v1 launches iOS-exclusive, native Swift/SwiftUI — Android ditunda tanpa timeline pasti (keputusan platform, bukan technical debt). Lihat tech-spec.md §1. |
 | ~~Route map visualization~~ | **Dicabut sebagai Non-goal (2026-09-12)** — dipecah jadi Live map (§4.8) dan Static map (§4.9), keduanya Must-have Fase 1. Alasan awal (biaya Maps API) sudah tidak berlaku setelah keputusan pakai MapKit native (tech-spec.md §1, lean-canvas.md §7); alasan "bukan bagian dari core loop" tetap benar secara literal, tapi diputuskan tetap masuk sebagai fitur engagement pendukung core loop, bukan lagi dianggap di luar prioritas. |
 | Government / sports-brand partnership tooling | Tidak ada demand tervalidasi; secondary user, bukan primary. |
