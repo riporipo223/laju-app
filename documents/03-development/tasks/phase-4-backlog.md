@@ -28,6 +28,12 @@ implemented.
   (PM decision) — already matched the `club_id` field reserved on `User`
   (database-api-spec.md §1) and the sketched `Club` entity never migrated
   in Fase 2, so this brings the name into alignment with existing code.
+  **One club per user — deliberate, decided 2026-09-23** (product-spec.md
+  §4.19): avoids cross-Club double-counting in Participation Rate and the
+  Club War snapshot. Already enforced by T4.2a's migration.
+  **T4.1 extended scope, belum dijadwalkan**: description, privacy/
+  visibility, join flow, leave/transfer/delete, member cap — deferred,
+  not decided (user-flow.md §2.6 is still an unreconciled draft).
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
@@ -66,9 +72,20 @@ implemented.
   the 48-hour window once a war is actually active (reusing §4.20
   Section 1's metric, not reimplementing it), the tie-break and
   total-inactivity forfeit rules (AC5-AC6 — active-war-only, do write
-  the Club War Record), and an endpoint to read the Record. **Reference**:
-  product-spec.md §4.19 AC2-AC9, ADR-0013 (precompute-not-live-derive
-  pattern), §4.20 Section 1.
+  the Club War Record), and an endpoint to read the Record.
+  **Permission check (added 2026-09-23)**: only the owner or an admin of a
+  *Premium Club* may send a challenge — "Premium Club" = the Club's
+  **owner** has an active Premium subscription (§4.19 base decisions);
+  an admin sending the challenge does not need Premium themselves. The
+  participation check uses §4.20 Section 1's activity threshold
+  (`validated` + ADR-0009 gate). **Unmet dependency, flagged not
+  resolved**: no Premium subscription system exists in the codebase yet
+  (verified 2026-09-23 — no StoreKit/entitlement/subscription code or
+  table), and no backlog task covers subscription infrastructure itself
+  (T4.4–T4.7 are individual Premium *features*, not the subscription
+  system they'd all sit on). T4.2b cannot implement this check until
+  that exists. **Reference**: product-spec.md §4.19 AC2-AC9, ADR-0013
+  (precompute-not-live-derive pattern), §4.20 Section 1.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
   challenge, view an active war's status/score, view the Club War Record
