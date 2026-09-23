@@ -63,7 +63,7 @@ Run again
 - Club, Matchmaking — fitur sosial ditunda sampai core loop individual
   tervalidasi. Club War sendiri **confirmed to build (Fase 4)**, 2026-09-23
   — tetap bukan v1, ~~hanya bentuknya sudah tidak lagi 100% terbuka~~
-  mekanismenya sudah final (product-spec.md §4.19 AC1-AC12)
+  mekanismenya sudah final (product-spec.md §4.19 AC1-AC13)
 - Monetisasi (Freemium/Premium/B2B) — fokus dulu ke retention, monetisasi
   baru relevan setelah ada basis user aktif. **Harga Premium sudah
   diputuskan 2026-09-23** ($7.99/bulan + tier regional App Store Connect,
