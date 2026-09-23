@@ -751,8 +751,13 @@ but every season after it is 60).
   entirely in Task B (§4.1 D1 reversal; database-api-spec.md). Events must not reintroduce any
   region requirement, collection, or filter — not even implicitly (e.g. no "only show Events near
   the user" logic that would need a location/region signal).
-- **UI**: a card feed in the **Social tab → Events sub-tab**. Large full-width image card, text
-  overlay showing participant count (*"Join X Runners"*), tap opens a detail view that redirects
+- **UI**: a card feed in the ~~**Social tab → Events sub-tab**~~ **Ranks tab → Events sub-tab**
+  (decided 2026-09-23, PM — no Social tab exists; the app's tabs are Track / You / Ranks, and
+  "social" was only the old placeholder name for Ranks). Large full-width image card, ~~text
+  overlay showing participant count (*"Join X Runners"*),~~ **no participant-count overlay**
+  (removed 2026-09-23, PM — nothing in this design can supply the number reliably: sponsored
+  registration happens off-platform and announcement-only events have none, so it would mean
+  manual staff upkeep), tap opens a detail view that redirects
   externally for sponsored Events. Reference: a confirmed mockup/screenshot exists for this pattern
   (not attached to this document — described here from that reference, not re-derived). See
   screen-inventory.md §4 for why this isn't wireframed yet (Fase 4, explicitly out of scope for now,
@@ -786,6 +791,15 @@ No region field anywhere in this model — deliberate, per the "available to eve
 - AC5: Only Laju staff can create/edit/activate/deactivate an Event, through an internal-only
   mechanism (recommended: an admin CLI script, same family as `backend/scripts/season.ts` — no
   dashboard UI, ever, per ADR-0014).
+- AC6 (added 2026-09-23, PM decision): Events is a sub-tab of the existing **Ranks** tab. No new
+  tab is added.
+- AC7 (added 2026-09-23, PM decision): an Event card shows no participant count of any kind.
+- AC8 (added 2026-09-23 — follows from AC4 + AC6, not a separate decision): the Events sub-tab is
+  **never** behind the Ranks tab's location-permission lock (§4.5 AC5). Today that lock replaces
+  the **whole** tab (`LeaderboardView.swift` switches on permission and shows
+  `LeaderboardLockedView` for three of its four states), so putting Events inside Ranks means the
+  lock has to move down to the leaderboard sub-tab only — otherwise users without location
+  permission would lose Events, which AC4 forbids.
 
 **MoSCoW**: Fase 4. **Must**: internal-only creation, no self-serve dashboard ever — this is locked,
 not left open to task-scoping. **Should**: the exact creation mechanism (CLI script is recommended,

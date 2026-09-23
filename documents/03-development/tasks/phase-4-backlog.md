@@ -162,28 +162,33 @@ implemented.
   creation mechanism carries over unchanged: an admin CLI script (same family as
   `backend/scripts/season.ts`), no dashboard UI, since only Laju staff ever create an Event.
   **Broken into sub-tasks 2026-09-23 on explicit PM instruction** (same exception as T4.2, T4.14,
-  T4.20) — Scope + Reference only, no DoD; the phase itself is still not scheduled. Two open points
+  T4.20) — Scope + Reference only, no DoD; the phase itself is still not scheduled. ~~Two open points
   found while doing it (not decided here): where "Social tab → Events sub-tab" lives, since no Social
   tab exists (the app's tabs are Track / You / Ranks — "social" was the old placeholder name for
   Ranks, `RootTabView.swift:48`); and where the "Join X Runners" count comes from, since sponsored
-  registration happens off-platform and announcement-only events have no registration at all.
+  registration happens off-platform and announcement-only events have no registration at all.~~
+  **Both decided 2026-09-23 (PM):** Events is a sub-tab of **Ranks** (§4.21 AC6); the "Join X
+  Runners" overlay is **removed** (AC7).
 - **T4.9a — Events: `event` table.** Depends on T4.9. **Scope**: one table per §4.21's rough data
   model — `id`, `title`, `image_url`, `description`, `type` (`sponsored` | `announcement`),
   `external_url` (required when `sponsored`, null when `announcement` — enforce with a CHECK),
   `sponsor_name` (sponsored only), `starts_at`, `ends_at`, `is_active`. **No region column** (§4.21
   AC4). RLS enabled with no grants. Where the image file itself is hosted is decided in this task.
-  Any column for the "Join X Runners" count waits on that open point. Written inert, reviewed before
+  ~~Any column for the "Join X Runners" count waits on that open point.~~ No participant-count
+  column — the overlay was removed (§4.21 AC7). Written inert, reviewed before
   apply. **Reference**: product-spec.md §4.21 data model, AC1, AC4.
 - **T4.9b — Events: staff tooling + read endpoint.** Depends on T4.9a. **Scope**: internal-only
   create/edit/activate/deactivate for Laju staff — an admin CLI script is §4.21's recommendation
   (its "Should"), never a self-serve surface (§4.21 AC5 Must, ADR-0014). A read endpoint returning
   every active Event to every signed-in user, no region or other eligibility filter (AC4). No
   registration or reward logic of any kind (AC2-AC3). **Reference**: product-spec.md §4.21 AC2-AC5.
-- **T4.9c — Events: iOS feed + detail.** Depends on T4.9b. **Scope**: card feed (full-width image,
-  "Join X Runners" overlay), detail view, and for `sponsored` events opening `external_url`
-  externally (AC2). Blocked on the two open points above (which tab; where X comes from), and not
-  wireframed yet (screen-inventory.md §4 excludes Fase 4). **Reference**: product-spec.md §4.21
-  AC1-AC2, AC4.
+- **T4.9c — Events: iOS feed + detail.** Depends on T4.9b. **Scope**: an **Events sub-tab inside
+  the Ranks tab** (AC6) — card feed (full-width image, **no** participant count, AC7), detail view,
+  and for `sponsored` events opening `external_url` externally (AC2). **Includes moving the
+  location-permission lock** from the whole Ranks tab (`LeaderboardView.swift` today) down to the
+  leaderboard sub-tab only, so Events is never locked (AC8, AC4). ~~Blocked on the two open points
+  above (which tab; where X comes from), and~~ Not wireframed yet (screen-inventory.md §4 excludes
+  Fase 4). **Reference**: product-spec.md §4.21 AC1-AC2, AC4, AC6-AC8.
 - **T4.17 — Club Global Leaderboard.** Depends on T4.1 (Club must exist)
   and, for its Section 2, T4.2 (Club War must exist — Section 2 has
   nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**
