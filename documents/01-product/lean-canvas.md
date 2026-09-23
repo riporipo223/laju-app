@@ -36,15 +36,24 @@ untuk "leveling up". Ini kategori berbeda, bukan sekadar Strava-clone.
 **Secondary User**
 - Running club — butuh tools untuk kelola member & kompetisi internal
 - ~~Event organizer (EO) — butuh platform partisipasi & leaderboard untuk event~~
-  **Direframe 2026-09-23 (ADR-0014):** EO bukan pengguna dashboard aktif — EO adalah **klien yang
+  ~~**Direframe 2026-09-23 (ADR-0014):** EO bukan pengguna dashboard aktif — EO adalah **klien yang
   meminta** (requesting client), bukan yang mengoperasikan tool sendiri. Event-scale reach (partisipasi
   & leaderboard yang menjangkau seluruh/sebagian besar user base) bersifat Laju-exclusive di semua
   tier, tidak ada self-serve. Tim Laju sendiri yang membuat dan mengelola event untuk EO (managed
-  service), bukan EO login dan mengelola sendiri. **Nama "Dashboard untuk EO" kemungkinan sudah tidak
-  akurat lagi — open question, belum diputuskan nama penggantinya.**
+  service), bukan EO login dan mengelola sendiri. Nama "Dashboard untuk EO" kemungkinan sudah tidak
+  akurat lagi — open question, belum diputuskan nama penggantinya.~~
+  **Konsep diganti total 2026-09-23 — "EO managed service" bukan lagi model yang dipakai.**
+  Segmen sekunder yang benar adalah **Brand/Sponsor**, bukan Event Organizer: brand membayar Laju
+  untuk exposure lewat **Laju Branded Events** (product-spec.md §4.21) — Laju's own team yang
+  membuat Event, brand tidak pernah dapat akses apapun ke sistem Laju (ADR-0014 tetap berlaku: no
+  self-serve, whole-user-base reach tetap Laju-exclusive). Brand hanya berperan sebagai sponsor yang
+  menyediakan reward dan menangani registrasi/distribusi reward di platform mereka sendiri
+  (redirect eksternal) — lihat detail lengkap di §6 dan product-spec.md §4.21. Digabung ke baris
+  "Sports brand" di bawah, bukan entitas terpisah.
 - Government — potensi partner untuk program kesehatan masyarakat berbasis
   data aktivitas fisik daerah
-- Sports brand — potensi sponsor season/challenge, brand placement di reward
+- **Sports brand / sponsor** — sponsor Laju Branded Events (product-spec.md §4.21) untuk exposure ke
+  seluruh user base; juga potensi sponsor season/challenge terpisah, brand placement di reward
 
 ## 3. Unique Value Proposition
 
@@ -111,11 +120,20 @@ berbasis poin/leaderboard kompetitif.
 - **B2B — running club**: Dashboard untuk running club (kelola member,
   leaderboard privat) — model tetap tool self-serve, tidak berubah.
 - ~~**B2B — event organizer**: Dashboard untuk event organizer (partisipasi,
-  hasil real-time)~~ **Direframe 2026-09-23 (ADR-0014), lihat §2**: bukan lagi
+  hasil real-time)~~ ~~**Direframe 2026-09-23 (ADR-0014), lihat §2**: bukan lagi
   tool-subscription. EO tidak dapat akses dashboard sendiri — model jadi
   **per-event service fee**: tim Laju yang membuat dan mengelola event untuk
-  klien EO. **Harga pastinya belum diputuskan — open question**, ini baru
-  perubahan model (managed service vs self-serve tool), bukan angka harga.
+  klien EO. Harga pastinya belum diputuskan — open question, ini baru
+  perubahan model (managed service vs self-serve tool), bukan angka harga.~~
+  **Konsep diganti total 2026-09-23 — bukan lagi "EO service fee".** Model revenue yang benar:
+  **sponsorship fee** — brand/sponsor membayar Laju untuk exposure ke seluruh user base lewat
+  sebuah **Laju Branded Event** (product-spec.md §4.21), bukan membayar Laju untuk *mengelola event
+  bagi klien EO*. Ini integrated sponsored advertising (brand membeli visibilitas di card feed
+  Events, ditandai "Sponsored"), bukan B2B managed-service. Laju tidak menangani registrasi maupun
+  distribusi reward untuk Event sponsored — itu tanggung jawab sponsor sepenuhnya di platform
+  eksternal mereka; yang dijual ke sponsor murni exposure/reach, bukan operasional event.
+  **Harga sponsorship fee belum diputuskan — open question**, sama seperti sebelumnya ini baru
+  perubahan model, bukan angka harga.
 
 **Catatan strategis:** hindari monetisasi yang merusak fairness leaderboard
 (pay-to-win) — ini akan merusak kredibilitas kompetisi yang jadi core value
