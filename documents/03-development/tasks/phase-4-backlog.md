@@ -38,7 +38,7 @@ implemented.
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
   event-scale rule). ~~vs. genuinely open (mechanics, win condition,
-  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC12): Participation
+  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC13): Participation
   Rate win condition (reused from §4.20 Club Aktif), fixed 48-hour duration,
   targeted challenge/invite start (not matchmaking — stays separate from
   T4.3 below), tie-break + forfeit rules, no anti-farming limit in v1.
@@ -62,7 +62,7 @@ implemented.
   NOT feed the Club War Record aggregation — schema needs to distinguish
   "dissolved, never fought" from "ended, real win/loss outcome," not
   just track a single win/loss field that both states would populate.
-  **Reference**: product-spec.md §4.19 AC1-AC12, §4.20
+  **Reference**: product-spec.md §4.19 AC1-AC13, §4.20
   Section 2 (Club War Record's own data needs).
 - **T4.2b — Club War: backend API.** Depends on T4.2a. **Scope**: create
   a challenge (target 1-2 specific clubs), accept/decline per invited
@@ -85,9 +85,12 @@ implemented.
   toward that club's Participation Rate for that war: the participant
   snapshot (`club_war_participant`, taken at `pending → active`) is final
   for that war and is **not** edited when someone leaves (§4.19 AC11).
-  (T4.2a's migration comment still calls this "genuinely open" — stale
+  ~~(T4.2a's migration comment still calls this "genuinely open" — stale
   since 2026-09-23; update it with the banner when the migration is
-  applied.)
+  applied.)~~ T4.2a's migration comment corrected 2026-09-23 (comment-only).
+  **War results are final at the 48-hour mark** (§4.19 AC13): a counted
+  `flagged` run rejected later does not revise the recorded win/loss — no
+  re-computation path is needed.
   **Premium lapse (decided 2026-09-23)**: checked on demand, never polled
   (§4.23 decided #10), at three points — challenge sent (owner not Premium
   → refuse), `pending → active` (inviter's owner lapsed → dissolve, no
@@ -106,14 +109,14 @@ implemented.
   client flag). Blocked until T4.20 is actually **implemented**, not just
   scoped — and T4.20b is itself blocked in full by the Apple Developer
   Program (verified 2026-09-23, see T4.20b). Also implements §4.19
-  AC10-AC12. **Reference**: product-spec.md §4.19 AC2-AC12, §4.23, ADR-0013
+  AC10-AC13. **Reference**: product-spec.md §4.19 AC2-AC13, §4.23, ADR-0013
   (precompute-not-live-derive pattern), §4.20 Section 1.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
   challenge, view an active war's status/score, view the Club War Record
   (shares a screen with §4.20's Club Global Leaderboard, not a separate
   screen — no `screen-inventory.md` entry added by this task itself).
-  **Reference**: product-spec.md §4.19 AC1-AC12, §4.20.
+  **Reference**: product-spec.md §4.19 AC1-AC13, §4.20.
 - **T4.3 — Matchmaking between clubs.** Depends on T4.1. Still Non-goal,
   no decided shape.
 - **T4.4 — Monetization: seasonal pass.**
@@ -298,7 +301,7 @@ implemented.
     but T4.17's reset cadences can't actually match the User Season
     cadence they're meant to mirror until this ships.
 - **T4.20 — Premium subscription infrastructure.** Added 2026-09-23 (PM
-  decision) — see product-spec.md §4.23 (AC1-AC13). The foundation every
+  decision) — see product-spec.md §4.23 (AC1-AC14). The foundation every
   Premium-dependent item sits on: T4.2b's Premium Club check, §4.5 AC4's
   league gating, T4.4-T4.7. Built **before** those, per PM. Numbered
   T4.20, not T4.19, to avoid confusion with product-spec §4.19 (Club War).
@@ -315,7 +318,12 @@ implemented.
   as `point_transaction` (ADR-0013) — status changes are new rows; RLS
   enabled with no grants, per `20260919150457_enable_rls_deny_anon.sql`.
   Written inert and reviewed before apply, same gate as T4.2a.
-  **Reference**: product-spec.md §4.23 decided #2, AC6.
+  **Blocked on one open point (2026-09-23):** whether `user_id` is
+  nullable depends on the account-deletion anonymization mechanism still
+  open in §4.23 — (a) null `user_id` needs a nullable column + an AC6
+  exception; (b) keep `user_id` needs neither. Decide before writing the
+  migration. **Reference**: product-spec.md §4.23 decided #2, #13, AC6,
+  AC14.
 - **T4.20b — Premium: backend verification + status endpoint.** Depends
   on T4.20a. **Scope**: verify transactions with the App Store Server API
   before recording them (AC5); enforce one Apple ID = one active Premium

@@ -2525,8 +2525,15 @@ feature actually needs)
   deletion flow shows an explicit notice before the final confirmation:
   *"Menghapus akun tidak membatalkan langganan Apple Anda — batalkan
   terpisah lewat pengaturan App Store, atau Anda tetap ditagih untuk
-  langganan yang sudah tidak bisa dipakai."* What happens to that
-  account's `subscription` rows is **not decided** (flagged in §4.23).
+  langganan yang sudah tidak bisa dipakai."* ~~What happens to that
+  account's `subscription` rows is **not decided** (flagged in §4.23).~~
+  **Decided 2026-09-23 (§4.23 decided #13 / AC14):** the account's
+  `subscription` rows are **anonymized, never deleted** —
+  `original_transaction_id` and status history kept for audit/Apple
+  disputes. Mechanism still open (§4.23): null `user_id` (needs an AC6
+  exception) vs keep `user_id` pointing at the already-anonymized `user`
+  row — the latter is what this task's own `account-deletion.ts` does for
+  `PointTransaction`.
 - Yang TIDAK dikerjakan: a "pause"/"deactivate" distinct from full
   deletion (not required by the Guideline, not requested); any admin-side
   tooling for deletion requests beyond the in-app self-service flow;

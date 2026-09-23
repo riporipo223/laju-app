@@ -140,7 +140,8 @@ side (T4.20b) and its real App Store products (T4.20c), not just App Store Serve
 (corrected 2026-09-23 after checking Apple's docs: every App Store Server API call needs a key
 generated in App Store Connect, and App Store Connect is paid-membership-only). Knock-on: every
 server-side Premium check waits on this — T4.2b (Club War) and §4.5 AC4 league gating included.
-Only T4.20a (the `subscription` table) is buildable before enrollment. The user is enrolling in the paid Apple Developer
+Only T4.20a (the `subscription` table) is buildable before enrollment — once product-spec.md §4.23's
+open anonymization-mechanism point is decided (it sets whether `user_id` is nullable). The user is enrolling in the paid Apple Developer
 Program separately; until that lands, treat these as **accepted PARTIAL/open items**, not bugs to
 work around. A `DEBUG`-only escape hatch already exists for automated E2E testing without a real
 Apple sign-in — see `AuthService.swift`'s `LAJU_DEBUG_ACCESS_TOKEN`/`LAJU_DEBUG_REFRESH_TOKEN`
