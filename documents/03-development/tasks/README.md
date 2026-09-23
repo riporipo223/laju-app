@@ -285,7 +285,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [ ] T4.6 — Monetization: exclusive badge (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.7 — Monetization: premium profile (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.8 — B2B dashboard: running club (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.9 — B2B dashboard: event organizer (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events, concept replaced 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - ~~T4.10 — Route map visualization (Mapbox)~~ — moved to Fase 1 (MapKit, T1.8/T1.9), no longer backlog (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.11 — Android support (postponed indefinitely) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.12 — Redis-backed real-time global leaderboard cache (lihat [phase-4-backlog.md](./phase-4-backlog.md))
