@@ -256,8 +256,11 @@ same job to a new `season_id`.
   struck through as historical record only.
 - ~~Circle~~ Club (renamed 2026-09-23), matchmaking (product-spec §5
   Non-goals). Club War specifically **confirmed to build 2026-09-23**
-  (product-spec.md §4.19) — still Fase 4/not v1, only the shape is now
-  partly decided.
+  (product-spec.md §4.19) — still Fase 4/not v1. ~~only the shape is now
+  partly decided.~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC9) —
+  Participation Rate win condition, 48-hour duration, targeted
+  challenge/invite start, tie-break + forfeit rules. One point still
+  flagged open (§4.19's own note on forfeited-challenge recording).
 - Social Feed (post achievements, comments) — added 2026-09-12, previously
   only an unreconciled draft in user-flow.md; recommended here (not Fase
   3) for the same "prove the loop alone first" reasoning as Club above
