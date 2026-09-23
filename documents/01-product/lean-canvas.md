@@ -91,7 +91,10 @@ sudah terasa dekat secara geografis).
   DB (database-api-spec.md §1). Lihat product-spec.md §4.19.
 - ~~Circle war~~ **Club War — CONFIRMED TO BUILD 2026-09-23** (bukan lagi "nice to have", lihat
   product-spec.md §4.19: max 3 club per Club War, self-serve oleh owner/admin Club Premium).
-  Mekanik/win-condition/durasi masih open question.
+  ~~Mekanik/win-condition/durasi masih open question.~~ **Mekanisme finalized 2026-09-23**: basis
+  menang Participation Rate (sama seperti §4.20 Club Aktif), durasi 48 jam, mulai lewat tantangan
+  tertarget (bukan matchmaking) — lihat product-spec.md §4.19 untuk detail lengkap AC1-AC9. Satu
+  titik masih open (apakah tantangan gagal-mulai tercatat di Club War Record) — lihat §4.19 sendiri.
 - Matchmaking antar club berbasis performa — masih Non-goal, belum ada keputusan bentuknya.
 
 **Catatan formula poin (perlu divalidasi, bukan final):**
