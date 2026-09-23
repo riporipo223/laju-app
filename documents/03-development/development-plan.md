@@ -277,8 +277,11 @@ same job to a new `season_id`.
 - ~~Route map visualization (Mapbox integration)~~ — **moved to Fase 1,
   2026-09-12** (MapKit, not Mapbox — see Fase 1 scope above, tech-spec.md
   §1/§5.1). No longer backlog.
-- Apple Watch companion app — added 2026-09-12, low priority/large effort
-  (tasks/phase-4-backlog.md T4.14).
+- Apple Watch companion app — added 2026-09-12, ~~low priority/large
+  effort~~ **confirmed to build 2026-09-23**, Apple Watch first then
+  Garmin/Huawei (tasks/phase-4-backlog.md T4.14). Apple Watch v1 shape
+  finalized 2026-09-23 (product-spec.md §4.22): mirror-only, live
+  metrics + pause/stop, no start from the watch. Garmin/Huawei unscoped.
 - Android support — postponed indefinitely, no timeline (mvp-report.md,
   tech-spec.md §1 — platform pivot decision, not a tech-debt item).
 - Live Activities, Dynamic Island, HealthKit, WidgetKit integration —
