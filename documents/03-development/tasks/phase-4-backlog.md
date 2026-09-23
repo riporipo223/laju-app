@@ -38,7 +38,7 @@ implemented.
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
   event-scale rule). ~~vs. genuinely open (mechanics, win condition,
-  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC9): Participation
+  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC10): Participation
   Rate win condition (reused from §4.20 Club Aktif), fixed 48-hour duration,
   targeted challenge/invite start (not matchmaking — stays separate from
   T4.3 below), tie-break + forfeit rules, no anti-farming limit in v1.
@@ -62,7 +62,7 @@ implemented.
   NOT feed the Club War Record aggregation — schema needs to distinguish
   "dissolved, never fought" from "ended, real win/loss outcome," not
   just track a single win/loss field that both states would populate.
-  **Reference**: product-spec.md §4.19 AC1-AC9, §4.20
+  **Reference**: product-spec.md §4.19 AC1-AC10, §4.20
   Section 2 (Club War Record's own data needs).
 - **T4.2b — Club War: backend API.** Depends on T4.2a. **Scope**: create
   a challenge (target 1-2 specific clubs), accept/decline per invited
@@ -78,20 +78,25 @@ implemented.
   **owner** has an active Premium subscription (§4.19 base decisions);
   an admin sending the challenge does not need Premium themselves. The
   participation check uses §4.20 Section 1's activity threshold
-  (`validated` + ADR-0009 gate). **Unmet dependency, flagged not
+  (`validated` + ADR-0009 gate). ~~**Unmet dependency, flagged not
   resolved**: no Premium subscription system exists in the codebase yet
   (verified 2026-09-23 — no StoreKit/entitlement/subscription code or
   table), and no backlog task covers subscription infrastructure itself
   (T4.4–T4.7 are individual Premium *features*, not the subscription
   system they'd all sit on). T4.2b cannot implement this check until
-  that exists. **Reference**: product-spec.md §4.19 AC2-AC9, ADR-0013
+  that exists.~~ **Depends on T4.20 (Premium subscription infrastructure,
+  scoped 2026-09-23, product-spec.md §4.23)** — the Premium Club check
+  reads the backend's `subscription` records (T4.20a/b), never a client
+  flag. Blocked until T4.20 is actually **implemented**, not just scoped.
+  Also implements the Premium lapse forfeit (§4.19 AC10). **Reference**:
+  product-spec.md §4.19 AC2-AC10, §4.23, ADR-0013
   (precompute-not-live-derive pattern), §4.20 Section 1.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
   challenge, view an active war's status/score, view the Club War Record
   (shares a screen with §4.20's Club Global Leaderboard, not a separate
   screen — no `screen-inventory.md` entry added by this task itself).
-  **Reference**: product-spec.md §4.19 AC1-AC9, §4.20.
+  **Reference**: product-spec.md §4.19 AC1-AC10, §4.20.
 - **T4.3 — Matchmaking between clubs.** Depends on T4.1. Still Non-goal,
   no decided shape.
 - **T4.4 — Monetization: seasonal pass.**
@@ -100,7 +105,11 @@ implemented.
 - **T4.7 — Monetization: premium profile.** Premium pricing decided
   2026-09-23 ($7.99/mo + App Store Connect regional tiers, product-spec.md
   §5) — applies to whichever of T4.4–T4.7 eventually ship, not scoped to
-  one of them specifically.
+  one of them specifically. **v1 packaging (2026-09-23): monthly only, no
+  annual plan, no free trial** — deliberate (product-spec.md §4.23).
+- **T4.4–T4.7 all depend on T4.20** (added 2026-09-23): each is a Premium
+  *feature* and had silently assumed a subscription system existed. None
+  does yet — see T4.20 below.
 - **T4.8 — B2B dashboard: running club.** Unchanged — still a self-serve
   tool, unlike T4.9 below.
 - **T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events.**
@@ -271,6 +280,42 @@ implemented.
     **currently active** production Season row, not new feature work —
     but T4.17's reset cadences can't actually match the User Season
     cadence they're meant to mirror until this ships.
+- **T4.20 — Premium subscription infrastructure.** Added 2026-09-23 (PM
+  decision) — see product-spec.md §4.23 (AC1-AC9). The foundation every
+  Premium-dependent item sits on: T4.2b's Premium Club check, §4.5 AC4's
+  league gating, T4.4-T4.7. Built **before** those, per PM. Numbered
+  T4.20, not T4.19, to avoid confusion with product-spec §4.19 (Club War).
+  Hybrid: StoreKit 2 on device for UI, backend as source of truth.
+  Monthly-only $7.99, no annual, no trial. App Store Server Notifications
+  are target design but **blocked** by the Apple Developer Program
+  (HANDOFF.md §4) — not built now.
+- **T4.20a — Premium: `subscription` table.** Depends on T4.20. **Scope**:
+  append-only `subscription` table (`user_id`, `original_transaction_id`,
+  `product_id`, `status`, `expires_at`, `environment`), same ledger pattern
+  as `point_transaction` (ADR-0013) — status changes are new rows; RLS
+  enabled with no grants, per `20260919150457_enable_rls_deny_anon.sql`.
+  Written inert and reviewed before apply, same gate as T4.2a.
+  **Reference**: product-spec.md §4.23 decided #2, AC6.
+- **T4.20b — Premium: backend verification + status endpoint.** Depends
+  on T4.20a. **Scope**: verify transactions with the App Store Server API
+  before recording them (AC5); enforce one Apple ID = one active Premium
+  Laju account via `appAccountToken` + `GET /inApps/v2/history/{anyTransactionId}`
+  (AC7); an endpoint returning the caller's Premium status; the shared
+  server-side "is this user Premium" check T4.2b and §4.5 AC4 call (AC4).
+  **Flagged**: calling the App Store Server API needs an In-App Purchase
+  key from App Store Connect — believed to require the paid Apple
+  Developer Program too, which would make this blocked for the same
+  reason as notifications, not only the notifications part. Needs
+  checking before this task starts. **Reference**: product-spec.md §4.23
+  AC4-AC5, AC7.
+- **T4.20c — Premium: iOS StoreKit 2.** Depends on T4.20b (to sync
+  purchases to the backend). **Scope**: product load and purchase flow
+  with `appAccountToken = user.id` (AC1-AC2), immediate Premium UI from
+  StoreKit's local verified entitlement (AC3), Restore Purchases on any
+  device (AC8). Needs a new StoreKit configuration; real products in App
+  Store Connect need the paid Developer Program (local `.storekit` testing
+  is believed not to — to verify). **Reference**: product-spec.md §4.23
+  AC1-AC3, AC8.
 
 ---
 
