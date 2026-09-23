@@ -524,8 +524,7 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
        dissolution). The war continues for the remaining club(s); in a 2-club war the other club wins
        by forfeit. "Loses active Premium" means Apple status `2` (expired — i.e. after any grace
        period has ended) — billing retry (`3`) and Billing Grace Period (`4`) still count as Premium
-       (§4.23). Status `5` (revoked — refunded) is also treated as lost: an **inference**, not in the
-       PM's decision text, flagged for confirmation.
+       (§4.23). Status `5` (revoked — refunded) is also treated as lost — **decided 2026-09-23 (PM)**.
 5. **Anti-farming — deliberately none in v1.** No cooldown between the same pair of clubs
    re-warring, no tier/strength-based restriction on who can be challenged. This is a conscious
    decision, not an oversight — revisit only if real usage data shows an actual exploitation
@@ -580,11 +579,18 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   while the challenge is still `pending`, the challenge dissolves exactly like AC7 — **no Club War
   Record entry for anyone**, not a forfeit.
 
-**NOT decided — new, created by the 2026-09-23 status-set correction (flagged, not invented):**
+- AC13 (added 2026-09-23, PM decision): a war's result is **final and permanent once computed at
+  the 48-hour mark**. If a `flagged` run that counted toward it is later `rejected` by anti-cheat
+  review, the recorded win/loss is **not** revised. Reasons: the 48-hour result computation is
+  already the war's last check point (§4.23 decided #10), and revising a result users have already
+  seen creates more confusion than the rare reversal it would fix. (§4.20's Club Aktif is different:
+  it's rebuilt on every precompute, so a rejected run simply drops out of it.)
+
+~~**NOT decided — new, created by the 2026-09-23 status-set correction (flagged, not invented):**
 counting `flagged` runs means a war's result can depend on a run that is later `rejected` by the
 anti-cheat review. §4.20's Club Aktif self-corrects (it's rebuilt on every precompute), but a Club
 War's win/loss is recorded once, when the war ends. If a `flagged` run that decided a war is later
-rejected: is the recorded result revised, or does it stand as recorded?
+rejected: is the recorded result revised, or does it stand as recorded?~~ → resolved by AC13.
 
 **AC7 rationale (PM decision, 2026-09-23):** consistent with §4.20 Section 2's own principle ("a
 club that has never fought a Club War is unranked, not zero — absent from the list entirely") — a
@@ -624,10 +630,9 @@ separate precompute jobs, no combined score between them.
   **Why the status set was corrected:** `validated`-only was stricter than the rule this codebase
   already uses for "did this person run today" — the server-side streak rule (tech-spec.md §2.2)
   counts `validated`/`approved`/`flagged` and excludes only `rejected`. The PM chose consistency
-  with that rule. The decision named `validated` and `flagged`; **`approved` is included as an
-  inference** — it's what a `flagged` run becomes once cleared, and the streak rule cited as the
-  reason includes it (excluding it would mean a run counts while under review but stops counting
-  once approved). Flagged for confirmation.
+  with that rule — **all three statuses, exactly the streak rule's set, decided 2026-09-23 (PM)**.
+  (`approved` is what a `flagged` run becomes once cleared; leaving it out would mean a run counts
+  while under review but stops counting once approved.)
   **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23 —
   reverses an earlier design conversation that specifically chose a *rolling* 30-day window instead
   of a periodic reset, because a hard reset undermines the "is this club alive right now" purpose a
@@ -908,12 +913,12 @@ the code is only a color name. Three already-decided things depend on it: the Pr
    expired, `3` billing retry, `4` Billing Grace Period, `5` revoked. **`1`, `3` and `4` all count as
    Premium**; a user only stops being Premium at `2`. Reason: Apple deliberately tolerates temporary
    payment problems (a card declined once) — Laju shouldn't punish them harder than Apple does,
-   e.g. with a Club War forfeit. Status `5` (revoked/refunded) is treated as not-Premium too — an
-   inference, flagged in §4.19 for confirmation.
+   e.g. with a Club War forfeit. Status `5` (revoked/refunded) is not Premium either — decided
+   2026-09-23 (PM).
 10. **Lapse detection is on demand, not polled** (PM, 2026-09-23): the backend checks the user's
     Premium status at the moment an action needs it — no background poll, no cron. Enough for now
     because every Premium consequence is tied to an action. For Club War the check points are
-    (derived from this decision, flagged for confirmation): sending a challenge, the
+    (decided 2026-09-23, PM): sending a challenge, the
     `pending → active` transition (a lapse here dissolves the challenge, §4.19 AC12), and computing
     the war's result at the end of the 48 hours (a lapse here forfeits, §4.19 AC10). For §4.5 AC4:
     each request for all-league data.
@@ -931,6 +936,13 @@ the code is only a color name. Three already-decided things depend on it: the Pr
     flow tells the user deleting the account does **not** cancel their Apple subscription. Written
     as an added AC on T2.22's existing scope (tasks/phase-2-backend-sync-global-leaderboard.md), not
     a new section.
+13. **A deleted account's `subscription` rows are anonymized, not deleted** (PM, 2026-09-23).
+    `original_transaction_id` and the status history are kept for audit and App Store disputes; the
+    rows are disconnected from the person. Stated as consistent with how
+    `backend/lib/account-deletion.ts` already treats history — its own header: *"`PointTransaction`
+    rows are never touched (append-only ledger)… The `user` row itself is soft-deleted, not removed,
+    so `PointTransaction.user_id` stays valid"*, and for runs: *"The row stays (ledger `run_id` FK),
+    the route goes."* The exact mechanism is flagged below.
 
 **Blocker scope, verified 2026-09-23 (was "believed" before):** every App Store Server API call —
 not only notifications — needs a JWT signed with an In-App Purchase key that can only be generated
@@ -957,17 +969,20 @@ Program (Apple's membership comparison: App Store Connect ✗ for free accounts)
   **Extended 2026-09-23:** the purchase is refused and the user sees *"Apple ID ini sudah punya
   langganan Laju Premium aktif di akun lain."* The server never attributes that subscription to the
   second account, whatever the client does.
+- AC8: Restore Purchases is available at any time and restores Premium, on any device, for the Laju
+  account the subscription belongs to.
+- AC9: No App Store Server Notifications endpoint ships in this version (target design, blocked —
+  HANDOFF.md §4).
 - AC10: Apple statuses `1` (active), `3` (billing retry) and `4` (Billing Grace Period) count as
-  Premium; `2` (expired) does not. (`5` revoked also does not — inference, flagged in §4.19.)
+  Premium; `2` (expired) and `5` (revoked) do not.
 - AC11: No background job polls subscription status. The backend checks Premium only at the moment
   an action needs it (decided #10), reading Apple's live status at that moment.
 - AC12: There is no way to move Premium from one Laju account to another in v1.
 - AC13: Deleting an account while its subscription is active shows the subscription warning —
   T2.22's added AC (tasks/phase-2-backend-sync-global-leaderboard.md).
-- AC8: Restore Purchases is available at any time and restores Premium, on any device, for the Laju
-  account the subscription belongs to.
-- AC9: No App Store Server Notifications endpoint ships in this version (target design, blocked —
-  HANDOFF.md §4).
+- AC14 (added 2026-09-23): deleting an account never deletes its `subscription` rows;
+  `original_transaction_id` and every status row survive, and nothing on them identifies the person
+  (mechanism flagged below).
 
 ~~**NOT decided — flagged, not invented:**~~ **Resolved 2026-09-23 (PM), except the last point:**
 - ~~**What "lapsed" means.**~~ → decided #9: expired after grace period; statuses 1/3/4 = Premium.
@@ -977,10 +992,27 @@ Program (Apple's membership comparison: App Store Connect ✗ for free accounts)
   decided #11: refused with a clear message; no transfer in v1.
 - ~~**Account deletion (T2.22) with an active subscription** — whether the deletion flow must tell
   the user their Apple subscription keeps billing.~~ → decided #12: yes, explicit warning (T2.22).
-- **Still NOT decided — what happens to a deleted account's `subscription` rows.** Decision #12
-  covers the warning only. `subscription` is append-only (AC6), T2.22 soft-deletes the `user` row and
-  keeps ledger rows (`point_transaction`) intact — whether `subscription` rows are kept the same way,
-  anonymized, or removed isn't decided, and it touches T2.22's personal-data handling.
+- ~~**Still NOT decided — what happens to a deleted account's `subscription` rows.**~~ → **decided
+  2026-09-23 (PM): anonymized, never deleted** — `original_transaction_id` and the full status
+  history stay, for audit and Apple disputes; the link to the person is removed. See decided #13
+  and AC14 — the *mechanism* is still open (below).
+
+**Still NOT decided — the anonymization mechanism (a genuine conflict, not invented either way):**
+the decision says `user_id` is nulled/disconnected. Two things in this repo point the other way:
+(1) AC6 above — `subscription` rows are **never updated** by application code, and nulling `user_id`
+is an UPDATE; (2) the `account-deletion.ts` pattern quoted above keeps `user_id` on ledger rows and
+anonymizes the `user` row it points to instead — so the rows are already disconnected from any
+personal data without being touched. Pick one:
+- **(a) Null `user_id`** as stated — needs `subscription.user_id` nullable and an explicit AC6
+  exception for account deletion; diverges from how `point_transaction` is handled.
+- **(b) Keep `user_id`, rely on the soft-deleted, anonymized `user` row** — exactly the existing
+  `account-deletion.ts` pattern, AC6 untouched, nothing to change in T2.22's code for this table.
+
+**Consequence of #11 + #13, noted (follows from decisions already made — not a new question):** if
+someone deletes their account without cancelling at Apple, the subscription stays active and stays
+attributed (by `appAccountToken`) to the deleted account. A new Laju account on the same Apple ID is
+then refused Premium (AC7, no transfer — AC12) until that subscription expires, while it keeps
+billing. The T2.22 warning (AC13) is the only mitigation.
 
 ## 5. Non-Goals (v1) — dan alasannya
 
