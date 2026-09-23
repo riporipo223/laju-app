@@ -96,7 +96,9 @@ sudah terasa dekat secara geografis).
   tertarget (bukan matchmaking) — lihat product-spec.md §4.19 untuk detail lengkap AC1-AC13.
   **AC7 resolved 2026-09-23**: tantangan yang ditolak/timeout 24 jam dianggap tidak pernah terjadi,
   nol entri di Club War Record untuk siapapun — bukan forfeit.
-- Matchmaking antar club berbasis performa — masih Non-goal, belum ada keputusan bentuknya.
+- ~~Matchmaking antar club berbasis performa — masih Non-goal, belum ada keputusan bentuknya.~~
+  **Matchmaking dikonfirmasi dibangun (Fase 4), 2026-09-23** — hanya saran lawan (sistem
+  menyarankan, club tetap mengirim tantangan sendiri), terpisah dari Club War. Detail belum di-scope.
 
 **Catatan formula poin (perlu divalidasi, bukan final):**
 Poin dasar = fungsi dari jarak (km) × konsistensi pace, dengan bonus untuk
@@ -126,6 +128,9 @@ berbasis poin/leaderboard kompetitif.
   verifikasi server) belum ada sama sekali — product-spec.md §4.23 / T4.20.
 - **B2B — running club**: Dashboard untuk running club (kelola member,
   leaderboard privat) — model tetap tool self-serve, tidak berubah.
+  **Arah 2026-09-23 (PM): dashboard web, terpisah dari app mobile, dijual
+  terpisah dari Premium $7.99 (bukan bundling).** Harga dan fitur pastinya
+  belum di-scope (T4.8).
 - ~~**B2B — event organizer**: Dashboard untuk event organizer (partisipasi,
   hasil real-time)~~ ~~**Direframe 2026-09-23 (ADR-0014), lihat §2**: bukan lagi
   tool-subscription. EO tidak dapat akses dashboard sendiri — model jadi

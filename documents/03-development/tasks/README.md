@@ -285,12 +285,12 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
   - [ ] T4.2a — data model (club, roster, club_war tables)
   - [ ] T4.2b — backend API (challenge, precompute, forfeit rules) — blocked on T4.20 being implemented
   - [ ] T4.2c — iOS UI (challenge, accept/decline, war status, record)
-- [ ] T4.3 — Matchmaking between clubs (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.3 — Matchmaking between clubs — confirmed 2026-09-23, suggestion-only; not scoped in detail (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.4 — Monetization: seasonal pass (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.5 — Monetization: advanced statistics (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.6 — Monetization: exclusive badge (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.7 — Monetization: premium profile (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.8 — B2B dashboard: running club (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.8 — B2B dashboard: running club — web, sold separately from Premium (2026-09-23); not scoped in detail (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events, concept replaced 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.9a — `event` table (no region column)
   - [ ] T4.9b — staff-only tooling (CLI recommended) + read endpoint
@@ -304,7 +304,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
   - [ ] T4.14b — Apple Watch v1: watchOS target + UI
   - [ ] T4.14c — Garmin companion — placeholder, not scoped
   - [ ] T4.14d — Huawei Watch companion — placeholder, not scoped
-- [ ] T4.15 — Social Feed (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.15 — Social Feed — built BEFORE Club (T4.1), decided 2026-09-23; not scoped in detail (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build — §4.20 AC1-AC12, Season 1 = no reset (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.17a — precompute tables for both sections

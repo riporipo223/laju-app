@@ -266,6 +266,9 @@ same job to a new `season_id`.
   only an unreconciled draft in user-flow.md; recommended here (not Fase
   3) for the same "prove the loop alone first" reasoning as Club above
   — see product-spec.md §5, tasks/phase-4-backlog.md T4.15-T4.16.
+  **Ordered 2026-09-23 (PM): built BEFORE Club** — Fase 4 work order is
+  T4.15 → T4.1 (Club) → T4.2 (Club War). Club itself scoped in
+  product-spec.md §4.24; matchmaking (T4.3) confirmed as suggestion-only.
 - Monetization: seasonal pass, advanced statistics, exclusive badges,
   premium profile (pricing decided 2026-09-23: $7.99/mo + App Store
   Connect regional tiers, product-spec.md §5; monthly only, no annual,

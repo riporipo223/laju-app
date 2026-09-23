@@ -37,7 +37,8 @@ Formula: Lari → dapat Poin → Placing → Level/Rank → Leaderboard
 **Nice to have (bukan untuk v1)**
 1. ~~Circle / Clan~~ Club — renamed 2026-09-23
 2. Club War — **CONFIRMED TO BUILD 2026-09-23** (Fase 4), lihat product-spec.md §4.19
-3. System matchmaking antar club — masih Non-goal, belum ada bentuk
+3. System matchmaking antar club — ~~masih Non-goal, belum ada bentuk~~
+   **dikonfirmasi 2026-09-23 (Fase 4): hanya saran lawan**, detail belum di-scope
 
 ## 5. Core Product Loop
 Track Run → Poin bertambah → Naik level → Positioning di Leaderboard

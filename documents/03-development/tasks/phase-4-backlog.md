@@ -145,8 +145,12 @@ implemented.
   (shares a screen with §4.20's Club Global Leaderboard, not a separate
   screen — no `screen-inventory.md` entry added by this task itself).
   **Reference**: product-spec.md §4.19 AC1-AC13, §4.20.
-- **T4.3 — Matchmaking between clubs.** Depends on T4.1. Still Non-goal,
-  no decided shape.
+- **T4.3 — Matchmaking between clubs.** Depends on T4.1. ~~Still Non-goal,
+  no decided shape.~~ **Confirmed to build (2026-09-23, PM), separate from
+  Club War; direction: suggestion-only** — the system suggests candidate
+  opponents, the club still sends the challenge by hand (§4.19), no forced
+  pairing or auto-start. Not scoped in detail — needs its own scoping
+  session.
 - **T4.4 — Monetization: seasonal pass.** Scope note (2026-09-23, PM —
   direction set, not AC-level):
   - Same thing as user-flow.md §2.8 "Seasonal Cosmetic Reward": when a
@@ -191,7 +195,10 @@ implemented.
   *feature* and had silently assumed a subscription system existed. None
   does yet — see T4.20 below.
 - **T4.8 — B2B dashboard: running club.** Unchanged — still a self-serve
-  tool, unlike T4.9 below.
+  tool, unlike T4.9 below. **Direction (2026-09-23, PM): a web dashboard,
+  separate from the mobile app, sold separately from Premium $7.99 (not
+  bundled).** Price and exact features not scoped — needs its own scoping
+  session. (Club admin tools deferred from T4.1 land here, not twice.)
 - **T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events.**
   **Concept replaced 2026-09-23 — second reframe, kept at T4.9 (same feature slot, not renumbered),
   same reasoning as product-spec.md §4.21 keeping its own section number.** The prior "EO managed
@@ -408,6 +415,15 @@ implemented.
   scope decision than this pass is meant to make. If there's a reason to
   prioritize it above Club specifically, that's a product call worth
   revisiting explicitly, not something to default into via this cleanup.
+  **Revisited explicitly 2026-09-23 (PM): Social Feed is built BEFORE
+  Club (T4.1)** — still Fase 4, but ordered ahead of Club, reversing the
+  implied "same phase, Club alongside/first" reading above. Work order
+  becomes T4.15 → T4.1 → T4.2 (Club War needs Club). Not scoped in detail
+  — needs its own scoping session. **Consequence to settle then:** the
+  draft's audience options (user-flow.md §2.7: Public / *Circle saja* /
+  Private) include a club-only audience that can't exist yet if Social
+  Feed ships before Club; likewise T4.1's club feed (§4.24, deferred)
+  waits on this.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
 - **T4.18 — Change User Season length from 91 to 60 days, forward-only.**
