@@ -71,7 +71,7 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 | Fase 1 — Core Loop Offline | Code complete. Gate (T1.17) open — needs physical-device dogfood runs only the user can do. |
 | Fase 2 — Backend + Sync + Global Leaderboard | 26/33 closed, 4 PARTIAL. All 4 PARTIAL items blocked on the Apple Developer Program (see §4) or a real device. |
 | **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. T3.1 (region onboarding) was superseded 2026-09-22 and **fully reworked 2026-09-23** — region removed entirely, live in production. See §5. |
-| Fase 4 — Backlog (T4.1+, Circle/Club/monetization/etc.) | **Not scheduled. Do not build without explicit user go-ahead.** Local Leaderboard (former T3.2–T3.5) is a separate case: **cancelled permanently 2026-09-22**, not part of this "not scheduled, ask first" backlog — it will never be scheduled, don't offer it as an option. |
+| Fase 4 — Backlog (T4.1+, Club/monetization/etc.) | **Not scheduled. Do not build without explicit user go-ahead.** Local Leaderboard (former T3.2–T3.5) is a separate case: **cancelled permanently 2026-09-22**, not part of this "not scheduled, ask first" backlog — it will never be scheduled, don't offer it as an option. |
 
 ---
 
@@ -110,7 +110,7 @@ tackled — each still needs either a user decision or something only the user c
 - **T1.17 gate** — needs physical-device dogfood sessions (battery-with-map-on-screen, audio cue
   with screen locked, ≥5 runs across ≥3 days). User-only; you cannot do this.
 - **T2.3/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
-- **Fase 4 backlog** (Circle/Club, monetization, etc.) — only if the user explicitly asks to start
+- **Fase 4 backlog** (Club, monetization, etc. — several items now have more decided detail as of 2026-09-23, see phase-4-backlog.md, still all "ask first") — only if the user explicitly asks to start
   it. Local Leaderboard specifically (former T3.2–T3.5) is **cancelled permanently**, not part of
   this "ask first" backlog — don't offer it as an option, it will never be scheduled.
 

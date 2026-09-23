@@ -24,17 +24,39 @@ implemented.
   **CANCELLED PERMANENTLY 2026-09-22**, not deferred to v1.1 — see product-spec.md
   §4.6. Detail kept at the bottom of this file for historical record only.
 
-- **T4.1 — Circle / Clan / Club** (data model + UI). Depends on the `club_id`
-  field already reserved on `User` (database-api-spec.md §1) and the
-  sketched `Club` entity never migrated in Fase 2.
-- **T4.2 — Club War.** Depends on T4.1.
-- **T4.3 — Matchmaking between circles.** Depends on T4.1.
+- **T4.1 — ~~Circle / Clan~~ Club** (data model + UI). **Renamed 2026-09-23**
+  (PM decision) — already matched the `club_id` field reserved on `User`
+  (database-api-spec.md §1) and the sketched `Club` entity never migrated
+  in Fase 2, so this brings the name into alignment with existing code.
+- **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
+  (was "nice to have v2+") — see product-spec.md §4.19 for what's decided
+  (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
+  event-scale rule) vs. genuinely open (mechanics, win condition,
+  duration).
+- **T4.3 — Matchmaking between clubs.** Depends on T4.1. Still Non-goal,
+  no decided shape.
 - **T4.4 — Monetization: seasonal pass.**
 - **T4.5 — Monetization: advanced statistics.**
 - **T4.6 — Monetization: exclusive badge.**
-- **T4.7 — Monetization: premium profile.**
-- **T4.8 — B2B dashboard: running club.**
-- **T4.9 — B2B dashboard: event organizer.**
+- **T4.7 — Monetization: premium profile.** Premium pricing decided
+  2026-09-23 ($7.99/mo + App Store Connect regional tiers, product-spec.md
+  §5) — applies to whichever of T4.4–T4.7 eventually ship, not scoped to
+  one of them specifically.
+- **T4.8 — B2B dashboard: running club.** Unchanged — still a self-serve
+  tool, unlike T4.9 below.
+- **T4.9 — ~~B2B dashboard: event organizer~~ EO managed service.**
+  **Reframed 2026-09-23 (ADR-0014)** — EO gets no dashboard access at all;
+  Laju's own team creates/manages events on an EO client's behalf. Revenue
+  model changed from tool-subscription to per-event service fee (pricing
+  not decided, lean-canvas.md §6). Task name may need to change along with
+  it — "dashboard" no longer describes what ships.
+- **T4.17 — Club Global Leaderboard.** Depends on T4.1 (Club must exist)
+  and, for its Section 2, T4.2 (Club War must exist — Section 2 has
+  nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**
+  — see product-spec.md §4.20 for the two-section spec (Club Aktif /
+  Club War Record) and the still-unresolved question of what happens to
+  the currently-live 91-day Season 1 if/when the User Season length
+  changes to 60 days to match.
 - ~~**T4.10 — Route map visualization** (Mapbox integration, per
   tech-spec.md §1 Maps SDK row).~~ **Moved to Fase 1, 2026-09-12** — split
   into live map + static map (product-spec.md §4.8-4.9,
@@ -46,37 +68,76 @@ implemented.
   own tracking mechanism decision (Android has no `CLLocationManager`
   equivalent) and its own local persistence choice, not a direct port of
   the iOS implementation.
-- **T4.12 — Redis-backed real-time global leaderboard cache** — Open
+- **T4.12 — Redis-backed real-time global leaderboard cache** — ~~Open
   Question in architecture.md §4, only relevant if precompute freshness
-  (≤15 min) proves insufficient at scale.
+  (≤15 min) proves insufficient at scale.~~ **CONFIRMED TO BUILD 2026-09-23**
+  (PM decision, architecture.md §4's Open Question resolved by product
+  decision, not measured data — see lean-canvas.md §7 for the added
+  operational cost). Redis sorted set as a read-through cache in front of
+  Postgres, global scope only, Postgres stays source of truth.
 - **T4.13 — Native iOS platform integrations** (Live Activities, Dynamic
   Island, HealthKit, WidgetKit) — capabilities newly available now the app
   is Swift-native, explicitly not v1 scope (tech-spec.md §1,
   development-plan.md Fase 4, mvp-report.md §8). Pivot introduced
   capability, not a feature request — do not start until Fase 1–3 have
-  shipped.
-- **T4.14 — Apple Watch companion app.** Added 2026-09-12. Low priority,
-  large effort — separate target, WatchConnectivity, its own tracking/UI
-  considerations. No dependency on anything else in this backlog.
+  shipped. **Priority order set 2026-09-23** (PM decision, was unordered):
+  1) **Live Activities**, 2) **Dynamic Island**, 3) **WidgetKit**, 4)
+  **HealthKit** — Live Activities/Dynamic Island reinforce the core
+  run-tracking loop directly (the thing users are already doing while
+  running); WidgetKit targets the D7/D30 retention metric (lean-canvas.md
+  §8) by giving the app a presence outside the app itself; HealthKit is
+  competitive parity (every other running app has it) rather than a Laju
+  differentiator, so it's lowest priority. Still one task — this orders
+  the work inside it, doesn't split it into four tasks.
+- **T4.14 — Companion smartwatch app.** Added 2026-09-12 as "Apple Watch
+  companion app," low priority. **Scope expanded and reprioritized
+  2026-09-23** (PM decision): confirmed to build, three platforms, strict
+  order:
+  1) **Apple Watch** (WatchOS/Swift) — fits the existing native stack
+     directly (ADR-0001), same language, same team can build it.
+  2) **Garmin** (Connect IQ SDK, Monkey C) — entirely separate tech stack
+     and toolchain from the rest of this codebase. **Not bundled into this
+     task as scoped** — needs its own future scoping pass once Apple Watch
+     ships, flagged here rather than estimated blind.
+  3) **Huawei Watch** (HarmonyOS or Wear OS, depending on model) — same
+     caveat as Garmin: separate stack, needs its own scoping, not bundled
+     here.
+  No dependency on anything else in this backlog. The Apple Watch phase
+  alone is roughly what the original "Apple Watch companion app" scope
+  described (separate target, WatchConnectivity, its own tracking/UI
+  considerations) — Garmin/Huawei are net-new scope on top of that,
+  not refinements of it.
 - **T4.15 — Social Feed** (post run achievements, view others' posts).
   Added 2026-09-12 — previously existed only as an unreconciled draft in
   user-flow.md (§2.7 "Social Feed / Posting"), never represented in
   product-spec.md/development-plan.md/tasks/* until now. Now formally
   tracked here (see product-spec.md §5 Non-goals) instead of remaining an
   orphaned draft. **Recommendation, not the locked call:** Fase 4, same
-  phase as Circle (T4.1) — not Fase 3. Reasoning: product-spec.md §1's
+  phase as Club (T4.1) — not Fase 3. Reasoning: product-spec.md §1's
   core bet is that the progression loop must be proven rewarding for a
   single player with zero social features before any social layer is
-  added (the same reasoning that keeps Circle at Fase 4); Social Feed is
-  a social/engagement feature exactly like Circle, arguably with *more*
-  unvalidated surface than Circle (audience/privacy controls, moderation,
+  added (the same reasoning that keeps Club at Fase 4); Social Feed is
+  a social/engagement feature exactly like Club, arguably with *more*
+  unvalidated surface than Club (audience/privacy controls, moderation,
   its coupling to the Premium tier system in user-flow.md which is itself
   unvalidated) — promoting it to Fase 3 would be a bigger, unreviewed
   scope decision than this pass is meant to make. If there's a reason to
-  prioritize it above Circle specifically, that's a product call worth
+  prioritize it above Club specifically, that's a product call worth
   revisiting explicitly, not something to default into via this cleanup.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
+- **T4.18 — Change User Season length from 91 to 60 days** (added
+  2026-09-23, PM decision — see product-spec.md §4.20). Distinct from
+  T4.17: this is a live-data migration on the **currently active**
+  production Season row, not new feature work, and genuinely blocks
+  T4.17's Section 1/2 reset cadence from actually matching the User
+  Season cadence they're meant to mirror. **Not scoped precisely yet** —
+  needs an explicit answer on what happens to the already-running
+  `Season 1 — 2026` (2026-09-01→2026-11-30, 91 days): cut short to a
+  60-day mark (disrupts in-progress standings), or apply 60 days starting
+  Season 2 only (Season 1 finishes its already-communicated length as a
+  one-time exception)? See product-spec.md §4.20's own note — deliberately
+  left open there too, not decided in this docs pass.
 
 ---
 

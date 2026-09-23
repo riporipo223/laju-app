@@ -277,9 +277,9 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [x] T3.10 — End-to-end verification: season close/open cycle (phase DoD gate) — **DONE 2026-09-22**, Phase 3 signed off (lihat [phase-3-season.md](./phase-3-season.md))
 
 ## Fase 4 — Backlog (out of scope for now)
-- [ ] T4.1 — Circle / Clan / Club (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.2 — Club War (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.3 — Matchmaking between circles (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.2 — Club War — confirmed to build 2026-09-23, still not scheduled (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.3 — Matchmaking between clubs (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.4 — Monetization: seasonal pass (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.5 — Monetization: advanced statistics (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.6 — Monetization: exclusive badge (lihat [phase-4-backlog.md](./phase-4-backlog.md))
@@ -293,6 +293,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [ ] T4.14 — Apple Watch companion app (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.15 — Social Feed (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 
 ### ~~Deferred from MVP v1~~ CANCELLED PERMANENTLY — Local Leaderboard (moved from Fase 3, 2026-09-21; cancelled 2026-09-22; IDs unchanged, full detail in phase-4-backlog.md)
 - [ ] ~~T3.2 — Extend precompute job to per-scope aggregation (kecamatan/kabupaten_kota/provinsi)~~ **CANCELLED PERMANENTLY 2026-09-22** (PM sign-off, not deferred) (lihat [phase-4-backlog.md](./phase-4-backlog.md))

@@ -35,7 +35,13 @@ untuk "leveling up". Ini kategori berbeda, bukan sekadar Strava-clone.
 
 **Secondary User**
 - Running club — butuh tools untuk kelola member & kompetisi internal
-- Event organizer (EO) — butuh platform partisipasi & leaderboard untuk event
+- ~~Event organizer (EO) — butuh platform partisipasi & leaderboard untuk event~~
+  **Direframe 2026-09-23 (ADR-0014):** EO bukan pengguna dashboard aktif — EO adalah **klien yang
+  meminta** (requesting client), bukan yang mengoperasikan tool sendiri. Event-scale reach (partisipasi
+  & leaderboard yang menjangkau seluruh/sebagian besar user base) bersifat Laju-exclusive di semua
+  tier, tidak ada self-serve. Tim Laju sendiri yang membuat dan mengelola event untuk EO (managed
+  service), bukan EO login dan mengelola sendiri. **Nama "Dashboard untuk EO" kemungkinan sudah tidak
+  akurat lagi — open question, belum diputuskan nama penggantinya.**
 - Government — potensi partner untuk program kesehatan masyarakat berbasis
   data aktivitas fisik daerah
 - Sports brand — potensi sponsor season/challenge, brand placement di reward
@@ -72,9 +78,12 @@ sudah terasa dekat secara geografis).
 - Season competition (siklus reset berkala, mendorong re-engagement)
 
 **Nice to have (v2+)**
-- Circle / Clan / Group
-- Circle war (kompetisi antar circle)
-- Matchmaking antar circle berbasis performa
+- ~~Circle / Clan / Group~~ **Renamed "Club" 2026-09-23** — sudah selaras dengan `club_id` di skema
+  DB (database-api-spec.md §1). Lihat product-spec.md §4.19.
+- ~~Circle war~~ **Club War — CONFIRMED TO BUILD 2026-09-23** (bukan lagi "nice to have", lihat
+  product-spec.md §4.19: max 3 club per Club War, self-serve oleh owner/admin Club Premium).
+  Mekanik/win-condition/durasi masih open question.
+- Matchmaking antar club berbasis performa — masih Non-goal, belum ada keputusan bentuknya.
 
 **Catatan formula poin (perlu divalidasi, bukan final):**
 Poin dasar = fungsi dari jarak (km) × konsistensi pace, dengan bonus untuk
@@ -94,9 +103,19 @@ berbasis poin/leaderboard kompetitif.
 ## 6. Revenue Streams
 - **Freemium** — semua fitur dasar gratis (tracking, poin, rank, leaderboard)
 - **Premium** — Seasonal pass, Advanced statistics, Exclusive badge, Premium
-  profile (referensi: Discord Nitro model — kosmetik/status, bukan pay-to-win)
-- **B2B** — Dashboard untuk running club (kelola member, leaderboard privat),
-  Dashboard untuk event organizer (partisipasi, hasil real-time)
+  profile (referensi: Discord Nitro model — kosmetik/status, bukan pay-to-win).
+  **Harga DECIDED 2026-09-23**: $7.99/bulan (harga referensi USD), harga
+  regional lewat App Store Connect's price-tier localization sendiri —
+  bukan sistem konversi kurs custom, ini tugas konfigurasi store, bukan
+  engineering. Lihat product-spec.md §5 (baris Monetisasi).
+- **B2B — running club**: Dashboard untuk running club (kelola member,
+  leaderboard privat) — model tetap tool self-serve, tidak berubah.
+- ~~**B2B — event organizer**: Dashboard untuk event organizer (partisipasi,
+  hasil real-time)~~ **Direframe 2026-09-23 (ADR-0014), lihat §2**: bukan lagi
+  tool-subscription. EO tidak dapat akses dashboard sendiri — model jadi
+  **per-event service fee**: tim Laju yang membuat dan mengelola event untuk
+  klien EO. **Harga pastinya belum diputuskan — open question**, ini baru
+  perubahan model (managed service vs self-serve tool), bukan angka harga.
 
 **Catatan strategis:** hindari monetisasi yang merusak fairness leaderboard
 (pay-to-win) — ini akan merusak kredibilitas kompetisi yang jadi core value
@@ -123,6 +142,13 @@ proposition.
 - Data storage
 - Anti-cheat/anomaly detection (item baru — dibutuhkan begitu leaderboard
   jadi kompetitif, bukan opsional)
+- **Redis hosting (item baru, 2026-09-23)** — Redis-backed leaderboard
+  **CONFIRMED TO BUILD** (product decision, resolves architecture.md §4's
+  Open Question; sebelumnya kondisional "hanya jika precompute 15-menit
+  terbukti tidak cukup di scale", sekarang dianggap terpenuhi/moot oleh
+  keputusan produk, bukan oleh data pengukuran nyata). Contoh provider:
+  Upstash, dipilih karena kompatibel dengan Vercel serverless. Harga/tier
+  belum diputuskan.
 
 ## 8. Key Metrics / Success Metrics
 - DAU/WAU dan rasio DAU/MAU (indikator stickiness, bukan cuma jumlah user)

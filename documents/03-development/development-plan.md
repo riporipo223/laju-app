@@ -254,13 +254,19 @@ same job to a new `season_id`.
   the schema, not kept prepared (database-api-spec.md). Tasks T3.2–T3.5
   (tasks/phase-4-backlog.md) and product-spec.md §4.6's three AC are kept
   struck through as historical record only.
-- Circle / Clan / Club, Club War, matchmaking (product-spec §5 Non-goals).
+- ~~Circle~~ Club (renamed 2026-09-23), matchmaking (product-spec §5
+  Non-goals). Club War specifically **confirmed to build 2026-09-23**
+  (product-spec.md §4.19) — still Fase 4/not v1, only the shape is now
+  partly decided.
 - Social Feed (post achievements, comments) — added 2026-09-12, previously
   only an unreconciled draft in user-flow.md; recommended here (not Fase
-  3) for the same "prove the loop alone first" reasoning as Circle above
+  3) for the same "prove the loop alone first" reasoning as Club above
   — see product-spec.md §5, tasks/phase-4-backlog.md T4.15-T4.16.
 - Monetization: seasonal pass, advanced statistics, exclusive badges,
-  premium profile, B2B dashboards for clubs/EOs.
+  premium profile (pricing decided 2026-09-23: $7.99/mo + App Store
+  Connect regional tiers, product-spec.md §5), B2B dashboard for clubs;
+  EO reframed as a managed service, not a dashboard (ADR-0014,
+  lean-canvas.md §2/§6) — still all Fase 4/not scheduled.
 - ~~Route map visualization (Mapbox integration)~~ — **moved to Fase 1,
   2026-09-12** (MapKit, not Mapbox — see Fase 1 scope above, tech-spec.md
   §1/§5.1). No longer backlog.

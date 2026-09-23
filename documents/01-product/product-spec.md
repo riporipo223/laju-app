@@ -40,7 +40,7 @@ Non-goals).
 | Point calculation (formula + anti-cheat)                                                    | **Must**       | Server is source of truth; client shows optimistic estimate                                                                                                                                                              |
 | Level / Rank progression                                                                    | **Must**       | Derived from cumulative points                                                                                                                                                                                           |
 | Leaderboard — Global                                                                        | **Must**       | Precomputed, season-scoped                                                                                                                                                                                               |
-| Leaderboard — Local (kota)                                                                  | **Won't (v1)** | **Deferred to v1.1 / Fase 4 (decided 2026-09-21), not cancelled** — needs high user density to be useful; see §4.6 and Non-goals. Tasks T3.2–T3.5 preserved in tasks/phase-4-backlog.md                                 |
+| Leaderboard — Local (kota)                                                                  | **Won't (v1)** | ~~Deferred to v1.1 / Fase 4 (decided 2026-09-21), not cancelled — needs high user density to be useful.~~ **CANCELLED PERMANENTLY 2026-09-22, not deferred** — see §4.6 and Non-goals. Missed by all 4 prior audit sweeps of that reversal (this table is §3, the AC section fixed was §4.6), caught 2026-09-23. Tasks T3.2–T3.5 preserved in tasks/phase-4-backlog.md as historical record only |
 | Season system (reset cycle)                                                                 | **Must**       | Drives re-engagement; resets rank, not lifetime stats                                                                                                                                                                    |
 | Run history / stats view                                                                    | **Must**       | Promoted from Should 2026-09-13 (Round 7 finding N7-4) — §4.9 AC2 (static map) load-bears on this screen existing; see §4.18                                                                                             |
 | Streak indicator                                                                            | Should         | Visual only in v1; feeds into point bonus already in formula                                                                                                                                                             |
@@ -57,10 +57,10 @@ Non-goals).
 | Account deletion                                                                            | **Must**       | Added 2026-09-12; see §4.17. App Store Guideline 5.1.1(v) — release blocker once Fase 2 auth exists, not optional                                                                                                        |
 | Seasonal pass / Premium stats / Exclusive badge / Premium profile                           | Could          | Monetization, post-core-loop validation                                                                                                                                                                                  |
 | B2B dashboard (club, EO)                                                                    | Could          | Depends on club entity, which is Won't for v1                                                                                                                                                                            |
-| Circle / Clan / Group                                                                       | **Won't (v1)** | Explicit scope cut, see Non-goals                                                                                                                                                                                        |
-| Circle war                                                                                  | **Won't (v1)** | Depends on Circle                                                                                                                                                                                                        |
-| Matchmaking (circle-to-circle)                                                              | **Won't (v1)** | Depends on Circle                                                                                                                                                                                                        |
-| Social Feed (post run achievements, likes, comments)                                        | **Won't (v1)** | Only existed as an unreconciled draft in user-flow.md — see Non-goals; recommendation: Fase 4 backlog (T4.15), not Fase 3 — same "prove the loop alone first" rationale as Circle                                        |
+| ~~Circle~~ Club / Group                                                                     | **Won't (v1)** | Explicit scope cut, see Non-goals. Renamed "Circle"→"Club" 2026-09-23                                                                                                                                                    |
+| Club War                                                                                    | **Won't (v1)** | Depends on Club. **Confirmed to build (Fase 4), 2026-09-23** — see §4.19. Still Won't for v1 itself                                                                                                                     |
+| Matchmaking (club-to-club)                                                                  | **Won't (v1)** | Depends on Club                                                                                                                                                                                                          |
+| Social Feed (post run achievements, likes, comments)                                        | **Won't (v1)** | Only existed as an unreconciled draft in user-flow.md — see Non-goals; recommendation: Fase 4 backlog (T4.15), not Fase 3 — same "prove the loop alone first" rationale as Club                                          |
 | Apple Watch companion app                                                                   | **Won't (v1)** | Low priority, large effort (separate target, WatchConnectivity) — added 2026-09-13, tasks/phase-4-backlog.md T4.14                                                                                                       |
 | Government / sports-brand partnership tooling                                               | **Won't (v1)** | No product surface needed until B2B validated                                                                                                                                                                            |
 | Android support                                                                             | **Won't (v1)** | v1 launches iOS-exclusive; ditunda tanpa timeline pasti — lihat tech-spec.md §1                                                                                                                                          |
@@ -443,14 +443,71 @@ yang baru selesai.
 - AC2: Nilai yang ditampilkan (tanggal, jarak, pace, poin) sama persis
   dengan yang tersimpan di Core Data untuk tiap run.
 
+### 4.19 Club War (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+
+**Status: confirmed to build** (PM decision, 2026-09-23) — reversed from "nice to have v2+"/Non-goal
+(§5). This section exists so the feature has a real spec instead of only a backlog stub (T4.2), per
+this repo's convention that Fase-4 items get full detail once genuinely decided, not before.
+
+**Decided:**
+- Max **3 clubs per Club War**.
+- **Self-serve**: a Club War is started by a Premium Club's owner/admin, not by Laju's team —
+  distinct from the event-scale permission rule (§4.21) below, since a Club War's reach is bounded
+  to the clubs actually entered, never the whole user base.
+
+**NOT decided — genuinely open, flagged rather than invented:**
+- **Mechanics** — how a match is scored (e.g. aggregate distance/points across members over the war
+  period? head-to-head per pair among the ≤3 clubs?).
+- **Win condition** — what determines a winner, and what a winner/loser actually gets.
+- **Duration** — how long one Club War runs. Note: this is separate from the *reset cadence*
+  question resolved in §4.20 below (how often the **Club War Record** — the running win/loss
+  history — resets), which is decided (60 days). An individual Club War's own duration is not.
+
+A task cannot be scoped precisely from this section alone — see tasks/phase-4-backlog.md's proposed
+T4.18+ breakdown for what's blocked on these still-open points.
+
+### 4.20 Club Global Leaderboard (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+
+**Status: confirmed to build** (PM decision, 2026-09-23). Two independent sections, same
+"precompute, never derive live on read" pattern as the existing Global leaderboard (ADR-0013) — two
+separate precompute jobs, no combined score between them.
+
+- **Section 1 — "Club Aktif"**: ranked by **Participation Rate** (% of a club's members who ran in
+  the period). **Reset cadence: every 60 days** (PM decision, 2026-09-23 — reverses an earlier design
+  conversation that specifically chose a *rolling* 30-day window instead of a periodic reset,
+  because a hard reset undermines the "is this club alive right now" purpose a rolling window gives
+  it; the PM was presented that tradeoff directly and chose the 60-day reset anyway, so this is a
+  deliberate override, not an oversight). **Minimum 10 members to qualify** — below that, a
+  "Belum Cukup Data" state, mirroring the cancelled Local Leaderboard's `insufficient_data` pattern
+  (§4.6, historical reference only; the mechanism itself was removed with that cancellation and
+  would need to be rebuilt here, not reused directly).
+- **Section 2 — "Club War Record"**: ranked by win/loss record from Club War (§4.19) matches only.
+  **Reset cadence: every 60 days** (PM decision, 2026-09-23, no prior conflicting design — this one
+  was always meant to align with a periodic reset, matching the Season pattern). A club that has
+  never fought a Club War is **unranked here, not zero** — absent from the list entirely.
+
+**User Season reset cadence — DECIDED, NOT YET IMPLEMENTED:** the PM confirmed changing the User
+Season length from 91 days to **60 days** (2026-09-23), to match the two sections above. This is a
+real conflict with the **currently live, currently active** Season row (`Season 1 — 2026`,
+2026-09-01 → 2026-11-30, 91 days, seeded by `20260917211241_seed_initial_season.sql`) and with
+tech-spec.md §2.5's documented quarterly (~91-day) cadence. **Neither the live season row nor any
+season-length constant has been touched by this decision** — per this repo's "docs only" rule for
+undecided-mechanics Fase-4 work, changing the length is implementation work for a scoped future
+task (tasks/phase-4-backlog.md's proposed T4.18+ breakdown), not something to execute from a docs
+pass alone. That task must also resolve, concretely, what happens to Season 1 specifically: does it
+get cut short to end at a 60-day mark (disrupting standings users are currently competing under), or
+does the 60-day length apply starting Season 2 only (Season 1 finishes its already-communicated 91
+days as a one-time exception)? This document deliberately does not pick one — flagged for that
+task's own scoping, not decided here.
+
 ## 5. Non-Goals (v1) — dan alasannya
 
 | Non-goal | Alasan |
 |---|---|
-| Circle / Clan / Club War / Matchmaking | mvp-report eksplisit: loop individual harus tervalidasi dulu sebelum lapisan sosial ditambahkan — supaya tidak menutupi apakah core loop benar-benar rewarding tanpa teman. |
-| Social Feed (post pencapaian, like, comment) | Sama alasannya dengan Circle di atas — draft di user-flow.md (belum direkonsiliasi ke dokumen manapun sampai 2026-09-12) menggabungkan Social Feed dengan Circle-feed; keduanya sama-sama lapisan sosial yang sengaja ditunda sampai core loop individual tervalidasi. Rekomendasi: Fase 4 backlog (T4.15), bukan Fase 3 — lihat tasks/phase-4-backlog.md. |
+| ~~Circle~~ **Club** / Matchmaking | mvp-report eksplisit: loop individual harus tervalidasi dulu sebelum lapisan sosial ditambahkan — supaya tidak menutupi apakah core loop benar-benar rewarding tanpa teman. **Renamed "Circle" → "Club" 2026-09-23** (PM decision) — the DB schema already used `club_id` (database-api-spec.md §1), so this brings docs into alignment with existing code, not the reverse. **Club War specifically is now CONFIRMED TO BUILD** (2026-09-23, reversed from "nice to have v2+"/Non-goal) — see the new §4.19 below. Still not v1/Fase 4-scheduled; only the eventual shape is now decided, not the timing. Matchmaking (circle-to-circle) stays a Non-goal, undecided shape. |
+| Social Feed (post pencapaian, like, comment) | Sama alasannya dengan Club di atas — draft di user-flow.md (belum direkonsiliasi ke dokumen manapun sampai 2026-09-12) menggabungkan Social Feed dengan Circle/Club-feed; keduanya sama-sama lapisan sosial yang sengaja ditunda sampai core loop individual tervalidasi. Rekomendasi: Fase 4 backlog (T4.15), bukan Fase 3 — lihat tasks/phase-4-backlog.md. |
 | Leaderboard Lokal (kecamatan / kabupaten-kota / provinsi) | ~~**Ditunda ke v1.1 / Fase 4 (2026-09-21) — bukan dibatalkan.** Butuh kepadatan user tinggi supaya berguna: dengan user awal sedikit, satu kecamatan hanya berisi beberapa orang dan leaderboard-nya kosong/tidak kompetitif. Global-only untuk MVP terasa "lokal" secara natural saat user masih sedikit. Kerja yang sudah ada (hierarki wilayah, skema `LEADERBOARD_SCOPE`, task T3.2–T3.5) disimpan sebagai referensi, ditandai deferred — lihat §4.6 dan tasks/phase-4-backlog.md.~~ **DIBATALKAN PERMANEN 2026-09-22 (PM sign-off)** — bukan ditunda. Alasan: scope terlalu luas untuk logic leaderboard yang dibutuhkan. Hierarki wilayah di `User` dan nilai `scope_type` regional di `LEADERBOARD_SCOPE` justru **dihapus** dari skema, bukan disimpan sebagai referensi (Task B). Lihat §4.6 dan tasks/phase-4-backlog.md. |
-| Monetisasi (Premium, B2B dashboard) | Fokus v1 = retention/validasi core loop, bukan revenue. Monetisasi baru relevan setelah ada basis user aktif. |
+| ~~Monetisasi (Premium, B2B dashboard)~~ | ~~Fokus v1 = retention/validasi core loop, bukan revenue. Monetisasi baru relevan setelah ada basis user aktif.~~ **Premium pricing DECIDED 2026-09-23** (PM decision): $7.99/bulan (harga referensi USD), harga regional lewat App Store Connect's price-tier localization sendiri — bukan sistem konversi kurs custom, ini sebagian besar tugas konfigurasi store, bukan engineering. Ini bukan berarti Premium sudah dijadwalkan untuk dibangun v1/Fase 4 — cuma bentuk harganya yang sudah tidak terbuka lagi. B2B dashboard (EO) tetap Non-goal v1; modelnya sendiri direframe 2026-09-23, lihat lean-canvas.md §2/§6. |
 | Android support | v1 launches iOS-exclusive, native Swift/SwiftUI — Android ditunda tanpa timeline pasti (keputusan platform, bukan technical debt). Lihat tech-spec.md §1. |
 | ~~Route map visualization~~ | **Dicabut sebagai Non-goal (2026-09-12)** — dipecah jadi Live map (§4.8) dan Static map (§4.9), keduanya Must-have Fase 1. Alasan awal (biaya Maps API) sudah tidak berlaku setelah keputusan pakai MapKit native (tech-spec.md §1, lean-canvas.md §7); alasan "bukan bagian dari core loop" tetap benar secara literal, tapi diputuskan tetap masuk sebagai fitur engagement pendukung core loop, bukan lagi dianggap di luar prioritas. |
 | Government / sports-brand partnership tooling | Tidak ada demand tervalidasi; secondary user, bukan primary. |

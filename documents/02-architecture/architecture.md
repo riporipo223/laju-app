@@ -205,19 +205,31 @@ for regional scopes.**
 Postgres instance handles comfortably (tens of thousands of users,
 precompute job completing well within the 15-minute window).
 
-**Open Question (v2+, not built now)**: if global leaderboard needs
+~~**Open Question (v2+, not built now)**: if global leaderboard needs
 near-real-time updates (interval < 1 min) at much larger scale, consider a
 Redis sorted set (`ZADD`/`ZREVRANGE`) as a read-through cache in front of
 Postgres for the global scope specifically — Postgres remains source of
 truth, Redis becomes a fast projection. Not adopted in v1 to avoid adding a
-new piece of infrastructure before it's needed.
+new piece of infrastructure before it's needed.~~
+
+**RESOLVED 2026-09-23 (PM decision): CONFIRMED TO BUILD.** The condition
+above ("only if precompute's 15-minute freshness proves insufficient at
+scale") is now treated as met/moot **by product decision, not by measured
+data** — no real-world evidence of the 15-minute window actually failing
+has been gathered; this is a forward-looking product call, not a
+performance fix for an observed problem. Shape is otherwise unchanged from
+the Open Question above: a Redis sorted set as a read-through cache in
+front of Postgres, global scope only, Postgres stays source of truth.
+Operational cost (Redis hosting, e.g. Upstash for Vercel-serverless
+compatibility) noted in lean-canvas.md §7. Not yet scoped as a task — see
+tasks/phase-4-backlog.md's proposed T4.18+ breakdown.
 
 ## 5. Architecture Decisions (why the system looks like this)
 
 Sections 1-4 describe *what* the system is. The reasoning behind each
 structural choice — including the alternatives that were rejected and what
 each choice costs — is recorded as Architecture Decision Records in
-**[adr/](./adr/README.md)**. Thirteen decisions are documented, in Nygard
+**[adr/](./adr/README.md)**. Fourteen decisions are documented, in Nygard
 format (Context / Decision / Alternatives Considered / Consequences).
 
 These are formalizations of decisions already made and already validated

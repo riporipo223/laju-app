@@ -35,9 +35,9 @@ justru menutupi masalah inti alih-alih menyelesaikannya.
 Formula: Lari → dapat Poin → Placing → Level/Rank → Leaderboard
 
 **Nice to have (bukan untuk v1)**
-1. Circle / Clan / Club
-2. Club war
-3. System matchmaking antar club
+1. ~~Circle / Clan~~ Club — renamed 2026-09-23
+2. Club War — **CONFIRMED TO BUILD 2026-09-23** (Fase 4), lihat product-spec.md §4.19
+3. System matchmaking antar club — masih Non-goal, belum ada bentuk
 
 ## 5. Core Product Loop
 Track Run → Poin bertambah → Naik level → Positioning di Leaderboard
@@ -60,15 +60,18 @@ Run again
   drain baterai — divalidasi lewat T0.9 (physical device test)
 
 ## 7. Out of Scope untuk v1
-- Circle/Clan, Club War, Matchmaking — semua fitur sosial ditunda sampai
-  core loop individual tervalidasi
+- Club, Matchmaking — fitur sosial ditunda sampai core loop individual
+  tervalidasi. Club War sendiri **confirmed to build (Fase 4)**, 2026-09-23
+  — tetap bukan v1, hanya bentuknya sudah tidak lagi 100% terbuka
 - Monetisasi (Freemium/Premium/B2B) — fokus dulu ke retention, monetisasi
-  baru relevan setelah ada basis user aktif
+  baru relevan setelah ada basis user aktif. **Harga Premium sudah
+  diputuskan 2026-09-23** ($7.99/bulan + tier regional App Store Connect,
+  product-spec.md §5), tapi belum dijadwalkan untuk v1/Fase 4
 - Android — ditunda tanpa timeline pasti; v1 launch iOS-exclusive
   (tech-spec.md §1)
 
 ## 8. Future Development
-- Circle/Clan system dan Club War
+- Club system dan Club War
 - Matchmaking antar club berdasarkan performa
 - ~~Local leaderboard 3-tier (kecamatan/kabupaten-kota/provinsi) — v1.1 /
   Fase 4, dipindah dari Fase 3 pada 2026-09-21 (butuh kepadatan user

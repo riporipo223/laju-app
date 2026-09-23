@@ -33,7 +33,7 @@ erDiagram
         int total_points
         int current_level
         float trust_score
-        uuid club_id FK "nullable, reserved for future Circle/Club feature"
+        uuid club_id FK "nullable, reserved for future Club feature (renamed from Circle, 2026-09-23)"
         timestamp created_at
         timestamp deleted_at "nullable — set by DELETE /api/account (§2.1b, added 2026-09-12); soft-delete only, row never physically removed so PointTransaction.user_id stays valid. Leaderboard precompute (T2.18/T3.2) must exclude rows where this is non-null. ANY authenticated request from a caller whose own row has deleted_at set is rejected (§3)"
     }
@@ -71,7 +71,7 @@ erDiagram
     LEADERBOARD_ENTRY {
         uuid id PK
         uuid season_id FK
-        string scope_type "global|kecamatan|kabupaten_kota|provinsi — v1 uses ONLY global; regional values prepared, deferred to v1.1 (Local Leaderboard)"
+        string scope_type "'global' only — enforced by a check constraint since 2026-09-23 (migration 20260923090000). Local Leaderboard's regional values (kecamatan/kabupaten_kota/provinsi) are CANCELLED PERMANENTLY and physically impossible now, not just unused — was stale wording claiming 'prepared, deferred to v1.1', corrected 2026-09-23"
         string scope_id "NOT NULL — sentinel 'GLOBAL' for global scope, consistent with LEADERBOARD_SCOPE"
         uuid user_id FK
         string frozen_display_name "denormalized copy of USER.display_name AT THE TIME this row was written by precompute (2026-09-13, Round 7 finding B7-12) — NOT a live join. A soft-deleted user's past-season entries (T3.8, retained/never overwritten) would otherwise render a blank/NULL name once USER.display_name is cleared by §2.1b; this field is frozen precisely so historical leaderboards keep showing a name"
@@ -82,7 +82,7 @@ erDiagram
 
     LEADERBOARD_SCOPE {
         uuid season_id FK "composite PK with scope_type, scope_id"
-        string scope_type "global|kecamatan|kabupaten_kota|provinsi — v1 uses ONLY global; regional values prepared, deferred to v1.1 (Local Leaderboard)"
+        string scope_type "'global' only — enforced by a check constraint since 2026-09-23 (migration 20260923090000). Local Leaderboard's regional values (kecamatan/kabupaten_kota/provinsi) are CANCELLED PERMANENTLY and physically impossible now, not just unused — was stale wording claiming 'prepared, deferred to v1.1', corrected 2026-09-23"
         string scope_id "NOT NULL — sentinel 'GLOBAL' for global scope (composite PK cannot hold NULL in Postgres)"
         int user_count "how many users have entries in this scope this season"
         boolean insufficient_data "true if user_count < configurable threshold N"
@@ -139,7 +139,7 @@ level, v1 has no level cap beyond 8 — a run that pushes past level 8
 simply stays at level 8 until this table is extended).
 
 **Future extension points already reserved (not built in v1):**
-- `USER.club_id` — nullable FK, unused until Circle/Club ships.
+- `USER.club_id` — nullable FK, unused until Club ships (renamed from Circle, 2026-09-23).
 - `CLUB` table shape sketched but not migrated in v1 (documented here for
   forward compatibility of the ERD only).
 
