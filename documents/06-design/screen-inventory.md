@@ -70,7 +70,7 @@ Design can and should run ahead of these — none require the code to exist firs
 
 ## 4. Explicitly out of scope — do not wireframe
 
-From [user-flow.md](../01-product/user-flow.md), which is an unreconciled draft: Circle / Clan (T4.1), Circle War (T4.2), Social Feed and post composer (T4.15-T4.16), Paywall / upgrade flow (T4.4-T4.7), Advanced Statistics (T4.5), Cloud Backup & Restore (not scheduled), Apple Health sync (T4.13), alternate app icon picker (T4.7).
+From [user-flow.md](../01-product/user-flow.md), which is an unreconciled draft: Circle / Clan (T4.1), Circle War (T4.2), Social Feed and post composer (T4.15-T4.16), Paywall / upgrade flow (T4.4-T4.7), Advanced Statistics (T4.5), Cloud Backup & Restore (not scheduled), Apple Health sync (T4.13), alternate app icon picker (T4.7), **Laju Branded Events — Social tab → Events sub-tab, card feed (T4.9, added 2026-09-23, see product-spec.md §4.21)**.
 
 Listed so the exclusion is a recorded decision. If any of these is promoted into scope, it gets a row in §3 and a section in `wireframe-spec.md` at that time — not before.
 
