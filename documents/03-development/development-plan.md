@@ -265,8 +265,11 @@ same job to a new `season_id`.
 - Monetization: seasonal pass, advanced statistics, exclusive badges,
   premium profile (pricing decided 2026-09-23: $7.99/mo + App Store
   Connect regional tiers, product-spec.md §5), B2B dashboard for clubs;
-  EO reframed as a managed service, not a dashboard (ADR-0014,
-  lean-canvas.md §2/§6) — still all Fase 4/not scheduled.
+  ~~EO reframed as a managed service, not a dashboard (ADR-0014,
+  lean-canvas.md §2/§6)~~ **concept replaced 2026-09-23 — Laju Branded
+  Events** (product-spec.md §4.21, lean-canvas.md §2/§6): brand-sponsored
+  or announcement-only Events, Laju staff-only creation, sponsorship-fee
+  revenue, no region filter — still all Fase 4/not scheduled.
 - ~~Route map visualization (Mapbox integration)~~ — **moved to Fase 1,
   2026-09-12** (MapKit, not Mapbox — see Fase 1 scope above, tech-spec.md
   §1/§5.1). No longer backlog.
