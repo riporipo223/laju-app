@@ -50,8 +50,10 @@ create table "club" (
 -- is left to T4.1, not decided here.
 --
 -- user_id is the PRIMARY KEY (not a surrogate id) to enforce "one club per
--- user" at the database level, matching the single-FK-column design intent
--- `user.club_id` originally implied.
+-- user" at the database level. First inferred from the single-FK-column shape
+-- of `user.club_id`; CONFIRMED as a deliberate PM decision 2026-09-23
+-- (product-spec.md §4.19): it prevents cross-club double-counting in
+-- Participation Rate and in this war snapshot.
 --
 -- No 'pending' / join-request state — this table holds only CONFIRMED members.
 -- T4.1's own join/invite flow (user-flow.md §2.6 draft: "request join atau
@@ -168,13 +170,13 @@ execute function "club_war_club_enforce_max_three"();
 --
 -- This exists specifically so the war's outcome is immune to membership
 -- changes that happen mid-war or after it ends (a club's live roster can keep
--- changing; a past war's recorded result must not). It also mechanically
--- resolves HOW to compute a fixed roster for a war regardless of policy —
--- but NOT the policy question itself of whether a member who leaves their
--- club mid-war should still count for it. That is flagged as a genuinely open
--- product question in this migration's accompanying report, not decided here;
--- whichever way it's decided, this snapshot table is where that decision gets
--- implemented (T4.2b), not in the schema shape itself.
+-- changing; a past war's recorded result must not).
+--
+-- Policy DECIDED 2026-09-23 (PM, product-spec.md §4.19 AC11): a member who
+-- leaves their club after the war went active STILL COUNTS for that war. This
+-- snapshot is final for the war and is never edited when someone leaves. (Was
+-- flagged "genuinely open" when this file was first written — corrected here,
+-- comment-only, before the migration has ever been applied.)
 create table "club_war_participant" (
   club_war_id uuid not null references "club_war" (id),
   club_id uuid not null references "club" (id),
