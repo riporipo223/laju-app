@@ -190,9 +190,16 @@ for regional scopes.**
   client renders product-spec AC 4.6.2 ("belum cukup data") from this
   persisted flag rather than inferring it from row count. `LEADERBOARD_SCOPE`
   is migrated in Fase 2 since the `global` scope needs a row from the
-  moment the global leaderboard ships; rows for the local scope types go on
+  moment the global leaderboard ships; ~~rows for the local scope types go on
   top of the table that already exists, when the Local Leaderboard is built
-  (deferred to v1.1 / Fase 4 — tasks T3.2–T3.5 in tasks/phase-4-backlog.md).
+  (deferred to v1.1 / Fase 4 — tasks T3.2–T3.5 in tasks/phase-4-backlog.md).~~
+  **the local scope types will never be added — Local Leaderboard cancelled
+  permanently 2026-09-22, not deferred (see the parenthetical note above this
+  paragraph, and product-spec.md §4.6). This sentence directly contradicted
+  that note within the same paragraph; missed by the first three audit
+  sweeps, caught 2026-09-23. `LEADERBOARD_SCOPE` now only ever holds
+  `scope_type='global'` rows, enforced by a check constraint
+  (`20260923090000_drop_region_and_regional_scopes.sql`).**
 
 **v1 scale target**: this is sufficient for the initial user base a single
 Postgres instance handles comfortably (tens of thousands of users,

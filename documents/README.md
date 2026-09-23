@@ -81,7 +81,9 @@ One caution worth reading before you start: ranks 1-3 invite a podium treatment,
 | 4 | **Account Deletion** (14) | wireframe-spec §9 | Two screens, App Store blocker. Copy is a legal surface — coordinate with the Privacy Policy |
 | 5 | **Season Info** (13) | wireframe-spec §7 | Last — reuses the leaderboard row from item 1 |
 
-The states in item 3, specifically: Run Summary flagged / "sedang diverifikasi" (6d — the `warning` amber token was reserved for exactly this and has never been used), Run Summary after points change *downward* on a later resolution (6e), auto-paused as visually distinct from manual pause (5b, AC 4.11.2), and the empty states (6c, 7a). *(12a, the insufficient-data state, is deferred with the Local Leaderboard — 2026-09-21.)*
+The states in item 3, specifically: Run Summary flagged / "sedang diverifikasi" (6d — the `warning` amber token was reserved for exactly this and has never been used), Run Summary after points change *downward* on a later resolution (6e), auto-paused as visually distinct from manual pause (5b, AC 4.11.2), and the empty states (6c, 7a). *(12a, the insufficient-data state, ~~is deferred with the Local Leaderboard — 2026-09-21~~ **is moot: the
+Local Leaderboard it belonged to was cancelled permanently 2026-09-22, not deferred — see §4.6.
+Missed by the first three audit sweeps of that reversal, caught 2026-09-23.**)*
 
 Full inventory with status and the visual dependency graph: [06-design/screen-inventory.md](./06-design/screen-inventory.md).
 
