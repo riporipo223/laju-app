@@ -13,17 +13,15 @@ struct LeaderboardView: View {
     @StateObject private var authorization = LocationAuthorizationObserver()
 
     var body: some View {
-        Group {
-            switch LeaderboardAccessState.state(for: authorization.status) {
-            case .unlocked:
-                board
-            case .needsPermission:
-                LeaderboardLockedView(state: .needsPermission) { authorization.requestWhenInUseAuthorization() }
-            case .denied:
-                LeaderboardLockedView(state: .denied, onRequest: nil)
-            case .restricted:
-                LeaderboardLockedView(state: .restricted, onRequest: nil)
-            }
+        switch LeaderboardAccessState.state(for: authorization.status) {
+        case .unlocked:
+            board
+        case .needsPermission:
+            LeaderboardLockedView(state: .needsPermission) { authorization.requestWhenInUseAuthorization() }
+        case .denied:
+            LeaderboardLockedView(state: .denied, onRequest: nil)
+        case .restricted:
+            LeaderboardLockedView(state: .restricted, onRequest: nil)
         }
     }
 
