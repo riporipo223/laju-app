@@ -85,10 +85,15 @@ native Swift/SwiftUI).
 7. **Leaderboard precompute**: A scheduled job (v1: pg_cron, interval
    15 min — T2.18) recomputes `LeaderboardEntry` rows for the **`global`**
    scope per active season, from the `PointTransaction` ledger — **not**
-   computed live on read. *(v1 is Global-only. Per-region scopes —
-   `kecamatan`, `kabupaten_kota`, `provinsi` — are a **deferred future
-   extension**, Local Leaderboard, v1.1 / Fase 4, decided 2026-09-21; the
-   data model below already supports them and is left in place.)* Only runs
+   computed live on read. *(Leaderboard is Global-only, permanently.
+   ~~Per-region scopes — `kecamatan`, `kabupaten_kota`, `provinsi` — are a
+   **deferred future extension**, Local Leaderboard, v1.1 / Fase 4, decided
+   2026-09-21; the data model below already supports them and is left in
+   place.~~ **Updated 2026-09-22 (PM sign-off): Local Leaderboard is
+   CANCELLED PERMANENTLY, not deferred — the regional `scope_type` values
+   and the `User` region hierarchy are being dropped from the schema, not
+   left in place. See product-spec.md §4.6 and database-api-spec.md.**)*
+   Only runs
    with `RUN.status` `validated` or `approved` contribute (tech-spec.md
    §2.4.1) — `flagged` and `rejected` runs are excluded until resolved.
    The same job also writes/updates one `LEADERBOARD_SCOPE` row for
@@ -151,10 +156,14 @@ from local cache or a fresh server response.
 
 Leaderboard reads are the heaviest, most frequent query pattern in the
 product (every user checks their rank often). v1 computes **one** scope
-(`global`) per season. The deferred Local Leaderboard (v1.1 / Fase 4,
+(`global`) per season. ~~The deferred Local Leaderboard (v1.1 / Fase 4,
 decided 2026-09-21) would multiply the number of distinct scopes — one per
 kecamatan/kabupaten_kota/provinsi, per season — which is exactly why the
-precompute design below is kept as-is for it.
+precompute design below is kept as-is for it.~~ **Updated 2026-09-22: Local
+Leaderboard is cancelled permanently, so this scope multiplication will
+never happen — `global` is the only scope this job will ever compute. The
+precompute design stands on its own merits (ADR-0013), not as preparation
+for regional scopes.**
 
 **Strategy: precompute, don't aggregate on read.**
 
@@ -166,18 +175,31 @@ precompute design below is kept as-is for it.
 - Recompute job runs on an interval (v1: ≤15 min, matches product-spec AC
   4.5.2), not on every point transaction — trades freshness for cost,
   deliberately (tech-spec §4).
-- *(Deferred with the Local Leaderboard — designed, prepared in the schema,
+- *(~~Deferred with the Local Leaderboard — designed, prepared in the schema,
   not active in v1, where `insufficient_data` is always `false` for
-  `global`.)* Small-region handling: if a scope (e.g. a specific kecamatan) has fewer
+  `global`.~~ **CANCELLED 2026-09-22 with the Local Leaderboard — the
+  small-region/`insufficient_data` mechanism described here will not be
+  built; `insufficient_data` is permanently `false` for `global`, the only
+  scope. Kept as a historical record of the design. Note for the SEC-3
+  privacy finding: `LEADERBOARD_SCOPE.insufficient_data` was cited there as
+  the system's only incidental small-cohort guard — it is now moot, since
+  no regional cohort is ever computed.**)* Small-region handling: if a scope (e.g. a specific kecamatan) has fewer
   than N users (configurable, e.g. 5), the precompute job marks that scope
   `insufficient_data` in the dedicated `LEADERBOARD_SCOPE` table
   (database-api-spec.md §1) instead of emitting a near-empty leaderboard —
   client renders product-spec AC 4.6.2 ("belum cukup data") from this
   persisted flag rather than inferring it from row count. `LEADERBOARD_SCOPE`
   is migrated in Fase 2 since the `global` scope needs a row from the
-  moment the global leaderboard ships; rows for the local scope types go on
+  moment the global leaderboard ships; ~~rows for the local scope types go on
   top of the table that already exists, when the Local Leaderboard is built
-  (deferred to v1.1 / Fase 4 — tasks T3.2–T3.5 in tasks/phase-4-backlog.md).
+  (deferred to v1.1 / Fase 4 — tasks T3.2–T3.5 in tasks/phase-4-backlog.md).~~
+  **the local scope types will never be added — Local Leaderboard cancelled
+  permanently 2026-09-22, not deferred (see the parenthetical note above this
+  paragraph, and product-spec.md §4.6). This sentence directly contradicted
+  that note within the same paragraph; missed by the first three audit
+  sweeps, caught 2026-09-23. `LEADERBOARD_SCOPE` now only ever holds
+  `scope_type='global'` rows, enforced by a check constraint
+  (`20260923090000_drop_region_and_regional_scopes.sql`).**
 
 **v1 scale target**: this is sufficient for the initial user base a single
 Postgres instance handles comfortably (tens of thousands of users,

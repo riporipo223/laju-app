@@ -79,6 +79,16 @@ triggers the Next.js job) rather than one shared pipeline.
 `feat|fix|chore|refactor|docs|test` — e.g. `feat/local-leaderboard-filter`,
 `fix/pace-cap-off-by-one`.
 
+**Exception, noted 2026-09-22**: work done from the Windows device/account pushes to a single
+long-lived branch, `luvfr`, instead of a fresh `type/short-description` branch per task. **Open
+question, not yet resolved with the user**: whether/how `luvfr` gets merged or rebased into `main`
+(a PR per change? periodic batch merge? renamed per release?) — found while pushing CQ-2's fix
+(2026-09-22) that `luvfr` has no CI coverage of its own: `.github/workflows/ci-ios.yml`'s `push`
+trigger is scoped to `branches: [main]` only, so pushes to `luvfr` don't run CI at all (confirmed
+via the GitHub API — zero workflow runs ever recorded for this branch). Until this is resolved,
+don't assume `luvfr` gets CI signal from a plain push; either open a PR from `luvfr` to `main`
+(the `pull_request` trigger has no branch restriction) or verify manually.
+
 **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) —
 `type(scope): message`, e.g. `feat(point-formula): add streak bonus cap`,
 `fix(anti-cheat): correct gps speed jump threshold`. Scope should match the

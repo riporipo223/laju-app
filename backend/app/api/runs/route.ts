@@ -157,11 +157,11 @@ export async function POST(request: Request) {
     );
   }
 
-  // Presence-only guard (database-api-spec.md §3) — the richer client-side onboarding block that
-  // prevents reaching this call at all is T3.1's job, not this task's.
-  if (!user.region_kecamatan || !user.region_kabupaten_kota || !user.region_provinsi) {
-    return NextResponse.json({ error: "Region must be set before submitting a run" }, { status: 409 });
-  }
+  // The region `409` guard that used to live here was REMOVED 2026-09-22 (D1 reversed,
+  // product-spec.md §4.1): region is no longer collected, so there is nothing to require. It is
+  // deliberately not replaced with a location-permission check — the replacement gate (§4.5 AC5)
+  // governs what the user can SEE on the Leaderboard, not whether a run may be SUBMITTED. Run
+  // submission now has no profile precondition beyond having a `user` row at all.
 
   // T2.12d: a retried submission (mobile sync queue, T2.14) must never re-run the pipeline or write a
   // second PointTransaction. This early lookup handles the common sequential-retry case cheaply; the

@@ -6,7 +6,15 @@
 
 ## Context
 
-The leaderboard is the product's core competitive mechanic, and it needs granular regional queries: "top N per region (kecamatan/kabupaten-kota/provinsi), sorted by points, with tie-break, per season." The point ledger (`PointTransaction`) also needs to be an immutable, auditable append-only log with referential integrity to `User`/`Run`/`Season`. Firebase/Firestore was a familiar option for the team; Postgres via Supabase was the alternative.
+The leaderboard is the product's core competitive mechanic, and it needs granular regional queries: "top N per region (kecamatan/kabupaten-kota/provinsi), sorted by points, with tie-break, per season."
+
+> **Note added 2026-09-22 — one supporting argument has lapsed; the decision stands.** The Local
+> Leaderboard (regional scopes) was cancelled permanently that day (product-spec.md §4.6), so the
+> "granular regional queries" requirement quoted above no longer exists. This ADR is **not**
+> superseded: the remaining rationale (ranking/aggregation over a Global, season-scoped leaderboard;
+> an immutable append-only ledger with referential integrity) is unchanged and still favours
+> Postgres. Recorded here so a future reader does not mistake the lapsed argument for a reason to
+> revisit the stack choice. The point ledger (`PointTransaction`) also needs to be an immutable, auditable append-only log with referential integrity to `User`/`Run`/`Season`. Firebase/Firestore was a familiar option for the team; Postgres via Supabase was the alternative.
 
 ## Decision
 

@@ -13,7 +13,7 @@ Depends on: [product-spec.md](../01-product/product-spec.md)
 | Client state management | SwiftUI native state (`@State`/`@Published`/`ObservableObject`) di layer ViewModel | Idiomatik MVVM SwiftUI — ViewModel meng-observe Core Data (via `NSFetchedResultsController`/`@FetchRequest`) untuk data lokal, dan meng-expose state hasil `URLSession` call untuk data dari server. Tidak butuh library pihak ketiga (Zustand/TanStack Query) untuk MVP. |
 | Networking (mobile) | `URLSession` + `Codable` | Native, cukup untuk kebutuhan MVP (`POST`/`GET` JSON ke Next.js API routes) — tidak ada kebutuhan fitur lanjutan (interceptor kompleks, GraphQL, dsb) yang butuh library pihak ketiga. |
 | Backend framework | Next.js (App Router, API routes) + TypeScript | **Rekomendasi**, bukan keputusan final — lihat catatan trade-off di bawah. Memanfaatkan familiarity existing (Next.js/TS) dan bisa dipakai juga untuk admin/B2B dashboard di masa depan. |
-| Database | PostgreSQL (via Supabase) | **Rekomendasi**, bukan keputusan final — lihat catatan trade-off. Leaderboard butuh ranking query & aggregation (v1: Global; per region kecamatan/kabupaten-kota/provinsi ditunda ke v1.1, 2026-09-21, tapi tetap alasan pilih relational DB) yang jauh lebih natural & efisien di relational DB dengan `GROUP BY`/window function dibanding NoSQL document store. |
+| Database | PostgreSQL (via Supabase) | **Rekomendasi**, bukan keputusan final — lihat catatan trade-off. Leaderboard butuh ranking query & aggregation (v1: Global; per region kecamatan/kabupaten-kota/provinsi DIBATALKAN PERMANEN 2026-09-22, sebelumnya ditunda ke v1.1 sejak 2026-09-21; pilihan relational DB tetap berlaku atas dasar query Global/season, lihat ADR-0006) yang jauh lebih natural & efisien di relational DB dengan `GROUP BY`/window function dibanding NoSQL document store. |
 | Auth | Supabase Auth (JWT) | Terintegrasi langsung dengan Postgres (Row Level Security opsional), menghindari sinkronisasi identitas dua sistem (Firebase Auth + Postgres user table terpisah). |
 | Maps SDK | **MapKit** (native Apple, keputusan locked 2026-09-12 — sebelumnya Mapbox/Open Question, lihat riwayat di bawah) | Dipakai di v1 core mulai Fase 1 (product-spec.md §4.8-4.9 — reverses the prior Non-goal) untuk live map saat tracking + static route map di Summary/History. Tidak ada biaya per-request (native framework, termasuk dalam Apple Developer Program fee) — lihat §5.1 untuk pendekatan integrasi, lean-canvas.md §7 untuk koreksi cost structure. Mapbox tidak jadi dipakai — MapKit cukup untuk kebutuhan v1 (tampilkan posisi + polyline dari data lokal, bukan routing/geocoding kompleks) dan menghapus dependency pihak ketiga sekaligus biaya. |
 | Backend hosting | Vercel | Native untuk Next.js, familiar dari stack existing. |
@@ -25,8 +25,12 @@ Depends on: [product-spec.md](../01-product/product-spec.md)
 
 Firebase (Firestore) familiar buat developer, tapi:
 - Leaderboard lokal granular (per kecamatan/kabupaten-kota/provinsi, per
-  season — *ditunda ke v1.1 / Fase 4, keputusan 2026-09-21; v1 hanya Global,
-  alasan ini dipertahankan sebagai dasar pemilihan Postgres untuk saat itu*) butuh
+  season — *~~ditunda ke v1.1 / Fase 4, keputusan 2026-09-21; v1 hanya Global,
+  alasan ini dipertahankan sebagai dasar pemilihan Postgres untuk saat itu~~
+  **DIBATALKAN PERMANEN 2026-09-22** — leaderboard Global-only selamanya.
+  Ini TIDAK membatalkan pilihan Postgres: query ranking/aggregation Global
+  per-season masih jauh lebih natural di relational DB; ADR-0006 tetap
+  berlaku, hanya salah satu argumen pendukungnya yang gugur*) butuh
   query semacam "top N per region, sorted by points, dengan tie-break" —
   ini native di SQL (`ORDER BY`, `PARTITION BY`, materialized view), tapi di
   Firestore butuh precompute manual + denormalisasi berlapis, lebih rawan
@@ -218,6 +222,14 @@ pertama untuk jarak jauh dan durasi berkelanjutan panjang:
   temuan di atas (gap-jump straight-line & trailing-duration-after-last-
   fix) murni karakteristik desain yang sudah ada, dicatat di sini sebagai
   data kalibrasi, bukan bug baru — lihat §2.4 untuk implikasi anti-cheat.
+
+**Retensi data `gps_route`/`gpsRoute` (SEC-1, diputuskan 2026-09-22):**
+disimpan tanpa batas waktu selama akun ada — tidak ada penghapusan
+otomatis berbasis waktu, baik di server maupun di Core Data lokal;
+satu-satunya mekanisme penghapusan adalah penghapusan akun. Pernyataan
+lengkap ada di `database-api-spec.md` §1 ERD (field `gps_route`) dan §2.1b
+poin 5 — dicatat sebagai keputusan produk yang disengaja (riwayat lari
+lengkap adalah fitur inti), bukan default yang tidak pernah diperiksa.
 
 ### 2.1c Unit display: kilometer, bukan meter (keputusan)
 

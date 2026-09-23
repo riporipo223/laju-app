@@ -1,8 +1,11 @@
 import SwiftUI
 
-/// The step between sign-in and the location prompt: a username and the three region fields (product-spec.md §4.1 AC2,
-/// decision D1 — region stays mandatory in v1). It is what finally makes the app call `POST /api/profile/complete`.
-/// Region is free text until the cascading picker exists (see `ProfileSetupViewModel`).
+/// The step between sign-in and the location prompt: a username. It is what finally makes the app call
+/// `POST /api/profile/complete`.
+///
+/// The three region fields were REMOVED 2026-09-22 (decision D1 reversed — product-spec.md §4.1): region is no longer
+/// collected, so this step is username-only. Leaderboard access is gated on granted location permission (§4.5 AC5),
+/// which the very next onboarding step already asks for — no profile field is involved.
 struct OnboardingProfileStep: View {
     @StateObject private var model: ProfileSetupViewModel
     let onContinue: () -> Void
@@ -19,19 +22,14 @@ struct OnboardingProfileStep: View {
                     .font(LajuFont.heading)
                     .foregroundStyle(LajuColor.textPrimary)
                     .padding(.top, 48)
-                Text(
-                    "Pilih nama panggilan dan wilayahmu. Wilayah dipakai untuk peringkat regional nanti."
-                )
-                .font(LajuFont.body)
-                .foregroundStyle(LajuColor.textSecondary)
+                Text("Pilih nama panggilan yang tampil di papan peringkat.")
+                    .font(LajuFont.body)
+                    .foregroundStyle(LajuColor.textSecondary)
 
                 field("Nama panggilan", text: $model.username, caps: .never)
                 Text("3–24 karakter: huruf, angka, atau garis bawah.")
                     .font(.footnote)
                     .foregroundStyle(LajuColor.textSecondary)
-                field("Kecamatan", text: $model.kecamatan, caps: .words)
-                field("Kabupaten / Kota", text: $model.kabupatenKota, caps: .words)
-                field("Provinsi", text: $model.provinsi, caps: .words)
 
                 if case let .failed(message) = model.state {
                     Text(message)

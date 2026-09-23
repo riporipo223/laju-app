@@ -5,9 +5,6 @@ import { supabaseAdmin } from "@/lib/supabase";
 interface ProfileCompleteBody {
   username?: unknown;
   display_name?: unknown;
-  region_kecamatan?: unknown;
-  region_kabupaten_kota?: unknown;
-  region_provinsi?: unknown;
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -19,8 +16,10 @@ function isNonEmptyString(value: unknown): value is string {
  * is what CREATES the first `user` row for a newly-signed-up identity, so it cannot require one to already
  * exist (see lib/auth.ts's doc comment on the distinction).
  *
- * Region validation is presence-only (all 3 fields required, non-empty) — matching against a real
- * administrative catalog is explicitly out of scope for v1 (Scope: "Yang TIDAK dikerjakan").
+ * Region validation was removed 2026-09-22 (D1 reversed — product-spec.md §4.1; Local Leaderboard,
+ * the only consumer region data was ever collected for, was cancelled permanently, §4.6). The
+ * `region_*` columns still exist in the table until Task B's migration drops them; this endpoint
+ * simply no longer reads or writes them.
  */
 export async function POST(request: Request) {
   const identity = await requireAuthenticatedIdentity(request, "profile.complete");
@@ -33,18 +32,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { username, display_name, region_kecamatan, region_kabupaten_kota, region_provinsi } = body;
+  const { username, display_name } = body;
 
-  if (
-    !isNonEmptyString(region_kecamatan) ||
-    !isNonEmptyString(region_kabupaten_kota) ||
-    !isNonEmptyString(region_provinsi)
-  ) {
-    return NextResponse.json(
-      { error: "region_kecamatan, region_kabupaten_kota, and region_provinsi are all required" },
-      { status: 400 }
-    );
-  }
+  // Region validation removed 2026-09-22 (D1 reversed, product-spec.md §4.1): region is no longer
+  // collected at all, so there is nothing to validate. Any `region_*` keys a not-yet-updated client
+  // still sends are simply ignored rather than rejected — that tolerance is deliberate, so an older
+  // app build keeps working through the rollout window instead of breaking on a 400.
   if (!isNonEmptyString(username)) {
     return NextResponse.json({ error: "username is required" }, { status: 400 });
   }
@@ -72,9 +65,6 @@ export async function POST(request: Request) {
         auth_user_id: identity.authUserId,
         username,
         display_name: isNonEmptyString(display_name) ? display_name : username,
-        region_kecamatan,
-        region_kabupaten_kota,
-        region_provinsi,
       },
       { onConflict: "auth_user_id" }
     )

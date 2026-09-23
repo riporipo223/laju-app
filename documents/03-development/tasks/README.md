@@ -26,7 +26,7 @@ tracked, not silently treated as done.
 | AC | Requirement (short) | Owning task(s) | Verified by DoD? |
 |---|---|---|---|
 | 4.1.1 | Sign-up in ≤3 steps | T2.3 | **Partial** — T2.3's DoD doesn't assert the step count |
-| 4.1.2 | Region required before first run submits | T2.4, T2.5, T3.1 | Yes |
+| 4.1.2 | ~~Region required before first run submits~~ | ~~T2.4, T2.5, T3.1~~ | **REVERSED 2026-09-22** (D1 reversal, PM sign-off) — region requirement removed entirely, not just deferred; consequence of Local Leaderboard's cancellation (4.6.x). Replacement: 4.5.5 (location-permission gate). Was "Yes"; T2.4/T2.5/T3.1's region-validation code is not yet reworked (Task B/C of the reversal, not started) |
 | 4.1.3 | Login persists across app restarts | T2.3 | Yes |
 | 4.2.1 | ≥60 min background tracking, ≤5% distance drift | T0.8, T0.9 | **Partial** — background survival confirmed (~59min, T0.9), battery drain confirmed (3%/hour, T0.9), and distance accuracy has real evidence (T0.8: ~0.15% deviation vs Strava on a ~660m outdoor run), well within 5%; still Partial only because neither task literally asserts "5%" as a numeric pass/fail gate in its own DoD text — all underlying evidence now supports a Yes |
 | 4.2.2 | Data survives OS force-kill | T0.9 | Yes |
@@ -41,9 +41,10 @@ tracked, not silently treated as done.
 | 4.5.2 | Leaderboard data ≤15 min stale | T2.18, T2.20 | Yes |
 | 4.5.3 | Leaderboard scoped to active season | T2.18 | Yes |
 | 4.5.4 | Freemium sees own **Season League** only; Premium unlocks all leagues on Global ("tier" = Season League, tech-spec.md §2.5; revised 2026-09-21, was "Global & Local penuh") | T3.7a (derivation, v1) + Premium gating (Fase 4, no task yet) | **Deferred with Premium** — not a Must-have v1 AC. T3.7a verifies the league derivation itself (band boundaries, equals leaderboard points, resets per season); the Freemium/Premium *gating* has no owning task until the Premium tier is scheduled |
-| 4.6.1 | Filter by kecamatan/kabupaten-kota/provinsi | T3.4, T3.5 *(phase-4-backlog.md)* | **Deferred to v1.1 / Fase 4 (2026-09-21)** — AC preserved in product-spec.md §4.6, no longer Must-have v1; DoD text kept with the moved tasks (was "Yes") |
-| 4.6.2 | "Belum cukup data" message for low-density regions | T3.3, T3.5 *(phase-4-backlog.md)* | **Deferred to v1.1 / Fase 4** — same as 4.6.1 (was "Yes") |
-| 4.6.3 | Region from profile, not per-run GPS (anti leaderboard-shopping) | T3.2, T3.5 *(phase-4-backlog.md)* | **Deferred to v1.1 / Fase 4** — same as 4.6.1 (was Partial: stated in Scope prose, no DoD item tested it — that gap moves with the task and is still there) |
+| 4.5.5 | Leaderboard visibility gated on granted location permission, not region (added 2026-09-22, replaces region-based access — product-spec.md §4.1 D1 reversal) | No task yet — Task C of the Local Leaderboard/region reversal, not started | **New, not yet implemented** — docs-only as of 2026-09-22 (Task A of the reversal); permission-denied fallback (locked Leaderboard tab + Settings CTA) is flagged in product-spec.md §4.5 as the PM's stated assumption, not yet confirmed in detail |
+| 4.6.1 | ~~Filter by kecamatan/kabupaten-kota/provinsi~~ | ~~T3.4, T3.5~~ *(phase-4-backlog.md, cancelled)* | **CANCELLED PERMANENTLY 2026-09-22** (PM sign-off, reverses the 2026-09-21 "Deferred" status) — scope too broad for the leaderboard logic needed; not a Must-have v1 AC, will never be one. AC struck through in product-spec.md §4.6, kept for historical record (was "Deferred", originally "Yes") |
+| 4.6.2 | ~~"Belum cukup data" message for low-density regions~~ | ~~T3.3, T3.5~~ *(phase-4-backlog.md, cancelled)* | **CANCELLED PERMANENTLY 2026-09-22** — same as 4.6.1 (was "Deferred", originally "Yes") |
+| 4.6.3 | ~~Region from profile, not per-run GPS (anti leaderboard-shopping)~~ | ~~T3.2, T3.5~~ *(phase-4-backlog.md, cancelled)* | **CANCELLED PERMANENTLY 2026-09-22** — same as 4.6.1 (was "Deferred", originally Partial) |
 | 4.7.1 | Rank resets on season transition; lifetime stats don't | T3.7 | Yes |
 | 4.7.2 | Time remaining in active season visible | T3.9 | Yes |
 | 4.7.3 | Final season rank retained, viewable after season ends | T3.8 | Yes |
@@ -56,10 +57,10 @@ tracked, not silently treated as done.
 | 4.10.1 | Per-km splits list with pace | T1.10 | Yes |
 | 4.10.2 | Partial final split clearly marked, not rounded/hidden | T1.10 | Yes |
 | 4.10.3 | Sum of split distances equals total run distance | T1.10 | Yes |
-| 4.11.1 | Sustained no-movement auto-transitions to Pause (time-based, not fix-reactive) | T1.11 | Yes |
-| 4.11.2 | Auto-pause visibly distinct from manual pause in UI | T1.11 | Yes |
-| 4.11.3 | Resume from auto-pause behaves like resume from manual pause (auto-resume out of scope) | T1.11 | Yes |
-| 4.11.4 | Auto-paused time excluded from duration/pace like manual pause | T1.11 | Yes |
+| 4.11.1 | ~~Sustained no-movement auto-transitions to Pause (time-based, not fix-reactive)~~ | T1.11 | **Removed 2026-09-22** — feature cut (PM sign-off), not deferred; was Yes. See product-spec.md §4.11 |
+| 4.11.2 | ~~Auto-pause visibly distinct from manual pause in UI~~ | T1.11 | **Removed 2026-09-22** — same as 4.11.1 |
+| 4.11.3 | ~~Resume from auto-pause behaves like resume from manual pause (auto-resume out of scope)~~ | T1.11 | **Removed 2026-09-22** — same as 4.11.1 |
+| 4.11.4 | ~~Auto-paused time excluded from duration/pace like manual pause~~ | T1.11 | **Removed 2026-09-22** — same as 4.11.1 |
 | 4.12.1 | Total elevation gain/loss shown on Run Summary | T1.12 | Yes |
 | 4.12.2 | Altitude noise doesn't materially inflate gain/loss on a flat route | T1.12 | Yes |
 | 4.13.1 | Audio announces distance+pace once per km crossed | T1.13 | Yes |
@@ -83,8 +84,10 @@ tracked, not silently treated as done.
 
 **4 `Partial` rows remain** (4.1.1, 4.2.1, 4.3.2, 4.4.2) — was 5 until
 2026-09-21, when 4.6.3 left the count with the rest of AC 4.6.x (Local
-Leaderboard deferred to Fase 4, so those three rows are now `Deferred`, not
-`Partial`; 4.5.4 is likewise `Deferred with Premium`). None
+Leaderboard deferred to Fase 4, so those three rows became `Deferred`, not
+`Partial`; **updated 2026-09-22: now `CANCELLED PERMANENTLY`, not
+`Deferred`** — see the rows themselves; 4.5.4 is likewise `Deferred with
+Premium`, unaffected by this change). None
 block the reconciliation feature (4.3.2's Partial is a narrower,
 separate gap — `trust_multiplier` exposure — left after the
 reconciliation redesign closed the flagged/approved/rejected half of
@@ -164,7 +167,7 @@ way for tests to quietly never happen.
 
 Concrete ordering, because this is the phase actually in progress:
 
-1. T1.1-T1.6, T1.9-T1.12, T1.14-T1.16 — **closed**, all DoD items checked. Note that "closed" does not mean every one was fully device-verified: T1.12, T1.15, and T1.16 each carry a note in their own DoD text that a real on-device pass is still desirable (elevation on a real hilly run, the permission banner rendering, the reminder firing after real elapsed time). Those notes were judged non-blocking when the items were checked; the T1.17 dogfood sessions are the natural place to confirm them.
+1. T1.1-T1.6, T1.9-T1.12, T1.14-T1.16 — **closed**, all DoD items checked. Note that "closed" does not mean every one was fully device-verified: T1.12, T1.15, and T1.16 each carry a note in their own DoD text that a real on-device pass is still desirable (elevation on a real hilly run, the permission banner rendering, the reminder firing after real elapsed time). Those notes were judged non-blocking when the items were checked; the T1.17 dogfood sessions are the natural place to confirm them. **T1.11 (within that range) was subsequently REMOVED 2026-09-22** (PM sign-off, feature cut) — it was genuinely closed/verified before removal, but no longer needs T1.17 dogfood exercise since the feature no longer exists; see product-spec.md §4.11.
 2. T1.8 and T1.13 — code complete, one deferred device row each.
 3. **One dogfood session block** covering all three remaining items at once:
    start a run screen-on with the map visible (closes T1.8's battery row),
@@ -183,14 +186,19 @@ T2.3 onward assumes Fase 1 is closed.
 - **Fase 0** — closed. T0.9 gate passed: background survival ~59min, 3%/hour battery, force-kill integrity.
 - **Fase 1** — closed when T1.17's four DoD items pass and zero Fase-1 rows remain open in `deferred-manual-tests.md`.
 - **Fase 2** — two independent gates, both required: T2.13 (anti-cheat demonstrably working, in CI) and T2.21 (release gate — also verifies offline sync, progress screen, and the reconciliation branch). T2.22 account deletion is tracked separately under pre-launch-checklist.md §4 as an App Store gate, not folded into either.
-- **Fase 3** — Season only (Local Leaderboard deferred to Fase 4, 2026-09-21). Closed when T3.10's full season close→open cycle passes with seeded multi-user data on the global leaderboard.
+- **Fase 3** — Season only (Local Leaderboard cancelled permanently 2026-09-22, not deferred — was "deferred to Fase 4" as of 2026-09-21). Closed when T3.10's full season close→open cycle passes with seeded multi-user data on the global leaderboard.
 - **Pre-submission** — `pre-launch-checklist.md` is a separate track from phase gates. It gates App Store submission, not phase completion, and includes items (Privacy Policy, App Privacy label) that no task owns because they are not code.
 
 Open findings from [security-review.md](../../04-quality-security/security-review.md)
 and [code-quality-audit.md](../../04-quality-security/code-quality-audit.md)
 are **not** phase gates and do not block the sequence above. They are
-tracked in their own registers, with SEC-1 and SEC-9 flagged as blocking
-App Store submission and Fase 2 launch respectively.
+tracked in their own registers. All of both registers' original Blockers
+are now resolved: SEC-9 (rate limiting) by T2.20a, 2026-09-21; SEC-1 (GPS
+retention policy) by an explicit decision — indefinite retention — made
+2026-09-22; and `code-quality-audit.md`'s CQ-2 (`RoutePointBuffer.flush`
+could silently destroy a route) fixed and resolved 2026-09-22, verified via
+real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
+191/191 tests passing, PR left open/unmerged for the user's own review).
 
 ## Fase 0 — Setup
 - [x] T0.1 — Init repo scaffolding (monorepo: ios/ + backend/) (lihat [phase-0-setup.md](./phase-0-setup.md))
@@ -215,7 +223,7 @@ App Store submission and Fase 2 launch respectively.
 - [ ] T1.8 — Live map during tracking (MapKit) — **PARTIAL**, DoD 1-3/4 done, item 4 (battery re-measurement) DEFERRED to [deferred-manual-tests.md](../../04-quality-security/deferred-manual-tests.md) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.9 — Static route map (Run Summary & History) — all 3 DoD items verified on physical device + on-device Core Data store (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.10 — Splits per kilometer (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
-- [x] T1.11 — Auto-pause (user-facing) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
+- [x] ~~T1.11 — Auto-pause (user-facing)~~ **REMOVED 2026-09-22** (PM sign-off, feature cut not deferred; code deleted, drift-guard GPS filtering it reused stays intact) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.12 — Elevation gain/loss — both DoD items verified; `ElevationTracker.compute(points:)` called from `RunViewModel.stop()` and `RunRecovery.finalize`, noise-rejection proven against a synthetic noisy-flat fixture (`ElevationTrackerTests`), not only a real hilly route (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [ ] T1.13 — Audio cues — **PARTIAL**, DoD 3/4 done (once-per-km content, global disable toggle, jitter-dedupe inherited from `SplitTracker`); item 4 (screen-locked/backgrounded device verification) outstanding, tracked in [deferred-manual-tests.md](../../04-quality-security/deferred-manual-tests.md) (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
 - [x] T1.14 — Crash/interrupt recovery flow (lihat [phase-1-core-loop-offline.md](./phase-1-core-loop-offline.md))
@@ -259,8 +267,8 @@ App Store submission and Fase 2 launch respectively.
 - [ ] T2.22 (PARTIAL 2026-09-19: 6/8 DoD verified live incl. field-by-field deletion and a fixed profile/complete revive hole; open: real-device local-wipe + fresh sign-up, and e2e before submission; new open item: Sign in with Apple token revocation) — Account deletion (App Store submission blocker) (lihat [phase-2-backend-sync-global-leaderboard.md](./phase-2-backend-sync-global-leaderboard.md))
 
 ## Fase 3 — Season System
-> Renamed 2026-09-21 (was "Local Leaderboard Granular + Season System"): Local Leaderboard cut from MVP v1 → T3.2–T3.5 deferred to Fase 4 below, IDs kept. Numbering gap T3.1 → T3.6 is deliberate.
-- [x] T3.1 — Mobile onboarding UX blocking run-start until region is set — shipped `8002079` (2026-09-21), checklist closed out 2026-09-22 during the T3.10 gate (lihat [phase-3-season.md](./phase-3-season.md))
+> Renamed 2026-09-21 (was "Local Leaderboard Granular + Season System"): Local Leaderboard cut from MVP v1 → T3.2–T3.5 deferred to Fase 4 below, IDs kept. Numbering gap T3.1 → T3.6 is deliberate. **Update 2026-09-22: T3.2–T3.5 CANCELLED PERMANENTLY**, not deferred — see phase-4-backlog.md.
+- [x] T3.1 — Mobile onboarding UX blocking run-start until region is set — shipped `8002079` (2026-09-21), checklist closed out 2026-09-22 during the T3.10 gate. **Superseded 2026-09-22 (same day)**: D1 reversed, region removed entirely — this shipped, signed-off implementation needs reworking to remove the region step and gate Leaderboard visibility on location permission instead (product-spec.md §4.1/§4.5 AC5). Not yet reworked — Task B/C of the reversal (lihat [phase-3-season.md](./phase-3-season.md))
 - [x] T3.6 — Season lifecycle management (upcoming → active → ended) — **DONE 2026-09-21** (`c0de85f`): one-active invariant enforced by a unique index, atomic `transition_season` with rollover, hourly `advance_seasons` that never leaves zero active seasons (overdue with no successor = `overrun`, stays active), CLI for the admin path; 12 real-database tests. **Ops note: Season 1 ends 2026-11-30 and no successor exists — create Season 2 before then** (lihat [phase-3-season.md](./phase-3-season.md))
 - [x] T3.7 — Season-scoped rank reset on transition — depends on T2.18 now, not T3.2 (lihat [phase-3-season.md](./phase-3-season.md))
 - [x] T3.7a — Season League derivation (out-of-band, 2026-09-21; "tier" = Season League, tech-spec.md §2.5; depends on T2.12c, T2.18, T3.7) (lihat [phase-3-season.md](./phase-3-season.md))
@@ -286,9 +294,9 @@ App Store submission and Fase 2 launch respectively.
 - [ ] T4.15 — Social Feed (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 
-### Deferred from MVP v1 — Local Leaderboard (moved from Fase 3, 2026-09-21; IDs unchanged, full detail in phase-4-backlog.md)
-- [ ] T3.2 — Extend precompute job to per-scope aggregation (kecamatan/kabupaten_kota/provinsi) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T3.3 — Insufficient_data handling in precompute job (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T3.4 — Extend GET /api/leaderboard with scope filters (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T3.5 — Local leaderboard screen with scope filter UI (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+### ~~Deferred from MVP v1~~ CANCELLED PERMANENTLY — Local Leaderboard (moved from Fase 3, 2026-09-21; cancelled 2026-09-22; IDs unchanged, full detail in phase-4-backlog.md)
+- [ ] ~~T3.2 — Extend precompute job to per-scope aggregation (kecamatan/kabupaten_kota/provinsi)~~ **CANCELLED PERMANENTLY 2026-09-22** (PM sign-off, not deferred) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] ~~T3.3 — Insufficient_data handling in precompute job~~ **CANCELLED PERMANENTLY 2026-09-22** (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] ~~T3.4 — Extend GET /api/leaderboard with scope filters~~ **CANCELLED PERMANENTLY 2026-09-22** (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] ~~T3.5 — Local leaderboard screen with scope filter UI~~ **CANCELLED PERMANENTLY 2026-09-22** (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 

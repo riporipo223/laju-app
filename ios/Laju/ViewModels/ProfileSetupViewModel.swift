@@ -1,11 +1,11 @@
 import Foundation
 
-/// State and validation of the onboarding profile step (username + the three region fields, AC 4.1.2 / T2.4 / T3.1).
+/// State and validation of the onboarding profile step (username only).
 ///
-/// Region is FREE TEXT for now: a proper catalog (thousands of Indonesian kecamatan, wireframe-spec.md §8's cascading
-/// picker) does not exist yet, and the server validates presence only. The trade-off is dirty data — the same kecamatan
-/// spelled several ways — which the deferred Local Leaderboard will have to normalize before it groups by region. Input
-/// is trimmed here, nothing more. When the picker is built (T3.1) it replaces these three fields.
+/// The three free-text region fields were REMOVED 2026-09-22 (decision D1 reversed — product-spec.md §4.1). Region was
+/// only ever collected to prepare data for the Local Leaderboard, which was cancelled permanently (§4.6), so there is
+/// nothing left to prepare for and the cascading-picker work (wireframe-spec.md §8) is cancelled with it. Leaderboard
+/// access is now gated on granted location permission instead (§4.5 AC5) — a gate that needs no profile field at all.
 @MainActor
 final class ProfileSetupViewModel: ObservableObject {
     enum State: Equatable {
@@ -15,13 +15,9 @@ final class ProfileSetupViewModel: ObservableObject {
     }
 
     @Published var username = ""
-    @Published var kecamatan = ""
-    @Published var kabupatenKota = ""
-    @Published var provinsi = ""
     @Published private(set) var state: State = .idle
 
     static let usernameLength = 3 ... 24
-    static let regionMaxLength = 100
 
     private let apiClient: APIClient
     private let accessToken: @Sendable () async throws -> String
@@ -31,19 +27,11 @@ final class ProfileSetupViewModel: ObservableObject {
         self.accessToken = accessToken
     }
 
-    /// The trimmed, validated request, or `nil` while any field is missing or malformed.
+    /// The trimmed, validated request, or `nil` while the username is missing or malformed.
     var request: CompleteProfileRequest? {
         let name = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        let regions = [kecamatan, kabupatenKota, provinsi].map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-        guard Self.isValidUsername(name),
-              regions.allSatisfy({ !$0.isEmpty && $0.count <= Self.regionMaxLength })
-        else { return nil }
-        return CompleteProfileRequest(
-            username: name,
-            regionKecamatan: regions[0],
-            regionKabupatenKota: regions[1],
-            regionProvinsi: regions[2]
-        )
+        guard Self.isValidUsername(name) else { return nil }
+        return CompleteProfileRequest(username: name)
     }
 
     var canSubmit: Bool {

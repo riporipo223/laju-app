@@ -15,7 +15,7 @@ This log formalizes architecture decisions already made and verified through 7+ 
 | [0009](0009-minimum-distance-gate-anti-farming.md) | Minimum-distance gate on the point formula (anti-farming) | accepted | 2026-09-13 |
 | [0010](0010-cursor-based-status-reconciliation.md) | Cursor-based status reconciliation (server-issued cursor, ASC + has_more) | accepted | 2026-09-13 |
 | [0011](0011-mapkit-over-mapbox.md) | MapKit over Mapbox for live/static route maps | accepted | 2026-09-12 |
-| [0012](0012-periodic-timer-auto-pause-evaluation.md) | Periodic timer for auto-pause evaluation, not reactive-per-fix | accepted | 2026-09-13 |
+| [0012](0012-periodic-timer-auto-pause-evaluation.md) | Periodic timer for auto-pause evaluation, not reactive-per-fix | **superseded** (feature removed 2026-09-22, not replaced by another ADR) | 2026-09-13 |
 | [0013](0013-append-only-ledger-and-precomputed-leaderboard.md) | Append-only PointTransaction ledger with a separately precomputed leaderboard table | accepted | 2026-09-10, extended through Round 7 |
 
 ## Lifecycle
@@ -24,6 +24,6 @@ This log formalizes architecture decisions already made and verified through 7+ 
 proposed → accepted → [deprecated | superseded by ADR-NNNN]
 ```
 
-All 13 ADRs above are `accepted`. ADR-0005 and ADR-0006 carry an explicit qualifier: tech-spec.md §1 flags the backend framework/hosting choice as a strong recommendation and the database choice as reserved for final PM confirmation.
+12 of the 13 ADRs above are `accepted`; ADR-0012 is `superseded` (auto-pause removed by product decision, 2026-09-22 — see the note at the top of that ADR). ADR-0005 and ADR-0006 carry an explicit qualifier: tech-spec.md §1 flags the backend framework/hosting choice as a strong recommendation and the database choice as reserved for final PM confirmation.
 
 The decisions tech-spec.md §1 marks **locked** are the four stack-table rows: mobile client ([ADR-0001](0001-native-swift-swiftui-over-react-native.md)), GPS tracking ([ADR-0003](0003-clocationmanager-direct-over-third-party.md)), local storage ([ADR-0002](0002-core-data-over-swiftdata.md)), and Maps SDK ([ADR-0011](0011-mapkit-over-mapbox.md), locked 2026-09-12). The remaining ADRs record decisions taken outside that table — in tech-spec.md's design sections, in the API spec, or in response to on-device evidence — and are no less binding for it; they simply are not stack choices.

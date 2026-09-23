@@ -70,26 +70,46 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 | Fase 0 — Setup | Closed. |
 | Fase 1 — Core Loop Offline | Code complete. Gate (T1.17) open — needs physical-device dogfood runs only the user can do. |
 | Fase 2 — Backend + Sync + Global Leaderboard | 26/33 closed, 4 PARTIAL. All 4 PARTIAL items blocked on the Apple Developer Program (see §4) or a real device. |
-| **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. |
-| Fase 4 — Backlog (Local Leaderboard, etc.) | **Not scheduled. Do not build without explicit user go-ahead.** |
+| **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. **Superseded same day**: T3.1 (region onboarding) needs reworking — region removed entirely, see §5. |
+| Fase 4 — Backlog (T4.1+, Circle/Club/monetization/etc.) | **Not scheduled. Do not build without explicit user go-ahead.** Local Leaderboard (former T3.2–T3.5) is a separate case: **cancelled permanently 2026-09-22**, not part of this "not scheduled, ask first" backlog — it will never be scheduled, don't offer it as an option. |
 
 ---
 
 ## 3. If the user types "Lanjutkan" right now
 
-**There is no task auto-queued.** Fase 3 just closed; Fase 4 is explicitly "do not build." Do not
-guess and start building something from Fase 4. Instead, tell the user where things stand and ask
-which of the following they want tackled — all of these are genuinely open and each needs either a
-user decision or something only the user can physically do:
+**Update, 2026-09-22**: CQ-2 and SEC-1 below were both acted on this session, and both are now
+**closed**. CQ-2: this project is worked across two machines — this Windows session implements
+against the docs/specs, and CI (not a local Mac run) ended up providing the real evidence, via a PR
+opened specifically to trigger `ci-ios.yml`'s `pull_request` check (a plain push to `luvfr` doesn't
+trigger CI — its `push` trigger is scoped to `main` only). One real bug was caught and fixed on a
+same-day re-read before the first push: the first pass used `assertionFailure` on the failure
+paths, which would have crashed any Debug build (including `xcodebuild test` and T1.17
+dogfooding) — removed in favor of `print`-only logging. A second real bug then surfaced from actual
+CI (not caught locally, since this machine has no SwiftFormat either): a `redundantThrows` lint
+violation in the new test file, fixed and amended into the same commit. Final CI run
+([35717568035](https://github.com/riporipo223/laju-app/actions/runs/35717568035)) passed clean:
+191/191 tests. See CQ-2's status block in `code-quality-audit.md` for full detail.
+[PR #1](https://github.com/riporipo223/laju-app/pull/1) is **open, not merged** — that decision is
+the user's. **SEC-1 is closed** — indefinite retention was chosen (see security-review.md SEC-1's
+decision block, 2026-09-22) and propagated to `database-api-spec.md`, `tech-spec.md`,
+`pre-launch-checklist.md`, and the live Privacy Policy text (`backend/lib/legal.ts`, verified via
+`lib/legal.test.ts` 6/6).
 
-- **CQ-2 (Blocker)** — `RoutePointBuffer.flush` can silently destroy a recorded route. Fix is
-  understood; needs the user's go-ahead to touch it. See `documents/04-quality-security/code-quality-audit.md`.
+Original guidance, kept for what's still open: Fase 3 just closed; Fase 4 is explicitly "do not
+build." Do not guess and start building something from Fase 4. Tell the user where things stand
+and ask which of the following they want tackled — each still needs either a user decision or
+something only the user can physically do:
+
+- ~~**CQ-2 (Blocker, code written, evidence pending)**~~ — **closed 2026-09-22**, see the update above; stale by the time you're reading this bullet.
 - **T1.17 gate** — needs physical-device dogfood sessions (battery-with-map-on-screen, audio cue
   with screen locked, ≥5 runs across ≥3 days). User-only; you cannot do this.
-- **SEC-1 (Blocker)** — no GPS retention policy defined yet. Blocks writing the Privacy Policy,
-  which blocks App Store submission. Needs a product decision from the user.
-- **T2.3/T2.4/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
-- **Fase 4 backlog** (Local Leaderboard: T3.2–T3.5) — only if the user explicitly asks to start it.
+- **T2.3/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
+  (T2.4 dropped from this list — its region-`409`-guard scope is being reworked/removed, not
+  blocked on Apple; see §5's D1 reversal.)
+- ~~**Fase 4 backlog** (Local Leaderboard: T3.2–T3.5) — only if the user explicitly asks to start
+  it.~~ **No longer an option to offer as of 2026-09-22** — Local Leaderboard is cancelled
+  permanently, not part of the "ask first" Fase 4 backlog. Other Fase 4 items (Circle, monetization,
+  etc.) are still "ask first."
 
 Full detail on all of these: `documents/README.md` §1 and §3.
 
@@ -129,16 +149,40 @@ One-liners only. Full rationale: `documents/02-architecture/adr/README.md` (13 A
 - Append-only `point_transaction` ledger + a separately precomputed leaderboard table — never
   derive the leaderboard live from the ledger on read (ADR 0013).
 - **Apple AND Google Sign-In**, not Apple-only — Google added 2026-09-21 as a second provider.
-- **Leaderboard is Global-only in v1.** Local/regional scopes (T3.2–T3.5) are deferred to Fase 4 —
-  moved intact, not cancelled, waiting on user density.
+- **Leaderboard is Global-only, permanently — Local/regional leaderboard (T3.2–T3.5) is
+  CANCELLED, not deferred** — reversed 2026-09-22 (PM sign-off) from the prior "moved intact,
+  waiting on user density" position. Rationale: scope too broad for the leaderboard logic needed,
+  not a density/timing problem. `product-spec.md` §4.6, `tasks/phase-4-backlog.md` T3.2–T3.5 kept
+  struck through as historical record; will never be built.
 - **"Tier" = Season League** — a division computed from points earned *in the current season
   only*, resets every season. It is not Level (lifetime) and not Rank. `tech-spec.md` §2.5.
-- **Region (kecamatan/kabupaten/provinsi) is mandatory in v1 onboarding**, free text for now — no
-  catalog/cascading picker exists yet (that's T3.1's deferred picker work, not built).
+- **Region (kecamatan/kabupaten/provinsi) is REMOVED from v1 entirely** — reverses the prior
+  "mandatory in v1 onboarding" decision (D1, 2026-09-21), reversed 2026-09-22 (PM sign-off) as a
+  direct consequence of the Local Leaderboard cancellation above (region was collected specifically
+  to prepare for that feature). Not replaced with GPS-based text detection — just removed.
+- **Global leaderboard visibility is gated on granted location permission, not on region** —
+  decided 2026-09-22, the replacement mechanism for the region removal above. Boolean/status only
+  (`CLLocationManager` authorization state) — no place name, no reverse geocoding, no admin
+  hierarchy stored anywhere. Reuses the existing run-tracking location-permission infrastructure,
+  no second permission flow. See `product-spec.md` §4.5 AC5 — its permission-denied fallback (a
+  locked Leaderboard tab + Settings CTA) is flagged there as the PM's stated assumption, not yet
+  confirmed in detail.
 - `resolve-flagged-runs` cron runs **daily**, not ≤12h — Vercel Hobby plan limitation, accepted
   (OPS-1). Revisit only if/when the project upgrades to Vercel Pro.
 - `POST /api/runs` p95 latency currently **does not** meet the 1.5s budget (PERF-1) — accepted
   limitation pending a possible Supabase Pro upgrade, not being actively optimized right now.
+- **GPS route retention is indefinite, until account deletion** — decided 2026-09-22 (SEC-1), both
+  server-side (`RUN.gps_route`) and locally (`Run.gpsRoute`). Deliberate: full run history is a
+  core product feature. Revisit only if UU PDP legal review (SEC-12, still open) or a real incident
+  changes the calculus — see `security-review.md` SEC-1 for the alternatives considered.
+- **Auto-pause (T1.11, product-spec.md §4.11) is removed from v1 entirely** — decided 2026-09-22
+  (PM sign-off), not disabled: code deleted (`AutoPauseWatchdog.swift`, `AutoPauseThreshold.swift`,
+  their tests, and the wiring in `RunViewModel.swift`/`RunTrackingView.swift`). The
+  `stationaryAnchor` drift-guard GPS filtering it reused (ADR 0004) was **not** touched — that
+  logic stays, it's core GPS noise filtering used elsewhere. T1.17's gate no longer covers it (now
+  8 items, not 9). Correction while acting on this: the removal request cited T1.10, but T1.10 is
+  actually splits-per-km — auto-pause is T1.11 (verified against tasks/phase-1-core-loop-offline.md
+  before touching any code).
 
 ---
 

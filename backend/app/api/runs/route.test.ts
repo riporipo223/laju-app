@@ -83,13 +83,12 @@ vi.mock("@/lib/gps-geometry", () => ({
 
 const { POST, GET } = await import("./route");
 
+// No region fields since 2026-09-22 (D1 reversed) — `UserRow` no longer carries them, and
+// `requireUser` no longer selects them.
 const completeUser = {
   id: "usr-1",
   auth_user_id: "auth-1",
   deleted_at: null,
-  region_kecamatan: "Cilandak",
-  region_kabupaten_kota: "Jakarta Selatan",
-  region_provinsi: "DKI Jakarta",
 };
 
 const validPoint = { lat: -6.2, lng: 106.8, timestamp: "2026-09-08T06:00:01Z", elevation: 45.2 };
@@ -158,14 +157,22 @@ describe("/api/runs", () => {
     expect(res.status).toBe(422);
   });
 
-  it("returns 409 when the user has no region set", async () => {
-    requireUserMock.mockResolvedValueOnce({
-      user: { ...completeUser, region_kecamatan: null },
-    });
+  // Replaces "returns 409 when the user has no region set" (removed 2026-09-22). The region guard
+  // is gone with D1's reversal and is deliberately NOT replaced by a location-permission check:
+  // the new gate (product-spec.md §4.5 AC5) governs Leaderboard VISIBILITY, not run SUBMISSION.
+  it("accepts a run from a user with no region — the region 409 guard was removed (D1 reversed)", async () => {
+    requireUserMock.mockResolvedValueOnce({ user: completeUser });
+    resolveRunStatusMock.mockReturnValueOnce(validated());
+    trustMultiplierForUserMock.mockResolvedValueOnce(1.0);
+    recomputeAndPersistTrustScoreMock.mockResolvedValueOnce(1.0);
+    recordRunPointsAndUpdateAggregateMock.mockResolvedValueOnce({ totalPoints: 2, currentLevel: 1 });
+    insertChain.single.mockResolvedValueOnce({ data: { id: "run_no_region" }, error: null });
+
     const res = await POST(
-      request({ distance_meters: 100, duration_seconds: 60, gps_route: [validPoint] })
+      request({ distance_meters: 1000, duration_seconds: 360, gps_route: [validPoint] })
     );
-    expect(res.status).toBe(409);
+
+    expect(res.status).not.toBe(409);
   });
 
   it("creates a validated run using resolveRunStatus's decision, full points, trust_multiplier applied", async () => {

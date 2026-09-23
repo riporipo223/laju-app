@@ -46,18 +46,41 @@ describe("POST /api/profile/complete", () => {
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
-  it("rejects with 400 if any region field is missing", async () => {
+  // Replaces "rejects with 400 if any region field is missing" (removed 2026-09-22): D1 was
+  // reversed and region is no longer collected, so its absence must NOT be an error any more.
+  it("accepts a profile with no region fields at all — region was removed (D1 reversed)", async () => {
     requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+    upsertChain.single.mockResolvedValueOnce({
+      data: { id: "usr-1", username: "budi_run", total_points: 0, current_level: 1 },
+      error: null,
+    });
+    const res = await POST(request({ username: "budi_run" }));
+    expect(res.status).toBe(201);
+    expect(upsertMock).toHaveBeenCalled();
+  });
+
+  // The columns still physically exist until Task B's migration, and an older app build may still
+  // send them. They must be ignored, not rejected and not written — that tolerance is what keeps a
+  // not-yet-updated client working through the rollout window.
+  it("ignores region_* keys a stale client still sends, and does not persist them", async () => {
+    requireAuthenticatedIdentityMock.mockResolvedValueOnce({ authUserId: "auth-1" });
+    upsertChain.single.mockResolvedValueOnce({
+      data: { id: "usr-1", username: "budi_run", total_points: 0, current_level: 1 },
+      error: null,
+    });
     const res = await POST(
       request({
         username: "budi_run",
         region_kecamatan: "Cilandak",
-        region_kabupaten_kota: "",
+        region_kabupaten_kota: "Jakarta Selatan",
         region_provinsi: "DKI Jakarta",
       })
     );
-    expect(res.status).toBe(400);
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(res.status).toBe(201);
+    const persisted = upsertMock.mock.calls.at(0)?.at(0) as unknown as Record<string, unknown>;
+    expect(persisted).not.toHaveProperty("region_kecamatan");
+    expect(persisted).not.toHaveProperty("region_kabupaten_kota");
+    expect(persisted).not.toHaveProperty("region_provinsi");
   });
 
   it("rejects with 400 if username is missing", async () => {

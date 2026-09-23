@@ -45,8 +45,8 @@ untuk "leveling up". Ini kategori berbeda, bukan sekadar Strava-clone.
 **"Lari yang berasa seperti main game, bukan sekadar logging."**
 
 Gamefikasi lewat: Point System, Rank, Level, Season, Leaderboard Global
-(Leaderboard Local ditunda ke v1.1, keputusan 2026-09-21 — lihat
-product-spec.md §4.6). Beda dari kompetitor yang gamefikasinya cuma badge
+(~~Leaderboard Local ditunda ke v1.1, keputusan 2026-09-21~~ **Leaderboard
+Local dibatalkan permanen 2026-09-22** — lihat product-spec.md §4.6). Beda dari kompetitor yang gamefikasinya cuma badge
 kosmetik (Nike Run Club) atau sosial-driven (Strava kudos) — Laju punya
 sistem progres persisten dengan konsekuensi nyata (naik/turun rank per
 season; dengan user awal yang masih sedikit, leaderboard Global sendiri
@@ -60,9 +60,12 @@ sudah terasa dekat secara geografis).
 - Point system dengan formula transparan (lihat catatan formula di bawah)
 - Rank & Level (progression permanen + reset per season untuk kompetisi adil)
 - Global leaderboard
-- ~~Local leaderboard~~ — **ditunda ke v1.1 / Fase 4 (keputusan 2026-09-21),
-  bukan bagian MVP.** Butuh kepadatan user tinggi supaya berguna.
-  Spesifikasinya disimpan: granularity kecamatan → kabupaten/kota →
+- ~~Local leaderboard~~ — **dibatalkan permanen 2026-09-22 (PM sign-off),
+  bukan bagian MVP, tidak akan pernah dikerjakan.** ~~(Sebelumnya: ditunda
+  ke v1.1 / Fase 4, keputusan 2026-09-21, butuh kepadatan user tinggi
+  supaya berguna.)~~ Alasan pembatalan: scope terlalu luas untuk logic
+  leaderboard yang dibutuhkan. Spesifikasi lama disimpan sebagai catatan
+  sejarah saja: granularity kecamatan → kabupaten/kota →
   provinsi, mengikuti hierarki administratif Indonesia ("daerah" dan
   campuran kabupaten/kota sebagai tier terpisah dihapus, lihat
   database-api-spec.md)
@@ -135,10 +138,13 @@ proposition.
 ## 9. Unfair Advantage
 Banyak user = banyak data. Data ini membuat:
 - Leaderboard lebih akurat (distribusi tier yang representatif)
-- Kompetisi lokal lebih relevan (cukup data untuk leaderboard granular per
+- ~~Kompetisi lokal lebih relevan (cukup data untuk leaderboard granular per
   kecamatan/kabupaten-kota, bukan cuma nasional yang terasa jauh dari user
   biasa) — inilah yang membuat Local Leaderboard layak dikerjakan
-  *setelah* basis user besar (ditunda ke v1.1, 2026-09-21)
+  *setelah* basis user besar (ditunda ke v1.1, 2026-09-21)~~ **Tidak lagi
+  berlaku (Local Leaderboard dibatalkan permanen 2026-09-22, lihat
+  product-spec.md §4.6) — poin ini dihapus dari strategi Unfair Advantage,
+  bukan sekadar ditunda menunggu basis user besar.**
 - Sistem season lebih adil (matchmaking/tier placement berbasis histori
   performa aktual, bukan asumsi)
 - Matchmaking berdasarkan performa nyata

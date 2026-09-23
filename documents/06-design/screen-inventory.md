@@ -57,12 +57,12 @@ Design can and should run ahead of these — none require the code to exist firs
 | # | Screen | Owning task | Phase | Notes |
 |---|---|---|---|---|
 | 9 | Sign Up / Sign In (functional) | T2.3 | 2 | Replaces screen 4's placeholder. **Two buttons since 2026-09-21: Sign in with Apple + Sign in with Google** (Apple stays — Guideline 4.8; see [pre-launch-checklist.md](../04-quality-security/pre-launch-checklist.md) §5). Google uses the design system's secondary button, not Google's default pill |
-| 10 | Profile completion — region picker | T2.4, T3.1 | 2/3 | Blocks first run submit (AC 4.1.2). Three-level cascade: kecamatan → kabupaten-kota → provinsi. Region no longer feeds any v1 screen (Local Leaderboard deferred, 2026-09-21) — kept, and still mandatory, because data is collected now for later (D1 final, 2026-09-21, product-spec.md §4.1) |
+| 10 | ~~Profile completion — region picker~~ **REMOVED 2026-09-22** | ~~T2.4, T3.1~~ (rework: Task C) | — | ~~Blocks first run submit (AC 4.1.2). Three-level cascade: kecamatan → kabupaten-kota → provinsi. Region no longer feeds any v1 screen (Local Leaderboard deferred, 2026-09-21) — kept, and still mandatory, because data is collected now for later (D1 final, 2026-09-21, product-spec.md §4.1)~~ **D1 reversed 2026-09-22: region removed entirely from onboarding and the schema. This screen's region portion is deleted, not redesigned; the picker is never built. Replacement gate for leaderboard access is location permission (product-spec.md §4.5 AC5), which needs no new screen — it reuses the existing permission banner pattern (screen-level design TBD in Task C)** |
 | 11 | Global Leaderboard | T2.20 | 2 | Top N + own rank (AC 4.5.1). **The only leaderboard in v1.** League view state ("liga sendiri" vs "semua liga", Freemium/Premium, AC 4.5.4; "tier" = Season League, tech-spec.md §2.5) is a future state — Premium tier not built, not designed yet. Showing the user's *own* league (T3.7a) can live on Season Info (13) |
-| 12 | ~~Local Leaderboard + scope filter~~ **DEFERRED to v1.1 / Fase 4** | T3.5 *(phase-4-backlog.md)* | — | Cut from MVP v1 (2026-09-21, product decision — needs high user density). Kept as reference: three scopes, plus the "belum cukup data" state (AC 4.6.2). No design work needed now |
+| 12 | ~~Local Leaderboard + scope filter~~ **CANCELLED PERMANENTLY 2026-09-22** (was "DEFERRED to v1.1 / Fase 4") | T3.5 *(phase-4-backlog.md)* | — | Cut from MVP v1 (2026-09-21, product decision — needs high user density). Kept as reference: three scopes, plus the "belum cukup data" state (AC 4.6.2). No design work needed now |
 | 13 | Season Info + countdown | T3.9 | 3 | Time remaining (AC 4.7.2), final rank history (AC 4.7.3) |
 | 14 | Account Deletion flow | T2.22 | 2 | Two screens: entry + explicit confirmation (AC 4.17.1-4.17.2). App Store submission blocker |
-| 12a | ~~Leaderboard — insufficient data~~ **DEFERRED** with screen 12 | T3.3, T3.5 *(phase-4-backlog.md)* | — | **State only.** Belongs to the Local Leaderboard; not needed in v1 (Global's `insufficient_data` is always `false`) |
+| 12a | ~~Leaderboard — insufficient data~~ **CANCELLED PERMANENTLY 2026-09-22** with screen 12 (was "DEFERRED") | T3.3, T3.5 *(phase-4-backlog.md)* | — | **State only.** Belongs to the Local Leaderboard; not needed in v1 (Global's `insufficient_data` is always `false`) |
 | 6d | Run Summary — flagged / "sedang diverifikasi" | T2.14b | 2 | **State only** — uses `warning` amber, the token reserved for exactly this |
 | 6e | Run Summary — resolution changed after the fact | T2.14b, T2.14d | 2 | **State only** — points may go *down*; this is expected, not an error |
 
@@ -91,7 +91,7 @@ Profile / Level (8)  ◄────────  level-up treatment
    │  streak grid                shared with 6a
    │
    ▼
-Leaderboard global (11)  ─ ─ ─ ►  [Leaderboard local (12) — DEFERRED to v1.1]
+Leaderboard global (11)  ─ ─ ─ ►  [Leaderboard local (12) — CANCELLED PERMANENTLY 2026-09-22]
    │  row + rank + own-rank          (would add scope filter chips
    │  pinned row                     + insufficient-data state; not in v1)
    ▼
@@ -104,7 +104,7 @@ Reading the graph:
 - **Run Tracking (5) is the base identity screen.** Everything downstream inherits its hero-number treatment and stat-card system. Restyle it first; it is the reference the others are judged against.
 - **Run Summary (6) is the highest-stakes screen in the product.** It is where the core reward moment lands (product-spec §1's whole hypothesis), and it carries the most states — level-up, confetti, flagged, streak prompt, empty map. Budget the most design time here.
 - **Run History (7) and Profile (8) are card-system consumers.** Once 5 and 6 are settled, these are largely composition.
-- **Leaderboard (11) introduces one genuinely new pattern** — a dense repeating row with rank, name, points, and a pinned "your rank" row. Nothing earlier in the product has this. Design 11 now; 12 (11 plus filter chips) is deferred to v1.1 with the Local Leaderboard.
+- **Leaderboard (11) introduces one genuinely new pattern** — a dense repeating row with rank, name, points, and a pinned "your rank" row. Nothing earlier in the product has this. Design 11 now; 12 (11 plus filter chips) is CANCELLED PERMANENTLY (2026-09-22) with the Local Leaderboard — never to be designed.
 - **Season Info (13) reuses the leaderboard row** for historical rank, so it should come last.
 
 ### Cross-cutting: navigation shell — **decided and built 2026-09-17**

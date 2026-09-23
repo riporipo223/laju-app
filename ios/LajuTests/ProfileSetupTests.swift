@@ -13,24 +13,20 @@ final class ProfileSetupTests: XCTestCase {
 
     private func fillValid(_ model: ProfileSetupViewModel) {
         model.username = "  andi_r9 "
-        model.kecamatan = " Kebayoran Baru"
-        model.kabupatenKota = "Jakarta Selatan "
-        model.provinsi = "DKI Jakarta"
     }
 
     // MARK: - Validation
 
-    func testNothingCanBeSubmittedUntilEveryFieldIsFilled() {
+    /// Region fields were removed 2026-09-22 (D1 reversed) — username is now the only thing gating submit.
+    func testNothingCanBeSubmittedUntilTheUsernameIsValid() {
         let model = makeModel()
         XCTAssertNil(model.request)
         XCTAssertFalse(model.canSubmit)
-        model.username = "andi_r9"
-        model.kecamatan = "Kebayoran Baru"
-        model.kabupatenKota = "Jakarta Selatan"
-        XCTAssertNil(model.request, "provinsi is still empty")
-        model.provinsi = "   "
+        model.username = "   "
         XCTAssertNil(model.request, "whitespace is not a value")
-        model.provinsi = "DKI Jakarta"
+        model.username = "ab"
+        XCTAssertNil(model.request, "too short")
+        model.username = "andi_r9"
         XCTAssertTrue(model.canSubmit)
     }
 
@@ -50,8 +46,6 @@ final class ProfileSetupTests: XCTestCase {
         fillValid(model)
         let request = try XCTUnwrap(model.request)
         XCTAssertEqual(request.username, "andi_r9")
-        XCTAssertEqual(request.regionKecamatan, "Kebayoran Baru")
-        XCTAssertEqual(request.regionKabupatenKota, "Jakarta Selatan")
     }
 
     // MARK: - What is sent
@@ -74,12 +68,10 @@ final class ProfileSetupTests: XCTestCase {
         XCTAssertEqual(request.url?.path, "/api/profile/complete")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-jwt")
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(seen.body)) as? [String: String])
-        XCTAssertEqual(body, [
-            "username": "andi_r9",
-            "region_kecamatan": "Kebayoran Baru",
-            "region_kabupaten_kota": "Jakarta Selatan",
-            "region_provinsi": "DKI Jakarta"
-        ])
+        // Region keys must be ABSENT, not empty — the client stopped collecting them entirely
+        // (2026-09-22, D1 reversed). Asserting the whole dictionary keeps this honest: an accidental
+        // re-introduction of any region key fails here.
+        XCTAssertEqual(body, ["username": "andi_r9"])
     }
 
     func testSubmitWithAnIncompleteFormSendsNothing() async {

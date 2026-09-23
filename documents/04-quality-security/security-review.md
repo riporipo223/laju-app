@@ -26,7 +26,7 @@ Findings are numbered `SEC-n`. Items marked **VERIFIED COVERED** are not finding
 
 The most sensitive data this app handles. A `gps_route` is a precise, timestamped trace of where a real person physically was — its first and last points are, for most users, their home address.
 
-### SEC-1 — No retention policy exists for GPS route data, anywhere — **Blocker**
+### SEC-1 — No retention policy exists for GPS route data, anywhere — ~~**Blocker**~~ **DECIDED 2026-09-22: indefinite retention**
 
 A grep across the entire document set for retention language (`retention`, `berapa lama`, `disimpan selama`, automatic deletion) returns **zero** matches relating to run or location data. The only deletion path specified for `gps_route` is user-initiated account deletion (`database-api-spec.md` §2.1b point 5, which nulls `RUN.gps_route` server-side).
 
@@ -39,6 +39,16 @@ Consequences of the gap, concretely:
 This is a decision, not a bug: the resolution can legitimately be "retained indefinitely, because run history is the product." But that must be a stated, deliberate position that the Privacy Policy reflects, not an unexamined default.
 
 **Should be owned by**: a new item in `pre-launch-checklist.md` §1, plus a retention statement in `tech-spec.md` alongside the existing data model.
+
+> **Decision made, 2026-09-22.** Presented to the user as four options — indefinite (formalize status quo), a fixed window with the route nulled after N months, a tiered scheme (full-fidelity short-term, simplified/downsampled long-term), and a user-controlled per-account setting — with the concrete tradeoffs of each (engineering cost, product impact on run-history/map-thumbnail features, and the SEC-8 coupling: any window caps how far back anti-cheat can re-review a flagged run). **Chosen: indefinite, formalized as a deliberate product decision**, both server-side (`RUN.gps_route`) and locally (`Run.gpsRoute` in Core Data) — full run history, including old routes, is treated as a core product feature, not incidental data.
+>
+> No purge job or schema change was needed since the decision keeps current behavior; what changed is that the behavior is now a stated position instead of an accidental default:
+> - `database-api-spec.md` §1 ERD's `gps_route` field comment and §2.1b point 5 now state the policy explicitly.
+> - `tech-spec.md` §2.1b gained a one-line cross-reference (the "data model" home this finding originally pointed at is actually the ERD in `database-api-spec.md`, not `tech-spec.md` — corrected here).
+> - `backend/lib/legal.ts`'s retention section (§7 "Berapa lama data disimpan" / the English summary) was reworded from "we haven't implemented automatic deletion yet" (implying a pending change) to "we deliberately do not apply automatic time-based deletion" (a stated position) — `PRIVACY_LAST_UPDATED` bumped to 2026-09-22 accordingly. `backend/lib/legal.test.ts` updated to match and still asserts no specific retention period is invented (true — the policy is genuinely open-ended). Verified: `backend` suite's `lib/legal.test.ts` 6/6 passing, `tsc --noEmit` clean.
+> - `pre-launch-checklist.md` §1 updated — retention is no longer one of the Privacy Policy's two open dependencies (only the "13+" age line remains open).
+>
+> **Residual, explicitly accepted**: this is the weakest-privacy-posture option of the four presented — the full-fidelity location corpus grows without bound for as long as an account exists, which is the worst case if the database is ever breached (compounding SEC-2's file-protection gap), and is the hardest of the four positions to defend under UU PDP's data-minimization framing (SEC-12) if that framing is ever tested. Revisit if UU PDP legal review (SEC-12, still open) or a future incident changes the calculus — the three alternatives considered above remain valid options, just not chosen now.
 
 ### SEC-2 — Core Data store has no specified file-protection class — **Warning**
 
@@ -54,7 +64,7 @@ The trade-off is real and is the reason this is a Warning rather than a Blocker:
 
 `lean-canvas.md` §9 states the strategic position directly: "Banyak user = banyak data," supporting more accurate leaderboards, more relevant local competition, fairer season tier placement, and performance-based matchmaking.
 
-Checked against the technical specs: there is **no** anonymization design, no aggregation pipeline spec, no k-anonymity or minimum-cohort threshold, and no separation between identified operational data and de-identified analytical data anywhere in `tech-spec.md`, `database-api-spec.md`, or `architecture.md`. The nearest thing that exists is `LEADERBOARD_SCOPE.insufficient_data` — a minimum-user-count threshold below which a scope is not shown. That is a *product* guard (a leaderboard of two people is not interesting), but it incidentally functions as a small-cohort privacy guard, and it is the only mechanism in the entire system that does.
+Checked against the technical specs: there is **no** anonymization design, no aggregation pipeline spec, no k-anonymity or minimum-cohort threshold, and no separation between identified operational data and de-identified analytical data anywhere in `tech-spec.md`, `database-api-spec.md`, or `architecture.md`. The nearest thing that exists is `LEADERBOARD_SCOPE.insufficient_data` — a minimum-user-count threshold below which a scope is not shown. That is a *product* guard (a leaderboard of two people is not interesting), but it incidentally functions as a small-cohort privacy guard, and it is the only mechanism in the entire system that does. **Update 2026-09-22: that last mechanism is now gone.** The Local Leaderboard was cancelled permanently and the regional scopes with it (product-spec.md §4.6), so `insufficient_data` is permanently `false` for `global`, the only remaining scope — no small cohort is ever computed, so the incidental guard has nothing to guard. This does not create a new exposure today (no aggregate feature ships), but it removes the one accidental mitigation this finding could previously point to, which matters if an aggregate-analytics feature is ever scoped.
 
 So, to answer the question as posed: **the security of the aggregate-insight strategy is not designed. It is currently only an idea.**
 
@@ -280,7 +290,7 @@ With Google added beside Apple (product-spec.md §4.1 AC1), one person can hold 
 
 | ID | Area | Finding | Severity | Status |
 |---|---|---|---|---|
-| SEC-1 | Location | No retention policy for GPS route data anywhere; blocks Privacy Policy, which blocks submission | **Blocker** | New |
+| SEC-1 | Location | No retention policy for GPS route data anywhere; blocks Privacy Policy, which blocks submission | ~~Blocker~~ **DECIDED 2026-09-22: indefinite retention** | Closed |
 | SEC-9 | API | No rate limiting specified on any endpoint; spec explicitly notes the only throttle is client-side | ~~Blocker~~ **RESOLVED 2026-09-21** (T2.20a) | Closed |
 | SEC-2 | Location | Core Data store has no specified `NSFileProtection` class | **Warning** | New |
 | SEC-3 | Location | "Unfair Advantage" aggregate-data strategy has no anonymization design — idea only | **Warning** | New |
@@ -299,9 +309,9 @@ With Google added beside Apple (product-spec.md §4.1 AC1), one person can hold 
 | — | API | Input validation, IDOR-by-construction scoping, and service-role key handling all well specified | — | **Verified covered** |
 | — | Compliance | Guideline 5.1.1(v) covered end-to-end from Apple requirement to task DoD | — | **Verified covered** |
 
-**Two Blockers, seven Warnings, five Notes, three areas verified covered.**
+**Zero open Blockers** (both resolved — SEC-9 by T2.20a 2026-09-21, SEC-1 by the retention decision 2026-09-22), seven Warnings, five Notes, three areas verified covered.
 
-Both Blockers share a shape worth naming: neither is a mistake in anything that was decided. Both are decisions that were never made, and where **the default that results from not deciding is the unsafe one** — indefinite retention, and unlimited request rate. The specification set is notably strong wherever a decision was actually taken; its gaps are where the question was never posed.
+Both original Blockers shared a shape worth naming, even now that they're closed: neither was a mistake in anything that was decided. Both were decisions that were never made, and where **the default that results from not deciding is the unsafe one** — indefinite retention, and unlimited request rate. The specification set is notably strong wherever a decision was actually taken; its gaps were where the question was never posed. SEC-9 was closed by building the missing control; SEC-1 was closed by making the missing decision explicitly (and choosing, deliberately, to keep the default behavior) — both are legitimate ways to close a "nobody decided" Blocker, and they are not the same kind of closure.
 
 ---
 

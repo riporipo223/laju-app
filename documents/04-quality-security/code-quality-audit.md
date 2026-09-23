@@ -74,7 +74,7 @@ Link 2 is declared in code. **Link 1 is not written down anywhere, and is not en
 
 The fix is close to free, since everything already runs on main: annotate `RunViewModel` and `LocationTrackingService` `@MainActor`. One wrinkle is worth stating so the fix is not mis-scoped — `CLLocationManagerDelegate` is a non-isolated protocol, so under Swift 6.0 a `@MainActor` `LocationTrackingService` must mark its delegate methods `nonisolated` and enter main-actor context explicitly via `MainActor.assumeIsolated { }`. That is the correct outcome rather than a workaround: it converts today's invisible assumption into a documented, runtime-checked one. §6's toolchain note describes an option that removes the wrinkle entirely.
 
-### CQ-2 — `RoutePointBuffer.flush` can silently destroy an entire recorded route, by two independent paths — **Blocker**
+### CQ-2 — `RoutePointBuffer.flush` can silently destroy an entire recorded route, by two independent paths — ~~**Blocker**~~ **RESOLVED 2026-09-22**
 
 `ios/Laju/ViewModels/RoutePointBuffer.swift:24-30`:
 
@@ -97,6 +97,17 @@ This is the single write path for `Run.gpsRoute`, and it is the mechanism T1.14'
 Rated **Blocker** on path (a), which requires no unusual precondition and defeats the exact guarantee T1.14 was built to provide: that a run survives a force-kill. A durability mechanism whose failure mode is silent, total, and indistinguishable from success is the wrong shape regardless of how often it fires.
 
 Recording clearly, per the audit-only instruction: **no fix was applied.** The shape of a fix is straightforward — make `flush` fail loudly rather than lossily, distinguish "empty" from "unreadable", and never overwrite a non-`nil` `gpsRoute` with `nil` — but that is a code change awaiting a decision, not part of this audit.
+
+**Status update, 2026-09-22 — fix implemented, verification pending.** With the user's go-ahead, `RoutePointBuffer.flush` (`ios/Laju/ViewModels/RoutePointBuffer.swift`) and `GPSPoint.decodeRoute`/new `decodeRouteStrict` (`ios/Laju/Models/GPSPoint.swift`) were changed exactly along the shape above: a new `RouteDecodeResult` (`.noRoute` / `.decoded` / `.corrupted`) replaces the old `?? []` collapse so `flush` can tell "empty run" apart from "undecodable bytes," and `flush` now returns a `RouteFlushResult` — an undecodable existing route or an encode failure (e.g. a non-finite `Double`) aborts the flush with a loud `print` instead of silently truncating or nil-ing `run.gpsRoute`, and `pending` is only cleared once the merge is actually persisted. Five new regression tests were added in `ios/LajuTests/RoutePointBufferTests.swift` covering both silent-loss paths plus the normal/no-op/append-across-flushes cases.
+
+Caught and fixed on a second read-through, same day, before handoff: the first version of this fix used `assertionFailure` (in addition to `print`) on both failure paths, on the theory that "fail loudly" meant crash-loud. That was wrong and has been removed — `assertionFailure` traps in Debug builds, which is what `xcodebuild test` and every dogfood build (T1.17) run under. It would have turned the exact scenario this fix exists to survive (a corrupted route, an unencodable point) into an app crash mid-run instead of a logged, data-preserving no-op — a worse failure mode than the one being fixed, and one that would have shown up as a crashing test rather than a clean signal. `print`-only logging is now the loud-but-non-fatal signal both production call sites and the tests rely on.
+
+**Closed 2026-09-22 — real evidence obtained via CI, not "should work."** PR opened from `luvfr` → `main` specifically to trigger `ci-ios.yml`'s `pull_request` check (a plain push to `luvfr` doesn't trigger CI — its `push` trigger is scoped to `main` only): [riporipo223/laju-app#1](https://github.com/riporipo223/laju-app/pull/1). First run ([35717238185](https://github.com/riporipo223/laju-app/actions/runs/35717238185)) genuinely failed — a real SwiftFormat `redundantThrows` violation in the new test file, caught and fixed (one-line, `RoutePointBufferTests.swift:34`, HANDOFF §1's mechanical-fix exception), amended into the same commit, force-pushed. Second run ([35717568035](https://github.com/riporipo223/laju-app/actions/runs/35717568035), commit `cecba05`) passed clean: SwiftLint 0 violations, SwiftFormat clean, and **`Build + test` actually ran** — `Executed 191 tests, with 0 failures (0 unexpected)` / `** TEST SUCCEEDED **`. The 5 CQ-2 regression tests specifically ran and passed, with log output confirming the real defensive behavior fired (not just "didn't crash"):
+```
+RoutePointBuffer.flush: failed to encode route for run ... — keeping the previously-persisted gpsRoute untouched; 1 pending point(s) kept for retry: invalidValue(nan, ...)
+RoutePointBuffer.flush: existing gpsRoute for run ... could not be decoded — refusing to overwrite it; 1 pending point(s) kept for retry
+```
+PR #1 stays **open, not merged** — this session only used it to get CI signal, per the user's explicit instruction; the merge decision is the user's own.
 
 ### CQ-3 — `@unchecked Sendable` on `StreakReminderScheduler` extends a safety promise to types it does not control — **Warning**
 
@@ -190,13 +201,15 @@ Recorded explicitly so a future reviewer applying a generic SwiftUI checklist do
 
 Harmless in practice: onboarding's instance exists only for the permission step and is released when onboarding completes, and the two are never active simultaneously in a way that affects tracking. Recorded because authorization state is consequently tracked in two places, and because the pattern does not extend — a third surface needing location (a settings screen re-checking permission, say) would make the duplication a real source of divergent `authorizationStatus` readings. A single shared instance injected through the environment would be the natural shape if that happens.
 
+**Update, 2026-09-23 — the "does not extend" prediction landed.** Task C of the Local Leaderboard/region reversal (product-spec.md §4.5 AC5) added a third surface: `LeaderboardView` now owns `LocationAuthorizationObserver` (`ios/Laju/ViewModels/LocationAuthorizationObserver.swift`), its own thin `CLLocationManager` wrapper reading only `authorizationStatus`. That is **three** independent `CLLocationManager`-adjacent instances in the process now (`RunTrackingView`'s and `OnboardingContainerView`'s `LocationTrackingService`, plus `LeaderboardView`'s `LocationAuthorizationObserver`). Not fixed as part of that change — deliberately out of scope, flagged in that commit's own message and here for tracking, not drift. Still a Note, not upgraded to Warning: the three cannot disagree (all read the same OS-level authorization state), and `LocationAuthorizationObserver` never calls `startUpdatingLocation`, so it does not introduce the "two tracking sessions" risk CQ-1/CQ-9's original framing was about — it only makes the "single shared instance injected through the environment" fix this entry already recommended cover one more consumer.
+
 ---
 
 ## 5. Findings summary
 
 | ID | Area | Finding | Severity |
 |---|---|---|---|
-| CQ-2 | Persistence | `RoutePointBuffer.flush` can silently destroy an entire route — decode-failure truncation and encode-failure nil | **Blocker** |
+| CQ-2 | Persistence | `RoutePointBuffer.flush` can silently destroy an entire route — decode-failure truncation and encode-failure nil | ~~**Blocker**~~ **RESOLVED 2026-09-22** (PR #1, CI run [35717568035](https://github.com/riporipo223/laju-app/actions/runs/35717568035), 191/191 tests) |
 | CQ-1 | Concurrency | Main-thread safety assumed but never declared; no `@MainActor` anywhere in the tracking path | **Warning** |
 | CQ-3 | Concurrency | `@unchecked Sendable` on `StreakReminderScheduler` covers an unconstrained protocol; test spies hold mutable state | **Warning** |
 | CQ-7 | Performance | Full-route decode/re-encode per flush is O(n²) main-thread work; ~200KB synchronous writes late in a 24km run | **Warning** |
@@ -207,9 +220,9 @@ Harmless in practice: onboarding's instance exists only for the permission step 
 | CQ-9 | SwiftUI | Two `LocationTrackingService` instances can coexist; harmless now, does not extend | **Note** |
 | — | Build | **Swift 6 language mode, complete strict concurrency, warnings-as-errors — builds clean** | **Verified sound** |
 
-**One Blocker, three Warnings, five Notes.**
+**Zero open Blockers** (CQ-2 resolved 2026-09-22), three Warnings, five Notes.
 
-No code was changed. CQ-2 is the only finding that warrants action before further Fase 1 work; the rest are safely deferrable, and CQ-1 is best done together with the toolchain question below.
+No code was changed as part of the original audit; CQ-2 was fixed in a later session (2026-09-22, see its status block above) with real CI evidence. The rest are safely deferrable, and CQ-1 is best done together with the toolchain question below.
 
 ### A note on what the Blocker is not
 

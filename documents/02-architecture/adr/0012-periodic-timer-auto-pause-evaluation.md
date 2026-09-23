@@ -1,5 +1,10 @@
 # ADR-0012: Periodic timer for auto-pause evaluation, not reactive-per-fix
 
+> **Status: Superseded 2026-09-22** — auto-pause feature removed by product decision, see T1.11's
+> removal note in phase-1-core-loop-offline.md. Kept below intact as a historical record of the
+> decision, not deleted — the `stationaryAnchor` mechanism (ADR-0004) this ADR built the timer on
+> top of was itself unaffected by the removal; only the auto-pause trigger built here is gone.
+
 **Date**: 2026-09-13 (Round 7 finding, tech-spec.md Auto-pause section)
 **Status**: accepted
 **Deciders**: Project lead, found via real on-device incident

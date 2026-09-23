@@ -18,9 +18,14 @@ also require an engineering task to exist first (cross-referenced below).
       retention period). **It is a developer draft, not legal advice: it still needs the
       owner's review (ideally by someone who knows UU PDP No. 27/2022) before submission**,
       and the URL should move to a domain the project owns (a `vercel.app` address is fine
-      for Google's consent screen but is a poor long-term App Store URL). Two of its statements
-      depend on decisions still open: retention (SEC-1 — the policy says honestly there is
-      no automatic deletion yet) and "13+" as the age line.
+      for Google's consent screen but is a poor long-term App Store URL). One statement still
+      depends on a decision left open: "13+" as the age line. **Retention (SEC-1) is now
+      decided, 2026-09-22: indefinite, until account deletion — a deliberate product choice
+      (full route history is a core feature), not an unexamined default.** The policy's
+      retention section (`backend/lib/legal.ts`) was reworded from "we haven't implemented
+      automatic deletion yet" to state that choice affirmatively; see
+      `database-api-spec.md` §1 ERD (`gps_route`) and §2.1b point 5, and
+      `security-review.md` SEC-1 for the full rationale and options considered.
 - [ ] Covers every data category actually collected: precise location
       ("Always" usage, tech-spec.md §1), and any HealthKit data if/when
       that integration ships (development-plan.md Fase 4, T4.13 — not v1,

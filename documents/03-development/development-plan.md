@@ -54,14 +54,18 @@ phase or any scheduled phase.
   personas) that the original breakdown missed, not new scope creep. All
   client-only, no backend needed: live map during tracking + static route
   map on Summary/History (MapKit, reverses the prior "route map" Non-goal
-  — see tech-spec.md §5.1), splits per kilometer, auto-pause (reusing the
+  — see tech-spec.md §5.1), splits per kilometer, ~~auto-pause (reusing the
   existing `stationaryAnchor` drift guard as an explicit user-facing
-  trigger, not new detection logic), elevation gain/loss, audio cues
+  trigger, not new detection logic)~~ **[removed 2026-09-22, PM sign-off —
+  see product-spec.md §4.11 and tasks/phase-1-core-loop-offline.md T1.11;
+  the reused `stationaryAnchor` drift guard itself was NOT removed, only
+  its use as a pause trigger]**, elevation gain/loss, audio cues
   (`AVSpeechSynthesizer`), crash/interrupt recovery flow, refined location
   permission handling (While Using vs Always vs Denied), and a local
   streak-reminder notification (`UNUserNotificationCenter`, no server —
-  streak is already tracked on-device since T1.1/T1.4). See
-  tasks/phase-1-core-loop-offline.md T1.8-T1.16 for the full breakdown.
+  streak is already tracked on-device since T1.1/T1.4). Now **8 items**
+  after the auto-pause removal. See tasks/phase-1-core-loop-offline.md
+  T1.8-T1.16 for the full breakdown.
 
 **Definition of Done:**
 - A user can complete multiple runs fully offline and see points/level
@@ -70,12 +74,13 @@ phase or any scheduled phase.
 - This is the first point at which the core hypothesis in product-spec §1
   ("progression without social features is rewarding") becomes testable —
   internal dogfooding should start here, before backend exists.
-- The 9 items added 2026-09-12 (live map, static map, splits, auto-pause,
+- The 8 remaining items added 2026-09-12 (live map, static map, splits,
   elevation, audio cues, crash recovery, permission-flow refinement,
-  streak reminder) all work correctly together during that same dogfood
-  pass, not just individually (added 2026-09-13, Round 7 finding N7-P7 —
-  T1.17's DoD already required this; this phase-level DoD is the source
-  T1.17 cites and needed the same bullet).
+  streak reminder — auto-pause **removed 2026-09-22**, PM sign-off) all
+  work correctly together during that same dogfood pass, not just
+  individually (added 2026-09-13, Round 7 finding N7-P7 — T1.17's DoD
+  already required this; this phase-level DoD is the source T1.17 cites
+  and needed the same bullet).
 
 **Dependency note:** the point formula implemented here must be identical
 to what ships server-side in Fase 2 — since client (Swift) and server
@@ -103,16 +108,22 @@ catches it now.
   needed for `POST /api/runs` and the global leaderboard to function
   correctly starting this phase. Full onboarding UX (client-side
   pre-submission blocking) is Fase 3 (T3.1); per-region leaderboard
-  granularity is **deferred to Fase 4 / v1.1** (decided 2026-09-21, see
-  Fase 3 and Fase 4 below) — this phase only needs "does this user have a
+  granularity is **~~deferred to Fase 4 / v1.1~~ CANCELLED PERMANENTLY,
+  2026-09-22** (decided 2026-09-21, reversed 2026-09-22, see Fase 3 and
+  Fase 4 below) — this phase only needs "does this user have a
   region", not "is this region a valid catalog entry" or "does the UI stop
-  them early".
+  them early". **Historical description, superseded**: region validation
+  itself (the `409` guard, `USER.region_*` schema) is being removed
+  entirely, not merely left unused — see database-api-spec.md.
 - `LEADERBOARD_SCOPE` schema (part of core migration, alongside
   `LeaderboardEntry`) — migrated here because the global leaderboard needs
   an explicit `scope_type='global'` row from the start
   (database-api-spec.md §1). Only the global row is used in v1; the
-  regional columns/`scope_type` values are prepared for the deferred Local
-  Leaderboard (tasks T3.2–T3.5 in tasks/phase-4-backlog.md).
+  regional columns/`scope_type` values ~~are prepared for the deferred Local
+  Leaderboard~~ **were prepared for Local Leaderboard (tasks T3.2–T3.5 in
+  tasks/phase-4-backlog.md), which is cancelled permanently as of
+  2026-09-22 — these regional columns/values are being dropped, see
+  database-api-spec.md.**
 - A dedicated GPS test fixture corpus (spoofed vs. real runs), built
   **before** the anti-cheat checks that consume it — see hard dependency
   below.
@@ -181,22 +192,36 @@ correctness requirement, not a nice-to-have.
 
 > **Scope change, 2026-09-21:** this phase used to be "Local Leaderboard
 > Granular + Season System". The Local Leaderboard was **cut from MVP v1**
-> and moved to Fase 4 / v1.1 (deferred, not cancelled): it only becomes
+> and ~~moved to Fase 4 / v1.1 (deferred, not cancelled): it only becomes
 > useful once user density is high — with few early users a kecamatan
 > holds a handful of people and the board is empty/uncompetitive, while a
-> Global board already feels "local" at small scale. The Global Leaderboard
+> Global board already feels "local" at small scale.~~ The Global Leaderboard
 > is fully built in Fase 2 (T2.18–T2.20), so this phase is now **Season
-> only** (plus T3.1, the region-onboarding UX). The former T3.2–T3.5 keep
-> their IDs and full detail in tasks/phase-4-backlog.md.
+> only** (plus T3.1, the region-onboarding UX — **removed as of 2026-09-22,
+> see below**). The former T3.2–T3.5 keep their IDs and full detail in
+> tasks/phase-4-backlog.md.
+>
+> **Update 2026-09-22 (PM sign-off): Local Leaderboard CANCELLED
+> PERMANENTLY, not deferred.** Rationale: scope too broad for the
+> leaderboard logic needed. T1's already-shipped, signed-off T3.1
+> (region-onboarding UX) is being reworked to remove the region step
+> entirely — see tasks/phase-3-season.md T3.1 and product-spec.md §4.1 D1
+> reversal / §4.5 AC5 for the replacement location-permission-gate
+> mechanism.
 
 **Scope:**
-- Mobile onboarding UX that blocks the run-start flow client-side before
+- ~~Mobile onboarding UX that blocks the run-start flow client-side before
   a wasted network call (kecamatan/kabupaten_kota/provinsi, product-spec
   AC 4.1.2) — the backend `409` guard itself already shipped in Fase 2
   alongside minimal region validation; this phase adds the client-side
   experience on top of it, not the guarantee itself. Region is collected
   in v1 even though no v1 screen uses it yet (prepared data for the
-  deferred Local Leaderboard; mandatory by final decision D1, 2026-09-21, product-spec.md §4.1).
+  deferred Local Leaderboard; mandatory by final decision D1, 2026-09-21, product-spec.md §4.1).~~
+  **Superseded 2026-09-22**: this was T3.1's original, shipped, signed-off
+  scope (Fase 3 DONE 2026-09-22). D1 is reversed — region is no longer
+  collected at all. T3.1 is being reworked to remove the region step
+  entirely and gate Leaderboard visibility on location permission instead
+  (product-spec.md §4.1/§4.5 AC5).
 - Full Season lifecycle (`upcoming → active → ended` transitions) added
   on top of the minimal seeded season from Fase 2 — season-scoped rank
   reset of the **global** leaderboard (lifetime points/level untouched).
@@ -214,14 +239,21 @@ same job to a new `season_id`.
 
 ## Fase 4 — Backlog (not scheduled, do not build yet)
 
-- **Local Leaderboard** (kecamatan / kabupaten-kota / provinsi, with the
+- ~~**Local Leaderboard** (kecamatan / kabupaten-kota / provinsi, with the
   "belum cukup data" state) — **moved here from Fase 3 on 2026-09-21**;
   deferred to v1.1, not cancelled. Trigger to schedule it: enough active
   users per region for a regional board to be non-empty. Already prepared,
   not to be redone: the region hierarchy on `User`, the `LEADERBOARD_SCOPE`
   table and `scope_type` values (database-api-spec.md §1), and fully written
   tasks T3.2–T3.5 (tasks/phase-4-backlog.md, IDs kept so existing
-  references stay valid). Product-spec §4.6 keeps its three AC as the spec.
+  references stay valid). Product-spec §4.6 keeps its three AC as the spec.~~
+- **Local Leaderboard: CANCELLED PERMANENTLY, 2026-09-22** (PM sign-off) —
+  not deferred, will not be scheduled. Rationale: scope too broad for the
+  leaderboard logic needed. The region hierarchy on `User` and
+  `LEADERBOARD_SCOPE`'s regional `scope_type` values are being dropped from
+  the schema, not kept prepared (database-api-spec.md). Tasks T3.2–T3.5
+  (tasks/phase-4-backlog.md) and product-spec.md §4.6's three AC are kept
+  struck through as historical record only.
 - Circle / Clan / Club, Club War, matchmaking (product-spec §5 Non-goals).
 - Social Feed (post achievements, comments) — added 2026-09-12, previously
   only an unreconciled draft in user-flow.md; recommended here (not Fase
