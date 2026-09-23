@@ -93,7 +93,7 @@ sudah terasa dekat secara geografis).
   product-spec.md §4.19: max 3 club per Club War, self-serve oleh owner/admin Club Premium).
   ~~Mekanik/win-condition/durasi masih open question.~~ **Mekanisme finalized 2026-09-23**: basis
   menang Participation Rate (sama seperti §4.20 Club Aktif), durasi 48 jam, mulai lewat tantangan
-  tertarget (bukan matchmaking) — lihat product-spec.md §4.19 untuk detail lengkap AC1-AC9.
+  tertarget (bukan matchmaking) — lihat product-spec.md §4.19 untuk detail lengkap AC1-AC10.
   **AC7 resolved 2026-09-23**: tantangan yang ditolak/timeout 24 jam dianggap tidak pernah terjadi,
   nol entri di Club War Record untuk siapapun — bukan forfeit.
 - Matchmaking antar club berbasis performa — masih Non-goal, belum ada keputusan bentuknya.
@@ -120,7 +120,10 @@ berbasis poin/leaderboard kompetitif.
   **Harga DECIDED 2026-09-23**: $7.99/bulan (harga referensi USD), harga
   regional lewat App Store Connect's price-tier localization sendiri —
   bukan sistem konversi kurs custom, ini tugas konfigurasi store, bukan
-  engineering. Lihat product-spec.md §5 (baris Monetisasi).
+  engineering. Lihat product-spec.md §5 (baris Monetisasi). **Paket v1
+  (2026-09-23): bulanan saja — tanpa paket tahunan, tanpa free trial**,
+  keputusan sadar membatasi scope. Infrastruktur langganannya (StoreKit +
+  verifikasi server) belum ada sama sekali — product-spec.md §4.23 / T4.20.
 - **B2B — running club**: Dashboard untuk running club (kelola member,
   leaderboard privat) — model tetap tool self-serve, tidak berubah.
 - ~~**B2B — event organizer**: Dashboard untuk event organizer (partisipasi,

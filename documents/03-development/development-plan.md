@@ -257,7 +257,7 @@ same job to a new `season_id`.
 - ~~Circle~~ Club (renamed 2026-09-23), matchmaking (product-spec §5
   Non-goals). Club War specifically **confirmed to build 2026-09-23**
   (product-spec.md §4.19) — still Fase 4/not v1. ~~only the shape is now
-  partly decided.~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC9) —
+  partly decided.~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC10) —
   Participation Rate win condition, 48-hour duration, targeted
   challenge/invite start, tie-break + forfeit rules. **AC7 resolved
   2026-09-23**: a declined/timed-out challenge produces zero Club War
@@ -268,7 +268,10 @@ same job to a new `season_id`.
   — see product-spec.md §5, tasks/phase-4-backlog.md T4.15-T4.16.
 - Monetization: seasonal pass, advanced statistics, exclusive badges,
   premium profile (pricing decided 2026-09-23: $7.99/mo + App Store
-  Connect regional tiers, product-spec.md §5), B2B dashboard for clubs;
+  Connect regional tiers, product-spec.md §5; monthly only, no annual,
+  no trial in v1 — all of these depend on T4.20, Premium subscription
+  infrastructure, which does not exist yet — product-spec.md §4.23),
+  B2B dashboard for clubs;
   ~~EO reframed as a managed service, not a dashboard (ADR-0014,
   lean-canvas.md §2/§6)~~ **concept replaced 2026-09-23 — Laju Branded
   Events** (product-spec.md §4.21, lean-canvas.md §2/§6): brand-sponsored

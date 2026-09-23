@@ -663,7 +663,9 @@ riwayat (T3.8). Task implementasi: **T3.7a** (tasks/phase-3-season.md).
 
 **Pemakaian (ditunda):** filter leaderboard per liga dan gating Freemium vs
 Premium (Freemium = liga sendiri, Premium = semua liga — product-spec.md §4.5
-AC4) ikut fitur Premium (Fase 4). v1 hanya menghitung dan menampilkan liga
+AC4) ikut fitur Premium (Fase 4) — dan butuh infrastruktur langganan Premium
+(T4.20, product-spec.md §4.23) yang belum ada sama sekali; gating-nya
+diputuskan di backend, bukan dari klaim client. v1 hanya menghitung dan menampilkan liga
 sendiri; leaderboard Global v1 tetap satu papan untuk semua orang.
 
 ## 3. Offline-First Strategy
