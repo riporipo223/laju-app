@@ -302,7 +302,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.18 — User Season 91→60 days, forward-only from Season 2 — decided 2026-09-23, not implemented (was missing from this list; added 2026-09-23) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.20 — Premium subscription infrastructure — decided 2026-09-23 (§4.23 AC1-AC14); T4.20b/c blocked by Apple Developer Program (verified); T4.20a buildable before enrollment once §4.23's anonymization mechanism is picked; T4.2b, §4.5 AC4, and T4.4–T4.7 depend on it (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.20 — Premium subscription infrastructure — decided 2026-09-23 (§4.23 AC1-AC14); T4.20b/c blocked by Apple Developer Program (verified); T4.20a unblocked (user_id non-null FK, decided 2026-09-23) and buildable before enrollment; T4.2b, §4.5 AC4, and T4.4–T4.7 depend on it (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.20a — `subscription` table (append-only) + RLS
   - [ ] T4.20b — backend: App Store Server API verification + status endpoint
   - [ ] T4.20c — iOS: StoreKit 2 purchase flow + Restore Purchases

@@ -2530,10 +2530,12 @@ feature actually needs)
   **Decided 2026-09-23 (§4.23 decided #13 / AC14):** the account's
   `subscription` rows are **anonymized, never deleted** —
   `original_transaction_id` and status history kept for audit/Apple
-  disputes. Mechanism still open (§4.23): null `user_id` (needs an AC6
+  disputes. ~~Mechanism still open (§4.23): null `user_id` (needs an AC6
   exception) vs keep `user_id` pointing at the already-anonymized `user`
-  row — the latter is what this task's own `account-deletion.ts` does for
-  `PointTransaction`.
+  row.~~ **Mechanism decided 2026-09-23: keep `user_id`** — the
+  `subscription` rows are not touched at all, exactly as this task's own
+  `account-deletion.ts` already treats `PointTransaction`. So this AC adds
+  **no** new deletion step for `subscription`; only the warning above.
 - Yang TIDAK dikerjakan: a "pause"/"deactivate" distinct from full
   deletion (not required by the Guideline, not requested); any admin-side
   tooling for deletion requests beyond the in-app self-service flow;

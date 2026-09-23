@@ -318,12 +318,15 @@ implemented.
   as `point_transaction` (ADR-0013) — status changes are new rows; RLS
   enabled with no grants, per `20260919150457_enable_rls_deny_anon.sql`.
   Written inert and reviewed before apply, same gate as T4.2a.
-  **Blocked on one open point (2026-09-23):** whether `user_id` is
+  ~~**Blocked on one open point (2026-09-23):** whether `user_id` is
   nullable depends on the account-deletion anonymization mechanism still
-  open in §4.23 — (a) null `user_id` needs a nullable column + an AC6
-  exception; (b) keep `user_id` needs neither. Decide before writing the
-  migration. **Reference**: product-spec.md §4.23 decided #2, #13, AC6,
-  AC14.
+  open in §4.23. Decide before writing the migration.~~ **Unblocked
+  2026-09-23 (PM chose option (b)):** `user_id` is **NOT nullable** — a
+  regular FK to `user`, exactly like `point_transaction.user_id`. Account
+  deletion never touches `subscription` rows; the anonymized `user` row
+  does the disconnecting. Ready to be written as an inert migration (same
+  gate as T4.2a) — not written yet. **Reference**: product-spec.md §4.23
+  decided #2, #13, AC6, AC14.
 - **T4.20b — Premium: backend verification + status endpoint.** Depends
   on T4.20a. **Scope**: verify transactions with the App Store Server API
   before recording them (AC5); enforce one Apple ID = one active Premium
