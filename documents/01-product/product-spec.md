@@ -480,23 +480,23 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
      `tasks/phase-4-backlog.md` T4.3 ("Matchmaking between clubs," still Non-goal, not this task) —
      and stays consistent with **ADR-0014**: a targeted invite to specific clubs is bounded reach,
      never a broadcast to the whole user base, which is why this can stay self-serve at all.
-4. **Tie-break and forfeit — two separate rules, kept binary (no "draw" state in the data model):**
-   - **Tie** (Participation Rate exactly equal between the leading clubs): broken by a secondary
-     metric — the tied clubs' total combined distance/points during the war period, highest wins.
-   - **Total inactivity forfeit**: a club with zero participating members during the war period
-     forfeits automatically; the other entered club(s) win.
-   - **Invitation timeout forfeit**: an invited club that has not accepted within **24 hours** of
-     the challenge being sent forfeits automatically.
-   - **NOT decided — genuinely open, flagged rather than invented:** whether a challenge that never
-     goes live (explicitly declined, or timed out unaccepted per the 24-hour rule above) produces a
-     real, recorded win/loss entry in the Club War Record (§4.20 Section 2), or whether it simply
-     dissolves with no record at all — as if the challenge never happened. The two decisions above
-     read differently on this: "the war only begins once everyone accepts" suggests nothing to
-     record if it never begins, while "an unaccepted invitation forfeits automatically" suggests a
-     recorded outcome does exist. This directly affects §4.20 Section 2's own data ("a club that has
-     never fought a Club War is unranked, not zero — absent from the list entirely") — specifically,
-     whether a declined/timed-out challenge counts as having "fought" for that purpose. **Needs a
-     PM decision before this can be scoped into schema/API work precisely enough to build.**
+4. **Two distinct lifecycle phases, each with its own rule — kept binary (no "draw" state in the
+   data model), and NOT the same rule applied twice:**
+   - **Phase 1 — pending (not all invited clubs have accepted yet).** If any invited club explicitly
+     declines, **or** does not accept within **24 hours** of the challenge being sent, the challenge
+     **dissolves entirely — the war is treated as never having happened.** No win/loss entry is
+     recorded for anyone: not the inviter, not a club that accepted early if another invited club
+     later declines/times out. Every party's state returns to exactly what it was before the
+     challenge was sent. **This is not a forfeit** — there is nothing to forfeit, because the war
+     never started. (Resolved 2026-09-23, PM decision, after this was flagged as a genuine
+     ambiguity between this rule and the Phase 2 forfeit rule below — see rationale note after AC9.)
+   - **Phase 2 — active (every invited club has accepted; the 48-hour scoring period is running).**
+     Two rules apply only once a war has reached this phase:
+     - **Tie** (Participation Rate exactly equal between the leading clubs): broken by a secondary
+       metric — the tied clubs' total combined distance/points during the war period, highest wins.
+     - **Total inactivity forfeit**: a club with zero participating members during the war period
+       forfeits automatically; the other entered club(s) win. This **is** a real, recorded
+       win/loss outcome, because the war genuinely started — unlike Phase 1's dissolution.
 5. **Anti-farming — deliberately none in v1.** No cooldown between the same pair of clubs
    re-warring, no tier/strength-based restriction on who can be challenged. This is a conscious
    decision, not an oversight — revisit only if real usage data shows an actual exploitation
@@ -506,7 +506,8 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
 - AC1: A Club War always involves the inviting club plus 1–2 invited clubs, max 3 total (base
   decision, unchanged).
 - AC2: The 48-hour scoring period begins only once every invited club has accepted; before that,
-  the challenge is pending and does not count toward anything.
+  the challenge is pending and produces no record of any kind for anyone if it never completes
+  (see AC7 — resolved, not open).
 - AC3: Each club's score during the 48-hour window is its Participation Rate — the identical metric
   and activity threshold as §4.20 Section 1 "Club Aktif" — computed only over that club's
   war-entered members, not its whole roster.
@@ -514,14 +515,25 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   highest rate wins and the rest lose (one ranking, not pairwise comparisons).
 - AC5: An exact tie in Participation Rate between the leading clubs is broken by total combined
   distance/points during the war period; the result stays win/loss, never a recorded draw.
-- AC6: A club with zero participating members during the war period forfeits automatically,
-  independent of AC5's tie-break rule.
-- AC7: An invited club that has not accepted within 24 hours of the challenge forfeits
-  automatically. **Whether this produces a Club War Record entry is the open point flagged above —
-  not yet an implementable AC on its own.**
+- AC6: A club with zero participating members during an **active** (already-started) war period
+  forfeits automatically — a real, recorded win/loss outcome (Phase 2 rule).
+- AC7 (RESOLVED 2026-09-23): if any invited club explicitly declines, or does not accept within 24
+  hours, the challenge dissolves and **no Club War Record entry is created for anyone** — not the
+  inviter, not a club that had already accepted if a co-invitee later declines/times out. This is
+  a Phase 1 (pending) outcome, distinct from AC6's Phase 2 (active-war) forfeit — see point 4 above.
 - AC8: No cooldown or matching-tier restriction gates who can be challenged, in this version.
 - AC9: A Club War's win/loss outcome is the unit of data that feeds §4.20 Section 2's "Club War
   Record" — see that section for the record's own reset cadence (every 60 days, starting Season 2).
+  AC7's dissolved-challenge case produces no such outcome, consistent with §4.20 Section 2's own
+  rule that a club which has never fought is unranked, not zero.
+
+**AC7 rationale (PM decision, 2026-09-23):** consistent with §4.20 Section 2's own principle ("a
+club that has never fought a Club War is unranked, not zero — absent from the list entirely") — a
+challenge that fails to reach Phase 2 reads as closer to "never fought" than "lost." It also closes
+a cheap exploit: spamming challenges at a club whose admin is currently inactive to rack up
+automatic wins without any member ever actually participating. The Phase-1-vs-Phase-2 split above
+is what reconciles decisions #3 and #4 as two different lifecycle stages of the same feature,
+rather than the contradiction they read as before this was resolved.
 
 ~~**NOT decided — genuinely open, flagged rather than invented:**
 - **Mechanics** — how a match is scored (e.g. aggregate distance/points across members over the war
