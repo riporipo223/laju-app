@@ -293,7 +293,11 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [ ] T4.11 — Android support (postponed indefinitely) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.12 — Redis-backed real-time global leaderboard cache (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.13 — Native iOS platform integrations (Live Activities, Dynamic Island, HealthKit, WidgetKit) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.14 — Apple Watch companion app (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.14 — Companion smartwatch app — Apple Watch v1 shape finalized 2026-09-23 (§4.22 AC1-AC7) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [ ] T4.14a — Apple Watch v1: phone-side relay (WatchConnectivity)
+  - [ ] T4.14b — Apple Watch v1: watchOS target + UI
+  - [ ] T4.14c — Garmin companion — placeholder, not scoped
+  - [ ] T4.14d — Huawei Watch companion — placeholder, not scoped
 - [ ] T4.15 — Social Feed (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build (lihat [phase-4-backlog.md](./phase-4-backlog.md))

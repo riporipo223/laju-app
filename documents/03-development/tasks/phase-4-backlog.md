@@ -180,10 +180,35 @@ implemented.
   independent GPS tracking on the watch — standalone tracking would mean
   a second implementation of the anti-drift/anti-cheat pipeline (ADR-0004,
   ADR-0008) on a new platform, a much larger scope than a "companion."
-  **Still not a real task (no DoD written)** — blocked on whether
+  ~~**Still not a real task (no DoD written)** — blocked on whether
   phone-free tracking is wanted at all (even as a later phase); that
   answer changes the size of the work by an order of magnitude, same
-  category of blocker as T4.9/§4.21's "what is an event."
+  category of blocker as T4.9/§4.21's "what is an event."~~
+  **Apple Watch v1 shape finalized 2026-09-23** (§4.22 AC1-AC7): mirror-only
+  (confirmed; phone-free stays open, NOT roadmapped as v2), live metrics +
+  pause/stop from the watch, no start from the watch, iPhone always the full
+  primary flow, real-time streaming. Blocker resolved for Apple Watch;
+  Garmin/Huawei still unscoped. Sub-tasks below.
+- **T4.14a — Apple Watch v1: phone-side relay.** Depends on T4.14 (shape
+  decided). **Scope**: a `WatchConnectivity` session on the iPhone that
+  streams the in-progress run's already-computed distance/pace/elapsed time
+  to the watch, and receives pause/resume/stop commands from the watch and
+  routes them through the **same** run-control path the phone's own buttons
+  use (not a parallel path). Watch disconnect must never affect the phone's
+  run. The update interval (per second vs per GPS point) is decided here, as
+  an implementation detail. **Reference**: product-spec.md §4.22 AC1-AC4,
+  AC6-AC7.
+- **T4.14b — Apple Watch v1: watchOS target + UI.** Depends on T4.14a.
+  **Scope**: new watchOS target (XcodeGen `project.yml`), a screen showing
+  live distance/pace/elapsed time, and pause/resume/stop controls — no start
+  control. **Reference**: product-spec.md §4.22 AC1, AC3, AC5.
+- **T4.14c — Garmin companion.** Placeholder only — **not scoped, not
+  decided** (§4.22 Q4, 2026-09-23). Needs its own scoping pass after Apple
+  Watch ships; separate stack (Connect IQ SDK, Monkey C). No AC exists.
+- **T4.14d — Huawei Watch companion.** Placeholder only — **not scoped, not
+  decided** (§4.22 Q4, 2026-09-23). Needs its own scoping pass after Apple
+  Watch ships; separate stack (HarmonyOS or Wear OS, depending on model). No
+  AC exists.
 - **T4.15 — Social Feed** (post run achievements, view others' posts).
   Added 2026-09-12 — previously existed only as an unreconciled draft in
   user-flow.md (§2.7 "Social Feed / Posting"), never represented in
