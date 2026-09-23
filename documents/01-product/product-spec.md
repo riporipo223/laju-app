@@ -716,11 +716,15 @@ nothing users have already been promised. tech-spec.md §2.5's documented quarte
 is therefore correct **for Season 1 specifically**, not the general rule going forward — see that
 section's own T4.18 note for the Season League point-band calibration consequence this has.
 
-**Still not done — implementation, not documentation, is next:** neither the live season row nor any
+~~**Still not done — implementation, not documentation, is next:** neither the live season row nor any
 season-length constant has been touched by this decision. That is deliberately left as a separate,
 scoped task (tasks/phase-4-backlog.md T4.18) — this docs pass only records *what* was decided, not
 *how* it gets built (e.g. how `advance_seasons`/`transition_season` should know Season 1 is 91 days
-but every season after it is 60).
+but every season after it is 60).~~ **How — decided 2026-09-23 (PM), still not done:** Season 2 and
+later are created **by hand** with `backend/scripts/season.ts create`, each with a 60-day period
+(`advance_seasons` never creates seasons, and each row carries its own dates, so there's no length
+constant to change); `overrun` gets a warning-level log so it's never silent; league bands are
+recalibrated **after** real Season 2 data. Detail in tasks/phase-4-backlog.md T4.18.
 
 ### 4.21 Laju Branded Events (Fase 4, added 2026-09-23, **concept replaced 2026-09-23** — NOT v1/Must-have)
 

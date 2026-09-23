@@ -369,7 +369,7 @@ implemented.
     already invested effort under a 91-day expectation set at the start;
     the cadence change is forward-only specifically to avoid that — it
     costs nothing users were already promised.
-  - **Still not implemented — this is the real remaining work:** the live
+  - ~~**Still not implemented — this is the real remaining work:** the live
     Season row and any season-length constant/config are untouched.
     Concretely still needs scoping: how `advance_seasons`/
     `transition_season` (database-api-spec.md's Season lifecycle,
@@ -377,13 +377,42 @@ implemented.
     creates after that is 60 — a hardcoded one-time exception, a
     `season.length_days` column, or something else. Also needs: the
     Season League point-band recalibration this triggers for Season 2+
-    specifically (tech-spec.md §2.5's own T4.18 note). ~~, and what T4.17's
+    specifically (tech-spec.md §2.5's own T4.18 note).~~
+  - **Implementation scoped 2026-09-23 (PM decisions, final):**
+    1. **Season 2 (and later seasons) are created manually** with the
+       existing `backend/scripts/season.ts create "<name>" <start> <end>`,
+       giving a 60-day period — no new auto-creation code. This dissolves
+       the old "how does `advance_seasons` know 91 vs 60" question:
+       `advance_seasons` never creates seasons (it only activates an
+       existing `upcoming` row once `start_at` passes, verified in
+       `20260921180000_season_lifecycle.sql`), and every season row
+       already carries its own `start_at`/`end_at` — no length constant
+       exists anywhere to change.
+    2. **Overrun must not be silent.** Today `overrun` is only a row the
+       function returns inside pg_cron — nothing reads it (verified: no
+       alerting code). **Small tech-debt todo, part of this task:** emit a
+       clear warning-level log when `overrun` is detected (in
+       `advance_seasons` and/or `season.ts`), so a missed Season 2 is
+       visible. Nothing more complex required.
+    3. **League bands (`backend/lib/season-league.ts`) are recalibrated
+       after real Season 2 data, not before** — no guessing numbers now.
+       Known consequence: Season 2 runs on bands calibrated for a ~91-day
+       season, so with ~34% less time to earn points, Season 2's league
+       spread will skew toward the lower leagues until recalibration.
+  - **Also stale, fix with the overrun todo:** `season.ts`'s header usage
+    example creates "Season 2 — 2026" as `2026-12-01 → 2027-02-28` (~90
+    days) — it contradicts the 60-day decision and is the exact command
+    someone would copy. Code file, not changed in the docs-only pass.
+  - **Operational deadline stands:** Season 2 must be created before
+    2026-11-30 (HANDOFF.md §3). ~~, and what T4.17's
     Club Aktif/Club War Record sections do during Season 1, when there
     is no 60-day cadence yet to align to (see T4.17's own note above).~~
     (T4.17's Season 1 behavior was decided 2026-09-23 — no reset during
     Season 1, product-spec.md §4.20 AC9 — so it's no longer open here.)
-  - Distinct from T4.17: this is a live-data/config change on the
-    **currently active** production Season row, not new feature work —
+  - Distinct from T4.17: this is ~~a live-data/config change on the
+    **currently active** production Season row~~ an operational step
+    (creating the Season 2 row by hand) plus a small logging change — the
+    currently active Season 1 row is not touched — not new feature work —
     but T4.17's reset cadences can't actually match the User Season
     cadence they're meant to mirror until this ships.
 - **T4.20 — Premium subscription infrastructure.** Added 2026-09-23 (PM

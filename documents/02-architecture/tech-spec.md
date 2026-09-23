@@ -650,7 +650,11 @@ lebih pendek berarti lebih sedikit waktu untuk menumpuk poin di periode yang
 sama, jadi band di atas **butuh kalibrasi ulang tambahan untuk Season 2+**
 secara khusus — bukan cuma "kalibrasi ulang setelah ada data nyata" yang
 sudah disebutkan, tapi sebuah perubahan struktural pada asumsi dasarnya.
-Belum diimplementasikan — lihat tasks/phase-4-backlog.md T4.18. Band adalah
+Belum diimplementasikan — lihat tasks/phase-4-backlog.md T4.18. **Kapan
+dikalibrasi (PM, 2026-09-23): SETELAH ada data Season 2 nyata, bukan sebelumnya**
+— tidak menebak angka sekarang. Konsekuensi yang diterima: Season 2 berjalan
+dengan band untuk season ~91 hari, jadi sebaran liga Season 2 akan condong ke
+liga bawah sampai dikalibrasi ulang. Band adalah
 konfigurasi
 (`LEAGUE_BANDS`), bukan hardcode inline, supaya bisa dituning tanpa mengubah
 logika.

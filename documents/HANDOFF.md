@@ -117,10 +117,12 @@ tackled — each still needs either a user decision or something only the user c
   ends 2026-11-30 and **no successor Season row has been created**. Nothing crashes if this is
   missed — `advance_seasons` never leaves zero active seasons, so Season 1 just stays `active` past
   its end date and is reported as `overrun` (database-api-spec.md, Season lifecycle) — but the season
-  never closes and no new one starts. Also note T4.18 (60-day seasons from Season 2) is decided but
+  never closes and no new one starts. ~~Also note T4.18 (60-day seasons from Season 2) is decided but
   **not implemented**, so creating Season 2 means either implementing T4.18 first or creating it by
-  hand with a 60-day period (`backend/scripts/season.ts`). Reminder only — not a product decision,
-  not queued work; raise it with the user well before the date.
+  hand with a 60-day period (`backend/scripts/season.ts`).~~ **Decided 2026-09-23 (T4.18): Season 2
+  is created by hand** with `backend/scripts/season.ts create`, 60-day period. Don't copy the script
+  header's example dates — they give ~90 days. Overrun is still silent until T4.18's warning-log
+  todo ships. Reminder only — not queued work; raise it with the user well before the date.
 
 Full detail on all of these: `documents/README.md` §1 and §3.
 
