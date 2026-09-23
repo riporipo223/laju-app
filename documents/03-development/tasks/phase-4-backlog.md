@@ -117,7 +117,16 @@ implemented.
   alone is roughly what the original "Apple Watch companion app" scope
   described (separate target, WatchConnectivity, its own tracking/UI
   considerations) — Garmin/Huawei are net-new scope on top of that,
-  not refinements of it.
+  not refinements of it. **Apple Watch phase real-scoped 2026-09-23** —
+  see product-spec.md §4.22: recommended shape is the watch mirroring an
+  in-progress phone-tracked run (`WatchConnectivity` relay), not
+  independent GPS tracking on the watch — standalone tracking would mean
+  a second implementation of the anti-drift/anti-cheat pipeline (ADR-0004,
+  ADR-0008) on a new platform, a much larger scope than a "companion."
+  **Still not a real task (no DoD written)** — blocked on whether
+  phone-free tracking is wanted at all (even as a later phase); that
+  answer changes the size of the work by an order of magnitude, same
+  category of blocker as T4.9/§4.21's "what is an event."
 - **T4.15 — Social Feed** (post run achievements, view others' posts).
   Added 2026-09-12 — previously existed only as an unreconciled draft in
   user-flow.md (§2.7 "Social Feed / Posting"), never represented in

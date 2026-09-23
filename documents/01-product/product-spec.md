@@ -552,6 +552,46 @@ work `tasks/phase-4-backlog.md`'s own top-of-file rule warns against.
 Not scoped into a real task (no T4.x DoD written) because the "what is an event" question is not a
 detail — until it's answered, any task breakdown here would be guessing at the actual work.
 
+### 4.22 Apple Watch Companion (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+
+**Status: real scoping done 2026-09-23** (still Fase 4, not scheduled, not built). T4.14 in
+tasks/phase-4-backlog.md, Apple Watch phase specifically — Garmin/Huawei are separate future scoping
+passes per that task's own note, not covered here.
+
+**Decided:**
+- Apple Watch first, before Garmin/Huawei (2026-09-23, PM decision) — fits the existing native stack
+  directly (ADR-0001: Swift/SwiftUI; WatchOS apps are Swift too), no new language/toolchain.
+- Separate target + WatchConnectivity, per the original 2026-09-12 scope note.
+
+**Recommended minimal shape — a proposal for PM confirmation, not yet decided:** the Watch app
+**mirrors an in-progress run already being tracked by the phone**, it does **not** track GPS
+independently on the watch. Concretely: phone remains the single source of truth for the run (start/
+stop, GPS ingestion, the anti-drift/anti-cheat pipeline — ADR-0003's direct-`CLLocationManager`
+choice and ADR-0004's stationary-anchor filter, §4.2's AC1-3), and `WatchConnectivity` relays
+already-computed stats (distance, pace, elapsed time) to the watch face for glanceable display,
+plus relays a pause/stop tap back to the phone. **Reasoning:** standalone GPS tracking on the watch
+would mean building and maintaining a *second* implementation of the entire anti-drift/anti-cheat
+pipeline (ADR-0004, ADR-0008) on a platform this codebase has never targeted — a large, currently
+unjustified scope increase for a "companion" feature. Mirroring is the shape every major running app
+ships first (Watch as a remote display/control, not a second tracker) before ever adding phone-free
+tracking as a later, explicitly separate feature.
+
+**NOT decided — genuinely open, needs the PM before this can be scoped precisely:**
+- **Phone-free tracking** (run with just the watch, no phone nearby) — explicitly out of the
+  recommended minimal shape above, but is it wanted at all, even as a later phase? If yes, that is a
+  substantially larger, separate task (the anti-drift pipeline reimplementation this section
+  recommends avoiding for v1 of the companion) — flagged so it isn't silently assumed either way.
+- **What exactly shows on the watch face**: live stats only (distance/pace/time), or also start/
+  pause/stop controls, or a full Watch-native complication/Live-Activity-style always-visible view
+  (this would also depend on T4.13's Live Activities work, priority-ordered but not yet built)?
+- **Does the watch need its own location permission prompt**, or does it purely ride on the phone's
+  already-granted permission via the paired-device relationship? Not researched — genuinely unknown
+  without checking Apple's current WatchConnectivity/location-sharing documentation.
+
+Not scoped into a real task (no T4.x DoD written) because "does the watch ever track independently"
+is a scope-defining fork, same category as T4.21's "what is an event" — answering it changes the
+size of the work by an order of magnitude, so it is not a detail to fill in during implementation.
+
 ## 5. Non-Goals (v1) — dan alasannya
 
 | Non-goal | Alasan |
