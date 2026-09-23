@@ -278,7 +278,10 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 
 ## Fase 4 — Backlog (out of scope for now)
 - [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.2 — Club War — confirmed to build 2026-09-23, still not scheduled (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.2 — Club War — confirmed to build 2026-09-23, mechanism finalized 2026-09-23 (§4.19 AC1-AC9), still not scheduled (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [ ] T4.2a — data model (club, roster, club_war tables)
+  - [ ] T4.2b — backend API (challenge, precompute, forfeit rules)
+  - [ ] T4.2c — iOS UI (challenge, accept/decline, war status, record)
 - [ ] T4.3 — Matchmaking between clubs (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.4 — Monetization: seasonal pass (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.5 — Monetization: advanced statistics (lihat [phase-4-backlog.md](./phase-4-backlog.md))
