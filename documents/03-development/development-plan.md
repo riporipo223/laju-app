@@ -259,8 +259,9 @@ same job to a new `season_id`.
   (product-spec.md §4.19) — still Fase 4/not v1. ~~only the shape is now
   partly decided.~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC9) —
   Participation Rate win condition, 48-hour duration, targeted
-  challenge/invite start, tie-break + forfeit rules. One point still
-  flagged open (§4.19's own note on forfeited-challenge recording).
+  challenge/invite start, tie-break + forfeit rules. **AC7 resolved
+  2026-09-23**: a declined/timed-out challenge produces zero Club War
+  Record entry for anyone — fully unblocked, no open points left.
 - Social Feed (post achievements, comments) — added 2026-09-12, previously
   only an unreconciled draft in user-flow.md; recommended here (not Fase
   3) for the same "prove the loop alone first" reasoning as Club above
