@@ -443,19 +443,87 @@ yang baru selesai.
 - AC2: Nilai yang ditampilkan (tanggal, jarak, pace, poin) sama persis
   dengan yang tersimpan di Core Data untuk tiap run.
 
-### 4.19 Club War (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+### 4.19 Club War (Fase 4, added 2026-09-23, **mekanisme finalized 2026-09-23** — NOT v1/Must-have)
 
 **Status: confirmed to build** (PM decision, 2026-09-23) — reversed from "nice to have v2+"/Non-goal
 (§5). This section exists so the feature has a real spec instead of only a backlog stub (T4.2), per
 this repo's convention that Fase-4 items get full detail once genuinely decided, not before.
 
-**Decided:**
+> **Mechanism finalized 2026-09-23** — the base decisions below (max 3 clubs, self-serve) were
+> already locked; the 5 previously-open mechanics questions (scoring, duration, start flow,
+> tie/forfeit, anti-farming) were resolved the same day after the PM was presented 2–3 concrete
+> options per question (not invented unilaterally). Old open-question list kept struck through
+> below per this repo's convention.
+
+**Decided (base):**
 - Max **3 clubs per Club War**.
 - **Self-serve**: a Club War is started by a Premium Club's owner/admin, not by Laju's team —
   distinct from the event-scale permission rule (ADR-0014), since a Club War's reach is bounded
   to the clubs actually entered, never the whole user base.
 
-**NOT decided — genuinely open, flagged rather than invented:**
+**Decided (mechanism, finalized 2026-09-23):**
+
+1. **Win condition — Participation Rate, reused from §4.20 Section 1 "Club Aktif".** Not aggregate
+   distance/points, not head-to-head pairing. Each entered club's score for the war period is the
+   same metric as Club Aktif: % of its war-entered members who met the activity threshold during
+   the war period. The club with the strictly higher rate wins; with 3 clubs entered, the single
+   highest rate wins outright and the rest lose — evaluated as one ranking, not pairwise.
+2. **Duration — fixed 48 hours**, not configurable per war. Distinct from the *reset cadence* of
+   the Club War Record itself (§4.20 Section 2: every 60 days, starting Season 2, T4.18) — that is
+   how often the running win/loss history resets, not how long one war lasts.
+3. **How it starts — targeted challenge/invite, explicitly NOT matchmaking.**
+   - A Premium Club's owner/admin sends a challenge to 1–2 specific other clubs (max 3 clubs total
+     including the inviter, per the base decision above).
+   - The 48-hour scoring period begins only once **every** invited club has accepted — before that,
+     the challenge sits in a pending state.
+   - **Deliberately not automated matchmaking** — stays a distinct, separate concern from
+     `tasks/phase-4-backlog.md` T4.3 ("Matchmaking between clubs," still Non-goal, not this task) —
+     and stays consistent with **ADR-0014**: a targeted invite to specific clubs is bounded reach,
+     never a broadcast to the whole user base, which is why this can stay self-serve at all.
+4. **Tie-break and forfeit — two separate rules, kept binary (no "draw" state in the data model):**
+   - **Tie** (Participation Rate exactly equal between the leading clubs): broken by a secondary
+     metric — the tied clubs' total combined distance/points during the war period, highest wins.
+   - **Total inactivity forfeit**: a club with zero participating members during the war period
+     forfeits automatically; the other entered club(s) win.
+   - **Invitation timeout forfeit**: an invited club that has not accepted within **24 hours** of
+     the challenge being sent forfeits automatically.
+   - **NOT decided — genuinely open, flagged rather than invented:** whether a challenge that never
+     goes live (explicitly declined, or timed out unaccepted per the 24-hour rule above) produces a
+     real, recorded win/loss entry in the Club War Record (§4.20 Section 2), or whether it simply
+     dissolves with no record at all — as if the challenge never happened. The two decisions above
+     read differently on this: "the war only begins once everyone accepts" suggests nothing to
+     record if it never begins, while "an unaccepted invitation forfeits automatically" suggests a
+     recorded outcome does exist. This directly affects §4.20 Section 2's own data ("a club that has
+     never fought a Club War is unranked, not zero — absent from the list entirely") — specifically,
+     whether a declined/timed-out challenge counts as having "fought" for that purpose. **Needs a
+     PM decision before this can be scoped into schema/API work precisely enough to build.**
+5. **Anti-farming — deliberately none in v1.** No cooldown between the same pair of clubs
+   re-warring, no tier/strength-based restriction on who can be challenged. This is a conscious
+   decision, not an oversight — revisit only if real usage data shows an actual exploitation
+   pattern, not preemptively (same YAGNI reasoning already applied elsewhere in this spec).
+
+**Acceptance Criteria:**
+- AC1: A Club War always involves the inviting club plus 1–2 invited clubs, max 3 total (base
+  decision, unchanged).
+- AC2: The 48-hour scoring period begins only once every invited club has accepted; before that,
+  the challenge is pending and does not count toward anything.
+- AC3: Each club's score during the 48-hour window is its Participation Rate — the identical metric
+  and activity threshold as §4.20 Section 1 "Club Aktif" — computed only over that club's
+  war-entered members, not its whole roster.
+- AC4: The club with the strictly higher Participation Rate wins; with 3 clubs entered, the single
+  highest rate wins and the rest lose (one ranking, not pairwise comparisons).
+- AC5: An exact tie in Participation Rate between the leading clubs is broken by total combined
+  distance/points during the war period; the result stays win/loss, never a recorded draw.
+- AC6: A club with zero participating members during the war period forfeits automatically,
+  independent of AC5's tie-break rule.
+- AC7: An invited club that has not accepted within 24 hours of the challenge forfeits
+  automatically. **Whether this produces a Club War Record entry is the open point flagged above —
+  not yet an implementable AC on its own.**
+- AC8: No cooldown or matching-tier restriction gates who can be challenged, in this version.
+- AC9: A Club War's win/loss outcome is the unit of data that feeds §4.20 Section 2's "Club War
+  Record" — see that section for the record's own reset cadence (every 60 days, starting Season 2).
+
+~~**NOT decided — genuinely open, flagged rather than invented:**
 - **Mechanics** — how a match is scored (e.g. aggregate distance/points across members over the war
   period? head-to-head per pair among the ≤3 clubs?).
 - **Win condition** — what determines a winner, and what a winner/loser actually gets.
@@ -465,7 +533,7 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   Club War's own duration is not decided.
 
 A task cannot be scoped precisely from this section alone — see tasks/phase-4-backlog.md's proposed
-T4.18+ breakdown for what's blocked on these still-open points.
+T4.18+ breakdown for what's blocked on these still-open points.~~
 
 ### 4.20 Club Global Leaderboard (Fase 4, added 2026-09-23 — NOT v1/Must-have)
 
