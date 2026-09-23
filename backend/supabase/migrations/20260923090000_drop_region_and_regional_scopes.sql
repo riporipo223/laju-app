@@ -9,8 +9,24 @@
 -- no administrative hierarchy is stored anywhere.
 --
 -- ============================================================================
--- DO NOT RUN THIS UNTIL TASK C IS DEPLOYED TO PRODUCTION.
+-- APPLIED 2026-09-23 — this migration has already been run against production.
 -- ============================================================================
+-- Verified: 0 region_* columns remain on `user`, both leaderboard tables show only
+-- `global` scope_type, the new check constraint genuinely rejects a regional insert
+-- (see the Verification block below — these are the exact queries used). A
+-- pre-migration snapshot (`user_region_backup_20260923`) was taken before applying.
+-- Fallout in code/tests/policy that depended on the pre-migration schema was found
+-- and fixed in a follow-up commit (`ed625c6`) — see that commit's message for detail.
+--
+-- The banner and rollback/verification sections below are kept as-is, unmodified,
+-- as the historical record of the real expand→migrate→verify→contract sequence this
+-- migration went through — this file is not re-run, only read for reference now.
+--
+-- ---------------------------------------------------------------------------
+-- Original pre-apply banner (kept verbatim below for the record):
+-- ---------------------------------------------------------------------------
+-- DO NOT RUN THIS UNTIL TASK C IS DEPLOYED TO PRODUCTION.
+--
 -- This is the CONTRACT step of an expand→migrate→verify→contract sequence. Until
 -- Task C's backend change is live on `main`, the deployed code still selects these
 -- columns in `lib/auth.ts`'s shared auth path — dropping them first makes PostgREST
