@@ -460,6 +460,15 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
 - **Self-serve**: a Club War is started by a Premium Club's owner/admin, not by Laju's team —
   distinct from the event-scale permission rule (ADR-0014), since a Club War's reach is bounded
   to the clubs actually entered, never the whole user base.
+- **"Premium Club" defined (PM decision, 2026-09-23):** a Club whose **owner** currently holds an
+  **active Premium subscription**. It is not a separate Club tier and has no subscription of its own
+  — a Club's Premium status is derived from its owner's subscription at the moment it's checked, so
+  it lapses if the owner's Premium lapses. (Was undefined until 2026-09-23 despite being used above.)
+- **One club per user — a deliberate design decision, not an accident of the schema** (PM, 2026-09-23).
+  A user belongs to at most one Club at a time. Reason: it keeps the Participation Rate precompute
+  and the Club War participant snapshot simple and correct — a user can never be counted for two
+  Clubs in the same period (no cross-Club double-counting). Enforced in T4.2a's migration by making
+  `club_member.user_id` the primary key.
 
 **Decided (mechanism, finalized 2026-09-23):**
 
@@ -510,7 +519,10 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   (see AC7 — resolved, not open).
 - AC3: Each club's score during the 48-hour window is its Participation Rate — the identical metric
   and activity threshold as §4.20 Section 1 "Club Aktif" — computed only over that club's
-  war-entered members, not its whole roster.
+  war-entered members, not its whole roster. A war-entered member counts as participating if they
+  have at least one `validated` run inside the 48-hour window whose distance clears ADR-0009's
+  `MIN_DISTANCE_KM_FOR_POINTS` gate (definition in §4.20 Section 1, added 2026-09-23 — before that
+  date this AC referred to a threshold §4.20 never actually defined).
 - AC4: The club with the strictly higher Participation Rate wins; with 3 clubs entered, the single
   highest rate wins and the rest lose (one ranking, not pairwise comparisons).
 - AC5: An exact tie in Participation Rate between the leading clubs is broken by total combined
@@ -554,7 +566,14 @@ T4.18+ breakdown for what's blocked on these still-open points.~~
 separate precompute jobs, no combined score between them.
 
 - **Section 1 — "Club Aktif"**: ranked by **Participation Rate** (% of a club's members who ran in
-  the period). **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23 —
+  the period). **Activity threshold — what "ran" means (PM decision, 2026-09-23):** a member counts
+  as having run in the period if they have at least one run in that period with status
+  **`validated`** **and** a distance that clears the existing anti-farming minimum-distance gate
+  (`MIN_DISTANCE_KM_FOR_POINTS`, ADR-0009 — currently 0.1km). This **reuses** the existing gate, it
+  is not a new threshold: if ADR-0009's constant is ever re-tuned, this definition follows it. Note
+  the gate is on points, not on status — a `validated` run under the gate exists (it earns 0 points)
+  and does **not** count here. §4.19 AC3 (Club War) uses this exact same definition.
+  **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23 —
   reverses an earlier design conversation that specifically chose a *rolling* 30-day window instead
   of a periodic reset, because a hard reset undermines the "is this club alive right now" purpose a
   rolling window gives it; the PM was presented that tradeoff directly and chose the 60-day reset
@@ -724,9 +743,9 @@ passes per that task's own note, **not covered here and deliberately given no AC
    persistence. **Phone-free tracking is NOT committed as a v2 roadmap item** — it stays genuinely
    open for the future, deliberately not locked in either direction now.
 2. **Live metrics + pause/stop from the watch; no start (Q1).** The watch shows live distance, pace
-   and elapsed time, and can send pause, resume and stop to the phone (**resume is an inference**, not
-   stated in the PM's "pause/stop" decision — included because a watch that can pause but not resume
-   forces the runner back to the phone mid-run; flagged for confirmation). It **cannot start a run** —
+   and elapsed time, and can send pause, resume and stop to the phone (~~resume is an inference, not
+   stated in the PM's "pause/stop" decision — flagged for confirmation~~ **resume confirmed final
+   2026-09-23**, PM). It **cannot start a run** —
    the technical research that would be needed for that (whether WatchConnectivity can reliably wake
    a backgrounded/locked phone's tracking session) has not been done, so it is out of v1.
 3. **Watch is always optional (Q2, consequence of Q1).** The iPhone remains the complete primary
