@@ -885,7 +885,7 @@ the code is only a color name. Three already-decided things depend on it: the Pr
 2. **A separate `subscription` table with transaction history** — not a scalar column on `user`.
    Append-only, the same ledger pattern as `point_transaction` (ADR-0013): a status change is a new
    row, never an UPDATE; a subscription's current status is its most recent row. Minimal fields:
-   `user_id`, `original_transaction_id`, `product_id`, `status`, `expires_at`, `environment`
+   `user_id` (non-null FK to `user` — settled 2026-09-23 with #13), `original_transaction_id`, `product_id`, `status`, `expires_at`, `environment`
    (`sandbox` | `production`).
 3. **App Store Server Notifications are the target design for real-time status sync, but are NOT
    implemented now** — blocked by the Apple Developer Program not yet being enrolled, the same
@@ -942,7 +942,9 @@ the code is only a color name. Three already-decided things depend on it: the Pr
     `backend/lib/account-deletion.ts` already treats history — its own header: *"`PointTransaction`
     rows are never touched (append-only ledger)… The `user` row itself is soft-deleted, not removed,
     so `PointTransaction.user_id` stays valid"*, and for runs: *"The row stays (ledger `run_id` FK),
-    the route goes."* The exact mechanism is flagged below.
+    the route goes."* ~~The exact mechanism is flagged below.~~ **Mechanism decided 2026-09-23
+    (PM): `user_id` is kept** — the rows are never touched; the person is disconnected because the
+    `user` row they point to is already anonymized by T2.22. No AC6 exception.
 
 **Blocker scope, verified 2026-09-23 (was "believed" before):** every App Store Server API call —
 not only notifications — needs a JWT signed with an In-App Purchase key that can only be generated
@@ -981,10 +983,13 @@ Program (Apple's membership comparison: App Store Connect ✗ for free accounts)
 - AC13: Deleting an account while its subscription is active shows the subscription warning —
   T2.22's added AC (tasks/phase-2-backend-sync-global-leaderboard.md).
 - AC14 (added 2026-09-23): deleting an account never deletes its `subscription` rows;
-  `original_transaction_id` and every status row survive, and nothing on them identifies the person
-  (mechanism flagged below).
+  `original_transaction_id` and every status row survive, and nothing on them identifies the person.
+  **Mechanism (decided 2026-09-23, PM): the `subscription` rows are not modified at all — `user_id`
+  stays, pointing at the `user` row that T2.22 soft-deletes and anonymizes.** Same as
+  `PointTransaction.user_id` today; AC6 (never updated) holds with no exception, and
+  `account-deletion.ts` needs no change for this table.
 
-~~**NOT decided — flagged, not invented:**~~ **Resolved 2026-09-23 (PM), except the last point:**
+~~**NOT decided — flagged, not invented:**~~ **All resolved 2026-09-23 (PM):**
 - ~~**What "lapsed" means.**~~ → decided #9: expired after grace period; statuses 1/3/4 = Premium.
 - ~~**How the server learns of a lapse while notifications are blocked.**~~ → decided #10: on
   demand at action points, reading Apple's live status; no polling.
@@ -995,18 +1000,18 @@ Program (Apple's membership comparison: App Store Connect ✗ for free accounts)
 - ~~**Still NOT decided — what happens to a deleted account's `subscription` rows.**~~ → **decided
   2026-09-23 (PM): anonymized, never deleted** — `original_transaction_id` and the full status
   history stay, for audit and Apple disputes; the link to the person is removed. See decided #13
-  and AC14 — the *mechanism* is still open (below).
+  and AC14 — mechanism decided too (below).
 
-**Still NOT decided — the anonymization mechanism (a genuine conflict, not invented either way):**
+~~**Still NOT decided — the anonymization mechanism (a genuine conflict, not invented either way):**
 the decision says `user_id` is nulled/disconnected. Two things in this repo point the other way:
 (1) AC6 above — `subscription` rows are **never updated** by application code, and nulling `user_id`
 is an UPDATE; (2) the `account-deletion.ts` pattern quoted above keeps `user_id` on ledger rows and
-anonymizes the `user` row it points to instead — so the rows are already disconnected from any
-personal data without being touched. Pick one:
-- **(a) Null `user_id`** as stated — needs `subscription.user_id` nullable and an explicit AC6
-  exception for account deletion; diverges from how `point_transaction` is handled.
-- **(b) Keep `user_id`, rely on the soft-deleted, anonymized `user` row** — exactly the existing
-  `account-deletion.ts` pattern, AC6 untouched, nothing to change in T2.22's code for this table.
+anonymizes the `user` row it points to instead. Pick one: (a) null `user_id` — nullable column + an
+AC6 exception; (b) keep `user_id`, rely on the anonymized `user` row.~~
+**Decided 2026-09-23 (PM): option (b).** `subscription.user_id` is kept and is a regular non-null
+FK to `user`, same as `PointTransaction.user_id`. Reasons: it's the pattern `account-deletion.ts`
+already uses for history, and it needs no exception to AC6 — `subscription` stays strictly
+append-only. Option (a) (null `user_id`) is **not** what's built.
 
 **Consequence of #11 + #13, noted (follows from decisions already made — not a new question):** if
 someone deletes their account without cancelling at Apple, the subscription stays active and stays
