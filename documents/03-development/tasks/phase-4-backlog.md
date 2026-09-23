@@ -49,7 +49,15 @@ implemented.
   Laju's own team creates/manages events on an EO client's behalf. Revenue
   model changed from tool-subscription to per-event service fee (pricing
   not decided, lean-canvas.md §6). Task name may need to change along with
-  it — "dashboard" no longer describes what ships.
+  it — "dashboard" no longer describes what ships. **Real scoping done
+  2026-09-23** — see product-spec.md §4.21: recommended minimal shape is
+  an admin CLI script (same family as `backend/scripts/season.ts`), no
+  dashboard UI at all, since there is zero self-serve surface to build
+  one for. **Still not a real task (no DoD written)** — blocked on one
+  genuinely open question that determines the entire shape of the work:
+  what an "event" technically *is* (a time-boxed leaderboard scope? a
+  data export? something else?). Cannot be scoped into concrete DoD
+  items until that's answered.
 - **T4.17 — Club Global Leaderboard.** Depends on T4.1 (Club must exist)
   and, for its Section 2, T4.2 (Club War must exist — Section 2 has
   nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**

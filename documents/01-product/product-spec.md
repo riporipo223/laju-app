@@ -452,7 +452,7 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
 **Decided:**
 - Max **3 clubs per Club War**.
 - **Self-serve**: a Club War is started by a Premium Club's owner/admin, not by Laju's team —
-  distinct from the event-scale permission rule (§4.21) below, since a Club War's reach is bounded
+  distinct from the event-scale permission rule (ADR-0014), since a Club War's reach is bounded
   to the clubs actually entered, never the whole user base.
 
 **NOT decided — genuinely open, flagged rather than invented:**
@@ -511,6 +511,46 @@ season-length constant has been touched by this decision. That is deliberately l
 scoped task (tasks/phase-4-backlog.md T4.18) — this docs pass only records *what* was decided, not
 *how* it gets built (e.g. how `advance_seasons`/`transition_season` should know Season 1 is 91 days
 but every season after it is 60).
+
+### 4.21 EO Managed Event (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+
+**Status: reframed, real scoping done 2026-09-23** (real scoping, per this session's own work — still
+Fase 4, not scheduled, not built). Was "B2B dashboard for event organizer" (T4.9); reframed to a
+managed service by ADR-0014 (event-scale reach is Laju-exclusive, no self-serve at any tier) — see
+lean-canvas.md §2/§6 for the business-model side of this. This section is the product/technical side:
+what "Laju's team creates and manages events on an EO client's behalf" concretely means.
+
+**Decided:**
+- No dashboard, no EO-facing UI of any kind. An EO client never authenticates into Laju's system.
+- Laju's own team is the operator — every action for an EO's event is performed by Laju staff.
+- Revenue: per-event service fee (lean-canvas.md §6). Exact price not decided.
+
+**Recommended minimal technical shape — a proposal for PM confirmation, not yet decided:**
+Given there is no self-serve surface at all, the lowest-risk starting shape is an **admin CLI script**
+in the same family as the existing `backend/scripts/season.ts` (T3.6's admin-triggered path) —
+Laju staff run a script against the real backend to set up and tear down whatever an "event" turns
+out to be, rather than building any dashboard UI for a feature nobody outside Laju ever sees. This
+mirrors an established pattern already in this codebase (`backend/scripts/resolve-flagged-run.ts` is
+the other example) rather than inventing a new one. **This avoids building UI work for a feature with
+zero self-serve surface**, which would be spending Fase-4 effort on exactly the kind of speculative
+work `tasks/phase-4-backlog.md`'s own top-of-file rule warns against.
+
+**NOT decided — genuinely open, needs the PM before this can be scoped precisely:**
+- **What is an "event," technically?** Candidates, none chosen: (a) a time-boxed leaderboard scope
+  layered on top of the existing Global leaderboard/precompute pattern (ADR-0013) — participants
+  see a separate, bounded-duration ranking; (b) something entirely outside the point/leaderboard
+  system, e.g. a one-off data export of run data Laju already has for participants who opted in;
+  (c) something else not yet named. The shape of the actual implementation work depends entirely on
+  this answer — it is not a detail to fill in later, it is the scoping question.
+- **Who counts as a "participant"?** Does an EO's event need its own signup/registration flow inside
+  the app, or does it reuse the existing user base filtered by some criterion (region — removed
+  entirely per §4.1's D1 reversal, so not that; club membership; a manual list Laju staff maintain)?
+- **Does this need real-time-ish data during the event**, or is a manual precompute run (Laju staff
+  triggers it, same pattern as `rebuild_global_leaderboard`) sufficient for an event's timescale
+  (hours to a few days, presumably — not confirmed)?
+
+Not scoped into a real task (no T4.x DoD written) because the "what is an event" question is not a
+detail — until it's answered, any task breakdown here would be guessing at the actual work.
 
 ## 5. Non-Goals (v1) — dan alasannya
 
