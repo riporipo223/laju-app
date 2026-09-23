@@ -504,6 +504,10 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
      challenge was sent. **This is not a forfeit** — there is nothing to forfeit, because the war
      never started. (Resolved 2026-09-23, PM decision, after this was flagged as a genuine
      ambiguity between this rule and the Phase 2 forfeit rule below — see rationale note after AC9.)
+     **Also dissolves (PM decision, 2026-09-23): the inviting club's owner losing Premium while the
+     challenge is still pending** — same outcome as a decline/timeout, no record for anyone, not a
+     forfeit. Reason: same principle as above — a pending phase that fails never happened; it is not
+     a loss.
    - **Phase 2 — active (every invited club has accepted; the 48-hour scoring period is running).**
      ~~Two rules apply only once a war has reached this phase:~~ **Three rules** apply only once a
      war has reached this phase (third added 2026-09-23 with §4.23):
@@ -512,11 +516,16 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
      - **Total inactivity forfeit**: a club with zero participating members during the war period
        forfeits automatically; the other entered club(s) win. This **is** a real, recorded
        win/loss outcome, because the war genuinely started — unlike Phase 1's dissolution.
-     - **Premium lapse forfeit** (added 2026-09-23, PM decision — see §4.23): if the owner of a club
-       whose Premium Club status the war relies on loses active Premium while the war is `active`,
-       the war ends **for that club** immediately with a forfeit — a real, recorded loss, the same
-       kind of outcome as the inactivity forfeit above (not a Phase 1 dissolution). The war continues
-       for the remaining club(s); in a 2-club war the other club wins by forfeit.
+     - **Premium lapse forfeit** (added 2026-09-23, PM decision — see §4.23): if the owner of ~~a club
+       whose Premium Club status the war relies on~~ **the inviting club** (the only club that needs
+       Premium Club status — invited clubs don't, so this rule can never apply to them) loses active
+       Premium while the war is `active`, the war ends **for that club** with a forfeit — a real,
+       recorded loss, the same kind of outcome as the inactivity forfeit above (not a Phase 1
+       dissolution). The war continues for the remaining club(s); in a 2-club war the other club wins
+       by forfeit. "Loses active Premium" means Apple status `2` (expired — i.e. after any grace
+       period has ended) — billing retry (`3`) and Billing Grace Period (`4`) still count as Premium
+       (§4.23). Status `5` (revoked — refunded) is also treated as lost: an **inference**, not in the
+       PM's decision text, flagged for confirmation.
 5. **Anti-farming — deliberately none in v1.** No cooldown between the same pair of clubs
    re-warring, no tier/strength-based restriction on who can be challenged. This is a conscious
    decision, not an oversight — revisit only if real usage data shows an actual exploitation
@@ -531,9 +540,11 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
 - AC3: Each club's score during the 48-hour window is its Participation Rate — the identical metric
   and activity threshold as §4.20 Section 1 "Club Aktif" — computed only over that club's
   war-entered members, not its whole roster. A war-entered member counts as participating if they
-  have at least one `validated` run inside the 48-hour window whose distance clears ADR-0009's
-  `MIN_DISTANCE_KM_FOR_POINTS` gate (definition in §4.20 Section 1, added 2026-09-23 — before that
-  date this AC referred to a threshold §4.20 never actually defined).
+  have at least one ~~`validated`~~ **`validated`, `flagged` or `approved`** run inside the 48-hour
+  window whose distance clears ADR-0009's `MIN_DISTANCE_KM_FOR_POINTS` gate (definition in §4.20
+  Section 1, added 2026-09-23 — before that date this AC referred to a threshold §4.20 never
+  actually defined; status set corrected the same day, see §4.20 Section 1 for why). A member who
+  leaves their club after the war went `active` **still counts** for that war (AC11).
 - AC4: The club with the strictly higher Participation Rate wins; with 3 clubs entered, the single
   highest rate wins and the rest lose (one ranking, not pairwise comparisons).
 - AC5: An exact tie in Participation Rate between the leading clubs is broken by total combined
@@ -549,20 +560,31 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   Record" — see that section for the record's own reset cadence (every 60 days, starting Season 2).
   AC7's dissolved-challenge case produces no such outcome, consistent with §4.20 Section 2's own
   rule that a club which has never fought is unranked, not zero.
-- AC10 (added 2026-09-23, with §4.23): if, while a war is `active`, the owner of a club whose
-  Premium Club status the war relies on stops having active Premium, that club forfeits
-  immediately — a recorded loss, same outcome type as AC6's inactivity forfeit, not an AC7
+- AC10 (added 2026-09-23, with §4.23; open points resolved the same day): if, while a war is
+  `active`, the owner of **the inviting club** stops having active Premium, the inviting club
+  forfeits — a recorded loss, same outcome type as AC6's inactivity forfeit, not an AC7
   dissolution. The war continues for the remaining club(s); in a 2-club war the other club wins.
-  "Immediately" is bounded by how fast the server learns of the lapse — see §4.23's flagged note
-  (App Store Server Notifications are blocked for now).
-  **NOT decided — flagged, not invented:**
-  - **Which clubs this applies to.** §4.19 requires Premium Club status only of the **inviting**
-    club (its owner/admin sends the challenge); nothing says invited clubs must be Premium Clubs.
-    Read literally, AC10 can then only ever trigger for the inviter. Confirm that, or decide that
-    invited clubs must be Premium Clubs too.
-  - **A lapse while the challenge is still `pending`** (Phase 1). The decision covers `active`
-    only. Does the challenge dissolve (AC7-style, no record), stay pending, or something else?
-  - **What counts as "lapsed"** (billing retry / grace period) — §4.23's flagged note.
+  **Invited clubs are never subject to AC10** — they don't need Premium Club status at all.
+  "Stops having active Premium" = Apple status `2` expired (after any grace period); billing retry
+  and Billing Grace Period still count as Premium (§4.23 decided #9). Detected **on demand** by the
+  backend at the point an action needs Premium — not by a background poll (§4.23 decided #10).
+  ~~**NOT decided — flagged, not invented:**~~ *(resolved 2026-09-23, PM)*
+  - ~~**Which clubs this applies to.**~~ → inviting club only.
+  - ~~**A lapse while the challenge is still `pending`**~~ → the challenge dissolves (AC12).
+  - ~~**What counts as "lapsed"**~~ → expired after grace period; see §4.23.
+- AC11 (added 2026-09-23, PM decision): a member who leaves their club **after** the war went
+  `active` still counts toward that club's Participation Rate for that war — the war's participant
+  snapshot taken at the `pending → active` moment is final for that war. (Membership changes after
+  that moment don't touch a war already running.)
+- AC12 (added 2026-09-23, PM decision): if the inviting club's owner stops having active Premium
+  while the challenge is still `pending`, the challenge dissolves exactly like AC7 — **no Club War
+  Record entry for anyone**, not a forfeit.
+
+**NOT decided — new, created by the 2026-09-23 status-set correction (flagged, not invented):**
+counting `flagged` runs means a war's result can depend on a run that is later `rejected` by the
+anti-cheat review. §4.20's Club Aktif self-corrects (it's rebuilt on every precompute), but a Club
+War's win/loss is recorded once, when the war ends. If a `flagged` run that decided a war is later
+rejected: is the recorded result revised, or does it stand as recorded?
 
 **AC7 rationale (PM decision, 2026-09-23):** consistent with §4.20 Section 2's own principle ("a
 club that has never fought a Club War is unranked, not zero — absent from the list entirely") — a
@@ -593,11 +615,19 @@ separate precompute jobs, no combined score between them.
 - **Section 1 — "Club Aktif"**: ranked by **Participation Rate** (% of a club's members who ran in
   the period). **Activity threshold — what "ran" means (PM decision, 2026-09-23):** a member counts
   as having run in the period if they have at least one run in that period with status
-  **`validated`** **and** a distance that clears the existing anti-farming minimum-distance gate
+  ~~**`validated`**~~ **`validated`, `flagged` or `approved`** (corrected 2026-09-23, PM) **and** a
+  distance that clears the existing anti-farming minimum-distance gate
   (`MIN_DISTANCE_KM_FOR_POINTS`, ADR-0009 — currently 0.1km). This **reuses** the existing gate, it
   is not a new threshold: if ADR-0009's constant is ever re-tuned, this definition follows it. Note
-  the gate is on points, not on status — a `validated` run under the gate exists (it earns 0 points)
+  the gate is on points, not on status — a run under the gate exists (it earns 0 points)
   and does **not** count here. §4.19 AC3 (Club War) uses this exact same definition.
+  **Why the status set was corrected:** `validated`-only was stricter than the rule this codebase
+  already uses for "did this person run today" — the server-side streak rule (tech-spec.md §2.2)
+  counts `validated`/`approved`/`flagged` and excludes only `rejected`. The PM chose consistency
+  with that rule. The decision named `validated` and `flagged`; **`approved` is included as an
+  inference** — it's what a `flagged` run becomes once cleared, and the streak rule cited as the
+  reason includes it (excluding it would mean a run counts while under review but stops counting
+  once approved). Flagged for confirmation.
   **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23 —
   reverses an earlier design conversation that specifically chose a *rolling* 30-day window instead
   of a periodic reset, because a hard reset undermines the "is this club alive right now" purpose a
@@ -866,11 +896,48 @@ the code is only a color name. Three already-decided things depend on it: the Pr
    the app, in any state, 20 per page with a `revision` token; each transaction carries the
    `appAccountToken` set at purchase.
 6. **Premium lapsing during an active Club War forfeits that club** — written into §4.19 itself
-   (Phase 2 rules and AC10), since it changes Club War's own state machine.
+   (Phase 2 rules and AC10), since it changes Club War's own state machine. **Scope settled
+   2026-09-23:** applies to the **inviting club only** (the only club that needs Premium); a lapse
+   while the challenge is still pending dissolves it instead (§4.19 AC12).
 7. **v1 packaging: monthly only, $7.99** (regional prices via App Store Connect tiers, decided
    earlier, §5 Monetisasi row). **No annual plan and no free trial in v1 — a deliberate scope limit,
    not an oversight.** Don't reopen without the PM.
 8. **Task number T4.20.**
+9. **"Lapsed" = expired after Apple's grace period, not the first failed payment** (PM, 2026-09-23).
+   Apple's subscription statuses (App Store Server API docs, verified 2026-09-23): `1` active, `2`
+   expired, `3` billing retry, `4` Billing Grace Period, `5` revoked. **`1`, `3` and `4` all count as
+   Premium**; a user only stops being Premium at `2`. Reason: Apple deliberately tolerates temporary
+   payment problems (a card declined once) — Laju shouldn't punish them harder than Apple does,
+   e.g. with a Club War forfeit. Status `5` (revoked/refunded) is treated as not-Premium too — an
+   inference, flagged in §4.19 for confirmation.
+10. **Lapse detection is on demand, not polled** (PM, 2026-09-23): the backend checks the user's
+    Premium status at the moment an action needs it — no background poll, no cron. Enough for now
+    because every Premium consequence is tied to an action. For Club War the check points are
+    (derived from this decision, flagged for confirmation): sending a challenge, the
+    `pending → active` transition (a lapse here dissolves the challenge, §4.19 AC12), and computing
+    the war's result at the end of the 48 hours (a lapse here forfeits, §4.19 AC10). For §4.5 AC4:
+    each request for all-league data.
+    **Technical consequence:** the backend's own `subscription` rows can't tell Billing Grace Period
+    from expired — both just look like an `expires_at` in the past, and without App Store Server
+    Notifications nothing updates the table when a renewal fails. So honoring decision 9 means each
+    on-demand check reads Apple's live status (`GET /inApps/v1/subscriptions/{anyTransactionId}`,
+    verified to exist) rather than trusting `expires_at` alone — which makes every Premium check
+    depend on the App Store Server API (see T4.20b's blocker, below).
+11. **The second Laju account on the same Apple ID is refused, with a clear message; no transfer**
+    (PM, 2026-09-23): the purchase is refused with *"Apple ID ini sudah punya langganan Laju Premium
+    aktif di akun lain."* Premium **cannot be moved** between Laju accounts in v1 — no transfer flow.
+    A deliberate scope limit, revisit only on real demand.
+12. **Account deletion must warn about an active subscription** (PM, 2026-09-23): the delete-account
+    flow tells the user deleting the account does **not** cancel their Apple subscription. Written
+    as an added AC on T2.22's existing scope (tasks/phase-2-backend-sync-global-leaderboard.md), not
+    a new section.
+
+**Blocker scope, verified 2026-09-23 (was "believed" before):** every App Store Server API call —
+not only notifications — needs a JWT signed with an In-App Purchase key that can only be generated
+in **App Store Connect** (Apple docs: "You generate JWTs using a private API key that you download
+from App Store Connect"), and App Store Connect is **not** available without the paid Apple Developer
+Program (Apple's membership comparison: App Store Connect ✗ for free accounts). So T4.20b is blocked
+**in full**, and so is every server-side Premium check that depends on it — see HANDOFF.md §4.
 
 **Acceptance Criteria:**
 - AC1: The store offers exactly one product: a monthly auto-renewable subscription at the $7.99
@@ -887,27 +954,33 @@ the code is only a color name. Three already-decided things depend on it: the Pr
   new row, and current status is the most recent row for an `original_transaction_id`.
 - AC7: If a verified transaction's Apple ID already backs an active Premium subscription attributed
   (by `appAccountToken`) to a different Laju account, the second account is not granted Premium.
+  **Extended 2026-09-23:** the purchase is refused and the user sees *"Apple ID ini sudah punya
+  langganan Laju Premium aktif di akun lain."* The server never attributes that subscription to the
+  second account, whatever the client does.
+- AC10: Apple statuses `1` (active), `3` (billing retry) and `4` (Billing Grace Period) count as
+  Premium; `2` (expired) does not. (`5` revoked also does not — inference, flagged in §4.19.)
+- AC11: No background job polls subscription status. The backend checks Premium only at the moment
+  an action needs it (decided #10), reading Apple's live status at that moment.
+- AC12: There is no way to move Premium from one Laju account to another in v1.
+- AC13: Deleting an account while its subscription is active shows the subscription warning —
+  T2.22's added AC (tasks/phase-2-backend-sync-global-leaderboard.md).
 - AC8: Restore Purchases is available at any time and restores Premium, on any device, for the Laju
   account the subscription belongs to.
 - AC9: No App Store Server Notifications endpoint ships in this version (target design, blocked —
   HANDOFF.md §4).
 
-**NOT decided — flagged, not invented:**
-- **What "lapsed" means.** Apple reports states beyond active/expired — e.g. billing retry and
-  **Billing Grace Period** (status `4` in the App Store Server API). Whether a user in billing retry
-  or grace period still counts as Premium is undecided. It matters most for §4.19 AC10 (a lapse
-  there is a recorded loss).
-- **How the server learns of a lapse while notifications are blocked.** Without App Store Server
-  Notifications, the backend only learns a subscription ended by polling
-  (`GET /inApps/v1/subscriptions/{anyTransactionId}`) or by checking `expires_at` when it next looks.
-  How often it checks decides how "immediate" §4.19 AC10's forfeit can actually be.
-- **What the second Laju account (AC7) sees**, and whether moving Premium from one Laju account to
-  another on the same Apple ID is ever allowed. (Apple has a server endpoint to change a
-  transaction's `appAccountToken`, so it's technically possible — the product decision isn't made.)
-- **Account deletion (T2.22) with an active subscription** — whether the deletion flow must tell the
-  user their Apple subscription keeps billing until cancelled in Apple's settings (believed to be an
-  App Store expectation — needs checking against current guidelines), and what happens to that
-  account's `subscription` rows.
+~~**NOT decided — flagged, not invented:**~~ **Resolved 2026-09-23 (PM), except the last point:**
+- ~~**What "lapsed" means.**~~ → decided #9: expired after grace period; statuses 1/3/4 = Premium.
+- ~~**How the server learns of a lapse while notifications are blocked.**~~ → decided #10: on
+  demand at action points, reading Apple's live status; no polling.
+- ~~**What the second Laju account (AC7) sees**, and whether moving Premium is ever allowed.~~ →
+  decided #11: refused with a clear message; no transfer in v1.
+- ~~**Account deletion (T2.22) with an active subscription** — whether the deletion flow must tell
+  the user their Apple subscription keeps billing.~~ → decided #12: yes, explicit warning (T2.22).
+- **Still NOT decided — what happens to a deleted account's `subscription` rows.** Decision #12
+  covers the warning only. `subscription` is append-only (AC6), T2.22 soft-deletes the `user` row and
+  keeps ledger rows (`point_transaction`) intact — whether `subscription` rows are kept the same way,
+  anonymized, or removed isn't decided, and it touches T2.22's personal-data handling.
 
 ## 5. Non-Goals (v1) — dan alasannya
 
