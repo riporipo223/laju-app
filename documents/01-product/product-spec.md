@@ -639,17 +639,56 @@ separate precompute jobs, no combined score between them.
   rolling window gives it; the PM was presented that tradeoff directly and chose the 60-day reset
   anyway, so this is a deliberate override, not an oversight). Follows the User Season boundary
   (below) — during Season 1 there is no 60-day cadence to align to yet, since Season 1 itself is 91
-  days; this section's own reset timing during Season 1 is not yet specified and is part of T4.18/
-  T4.17's implementation scoping, not decided here. **Minimum 10 members to qualify** — below that,
+  days; ~~this section's own reset timing during Season 1 is not yet specified and is part of T4.18/
+  T4.17's implementation scoping, not decided here.~~ **Season 1 behavior decided 2026-09-23 (PM):
+  no reset during Season 1** — the period runs from the feature's launch until Season 2 starts, then
+  the 60-day cycle begins. Same rule as Section 2. (The PM re-confirmed the 60-day reset over a
+  rolling 30-day window on 2026-09-23 when a later prompt described Club Aktif as rolling — the
+  60-day decision stands.) **Minimum 10 members to qualify** — below that,
   a "Belum Cukup Data" state, mirroring the cancelled Local Leaderboard's `insufficient_data` pattern
   (§4.6, historical reference only; the mechanism itself was removed with that cancellation and
   would need to be rebuilt here, not reused directly).
 - **Section 2 — "Club War Record"**: ranked by win/loss record from Club War (§4.19) matches only.
   **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23, no prior conflicting
   design — this one was always meant to align with a periodic reset, matching the Season pattern).
-  Same Season-1 caveat as Section 1 above — the 60-day cadence has nothing to align to until Season 2
-  begins. A club that has never fought a Club War is **unranked here, not zero** — absent from the
-  list entirely.
+  ~~Same Season-1 caveat as Section 1 above — the 60-day cadence has nothing to align to until Season 2
+  begins.~~ **Season 1 behavior decided 2026-09-23 (PM): no reset during Season 1** — the record
+  accumulates from the feature's launch until Season 2 starts, then the 60-day cycle applies. Reason:
+  Season 1 stays 91 days untouched, and a one-off partial-reset mechanism for a single transition
+  period isn't worth building. (Only matters if Club War ships before Season 1 ends on 2026-11-30;
+  if it ships later, the 60-day cycle applies from day one.) A club that has never fought a Club War
+  is **unranked here, not zero** — absent from the list entirely.
+
+**Acceptance Criteria (added 2026-09-23):**
+- AC1: Club Aktif and Club War Record are two separate rankings produced by two separate precompute
+  jobs (ADR-0013 pattern). Neither reads the other's output; there is no combined score.
+- AC2: Both rankings are served from precomputed results, never derived live on read.
+- AC3: A club's Club Aktif score is its Participation Rate for the current period: members who ran
+  ÷ members. "Ran" = at least one `validated`, `approved` or `flagged` run in the period whose
+  distance clears `MIN_DISTANCE_KM_FOR_POINTS` (ADR-0009) — the same definition §4.19 AC3 uses.
+  Members = the club's roster at precompute time *(reading, not a stated decision — see the open
+  question in the 2026-09-23 report on runs from before a member joined)*.
+- AC4: A club with fewer than 10 members is not ranked in Club Aktif; it shows a "Belum Cukup Data"
+  state instead.
+- AC5: Club War Record counts only wars with status `ended` (§4.19). Dissolved challenges (§4.19 AC7,
+  AC12) never appear in it, for any club.
+- AC6: A club with no ended war in the current period does not appear in Club War Record — absent,
+  not listed as 0–0.
+- AC7: A recorded war result is never revised afterwards (§4.19 AC13). Club Aktif, by contrast, is
+  rebuilt on every precompute, so a run rejected later simply stops counting.
+- AC8: From Season 2 onward, both sections reset every 60 days, aligned to the User Season boundary
+  (each Season from Season 2 is 60 days, T4.18).
+- AC9: During Season 1, neither section resets: the period runs from the feature's launch until
+  Season 2 starts.
+
+**NOT decided — flagged, not invented (2026-09-23):**
+- **Club War Record ordering.** "Ranked by win/loss record" doesn't say how: most wins, best win
+  rate, or wins minus losses — and what breaks a tie.
+- **Club Aktif roster (AC3).** Does a run count if the member did it before joining the club, within
+  the same period? And does a member who left mid-period still count in either the numerator or
+  the denominator?
+- **"Never fought" after a reset (AC6).** AC6 reads "never fought" as "no ended war in the current
+  period". The original wording ("has never fought a Club War") could also mean "ever".
 
 **User Season reset cadence — T4.18 DECIDED 2026-09-23, NOT YET IMPLEMENTED:**
 
