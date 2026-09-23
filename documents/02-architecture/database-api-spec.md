@@ -30,9 +30,9 @@ erDiagram
         string username
         string display_name
         string avatar_url "cleared on deletion (§2.1b) — an image URL is personal data"
-        string region_kecamatan
-        string region_kabupaten_kota "merged tier — kabupaten and kota are the same administrative level in Indonesia, never both for one user"
-        string region_provinsi
+        string region_kecamatan "REMOVED 2026-09-22 — dropped by migration 20260923090000 (D1 reversed, product-spec.md §4.1; Local Leaderboard cancelled §4.6). Listed here only until that migration is applied; no code reads or writes it as of Task C"
+        string region_kabupaten_kota "REMOVED 2026-09-22 — same migration. (Was: merged tier — kabupaten and kota are the same administrative level in Indonesia, never both for one user)"
+        string region_provinsi "REMOVED 2026-09-22 — same migration"
         int total_points
         int current_level
         float trust_score
@@ -224,10 +224,7 @@ Request:
 ```json
 {
   "username": "budi_run",
-  "display_name": "Budi",
-  "region_kecamatan": "Cilandak",
-  "region_kabupaten_kota": "Jakarta Selatan",
-  "region_provinsi": "DKI Jakarta"
+  "display_name": "Budi"
 }
 ```
 
@@ -622,7 +619,7 @@ Backed by `season_result`, written once when a season ends and never updated; `l
 | Total excluded segments between `FLAG_THRESHOLD_PCT` (10%) and `REJECT_THRESHOLD_PCT` (50%) | Run status → `flagged`, `flag_confidence` set to `low` (10%–<25%) or `high` (25%–<50%); partial `PointTransaction` written but excluded from leaderboard precompute until resolved. `low` auto-resolves to `approved` after `REVIEW_WINDOW_LOW` (default 48h); `high` never auto-resolves — requires manual override (tech-spec §2.4.1) |
 | Run with zero/negative duration or distance | `400 Bad Request`, rejected outright — not a plausible anomaly, a malformed request |
 | Authenticated request from an identity with no `user` row yet | `401` with body `{"error":"No user profile exists for this identity","code":"profile_missing"}` — the machine-readable `code` (added 2026-09-21) is how the app knows to show its profile step instead of treating the 401 as a broken session; no other 401 carries it. `POST /api/profile/complete` is the endpoint that creates the row |
-| Run submitted for a user without completed profile (no region set) | `409 Conflict` — run accepted into a holding state is out of scope for v1; client is expected to block submission until profile is complete (product-spec AC 4.1.2) |
+| ~~Run submitted for a user without completed profile (no region set)~~ **RULE REMOVED 2026-09-22** (D1 reversed — region no longer collected, so there is nothing to require; the replacement gate governs Leaderboard *visibility*, not run *submission* — product-spec.md §4.5 AC5). `POST /api/runs` no longer returns `409` for this | ~~`409 Conflict` — run accepted into a holding state is out of scope for v1; client is expected to block submission until profile is complete (product-spec AC 4.1.2)~~ |
 | Request over a rate limit (T2.20a) | `429` with a `Retry-After` header and body `{"error":"rate_limited","retry_after_seconds":N}` — per user per route (e.g. `POST /api/runs` 30/min, 300/h) and per IP (120/min across `/api/*`); the client stops its sync batch and retries next cycle. Starting values, tuned as real traffic is seen |
 | `POST /api/runs` with `gps_route` over 20,000 points, or a body over 4,000,000 bytes (SEC-10, T2.20a) | `413 Payload Too Large`, refused before any anti-cheat work; the client treats 413 as a permanent rejection |
 | Duplicate run submission (same `started_at`+`user_id` retried by sync queue) | Idempotent — server returns the existing run's result instead of creating a duplicate `PointTransaction` |
