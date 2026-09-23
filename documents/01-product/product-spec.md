@@ -512,9 +512,78 @@ scoped task (tasks/phase-4-backlog.md T4.18) — this docs pass only records *wh
 *how* it gets built (e.g. how `advance_seasons`/`transition_season` should know Season 1 is 91 days
 but every season after it is 60).
 
-### 4.21 EO Managed Event (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+### 4.21 Laju Branded Events (Fase 4, added 2026-09-23, **concept replaced 2026-09-23** — NOT v1/Must-have)
 
-**Status: reframed, real scoping done 2026-09-23** (real scoping, per this session's own work — still
+> **Concept replaced 2026-09-23 (PM decision) — not a refinement of the section below, a different
+> concept entirely.** The "EO Managed Event" scoping (same-day real-scoping pass, struck through
+> below) got the ownership model right (Laju-exclusive, no dashboard — ADR-0014 still applies) but
+> never answered what an "event" technically *is*, which blocked real scoping. That question is
+> answered now. Everything struck through below is kept as a historical record of the prior pass,
+> per this repo's convention for reversed/replaced decisions — it is not the current spec.
+
+**Decided (final, from product explanation — Senior Tech Lead framing, 2026-09-23):**
+- **Only Laju's own team can create an Event.** No self-serve, ever, at any tier — an EO/brand never
+  holds any dashboard access, never authenticates into Laju's system. This is ADR-0014's general
+  "whole-user-base reach is Laju-exclusive" rule, applied concretely here, not an exception to it.
+- **Two Event types:**
+  1. **Sponsored** — a brand partners on the Event (e.g. *"Run with Nike, dapatkan sepatu Nike"* —
+     sponsored by Nike).
+  2. **Announcement-only** — no reward attached (e.g. *"Run With Laju at Yogyakarta"*).
+- **Sponsored registration happens entirely off-platform.** Tapping a sponsored Event redirects to
+  the sponsor's own external website. Laju does **not** run registration or handle reward
+  distribution for sponsored Events — that is the sponsor's own responsibility, on their own
+  platform, outside Laju's system.
+- **Winner determination is manual, not automated.** Laju staff cross-check participants' run data
+  already present in Laju's system (distance, pace, route, etc. for the relevant window) and tell
+  the sponsor who won. **No automated payout or reward-distribution mechanism exists or is planned**
+  — this is a human process end to end, not a feature to build.
+- **Events are available to every user, unfiltered by region.** Region was removed from the system
+  entirely in Task B (§4.1 D1 reversal; database-api-spec.md). Events must not reintroduce any
+  region requirement, collection, or filter — not even implicitly (e.g. no "only show Events near
+  the user" logic that would need a location/region signal).
+- **UI**: a card feed in the **Social tab → Events sub-tab**. Large full-width image card, text
+  overlay showing participant count (*"Join X Runners"*), tap opens a detail view that redirects
+  externally for sponsored Events. Reference: a confirmed mockup/screenshot exists for this pattern
+  (not attached to this document — described here from that reference, not re-derived). See
+  screen-inventory.md §4 for why this isn't wireframed yet (Fase 4, explicitly out of scope for now,
+  per that document's own stated boundary).
+
+**Rough data model** (for the eventual Task B/C scoping pass — not built, no migration exists yet):
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | uuid | |
+| `title` | text | e.g. "Run with Nike" |
+| `image_url` | text | full-width card image |
+| `description` | text | |
+| `type` | `sponsored` \| `announcement` | determines whether the sponsor/redirect fields apply |
+| `external_url` | text, nullable | required for `sponsored` (registration + reward, sponsor-owned); `null` for `announcement` |
+| `sponsor_name` | text, nullable | `sponsored` only, e.g. "Nike" |
+| `starts_at` / `ends_at` | timestamptz | |
+| `is_active` | boolean | Laju staff toggles; inactive Events don't appear in the feed |
+
+No region field anywhere in this model — deliberate, per the "available to every user" decision above.
+
+**Acceptance criteria:**
+- AC1: An Event is exactly one of two types — `sponsored` or `announcement` — and the type
+  determines whether a sponsor name and external redirect are shown.
+- AC2: Tapping a `sponsored` Event opens `external_url` externally (browser/webview). Laju performs
+  no registration or reward logic of its own for it.
+- AC3: No automated reward distribution exists anywhere in the system for Events — winner
+  determination and notifying the sponsor is a manual, off-app Laju-staff process.
+- AC4: Every user sees every active Event in the feed. No region filter, and no other eligibility
+  gate of any kind.
+- AC5: Only Laju staff can create/edit/activate/deactivate an Event, through an internal-only
+  mechanism (recommended: an admin CLI script, same family as `backend/scripts/season.ts` — no
+  dashboard UI, ever, per ADR-0014).
+
+**MoSCoW**: Fase 4. **Must**: internal-only creation, no self-serve dashboard ever — this is locked,
+not left open to task-scoping. **Should**: the exact creation mechanism (CLI script is recommended,
+not yet the final word on implementation).
+
+---
+
+~~**Status: reframed, real scoping done 2026-09-23** (real scoping, per this session's own work — still
 Fase 4, not scheduled, not built). Was "B2B dashboard for event organizer" (T4.9); reframed to a
 managed service by ADR-0014 (event-scale reach is Laju-exclusive, no self-serve at any tier) — see
 lean-canvas.md §2/§6 for the business-model side of this. This section is the product/technical side:
@@ -550,7 +619,7 @@ work `tasks/phase-4-backlog.md`'s own top-of-file rule warns against.
   (hours to a few days, presumably — not confirmed)?
 
 Not scoped into a real task (no T4.x DoD written) because the "what is an event" question is not a
-detail — until it's answered, any task breakdown here would be guessing at the actual work.
+detail — until it's answered, any task breakdown here would be guessing at the actual work.~~
 
 ### 4.22 Apple Watch Companion (Fase 4, added 2026-09-23 — NOT v1/Must-have)
 
