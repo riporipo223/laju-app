@@ -1084,6 +1084,63 @@ attributed (by `appAccountToken`) to the deleted account. A new Laju account on 
 then refused Premium (AC7, no transfer — AC12) until that subscription expires, while it keeps
 billing. The T2.22 warning (AC13) is the only mitigation.
 
+### 4.24 Club (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+
+**Status: scoped 2026-09-23** (PM decisions after options were presented; not built). Task: **T4.1**
+in tasks/phase-4-backlog.md. This is the base Club feature that Club War (§4.19), Club Global
+Leaderboard (§4.20) and Premium Club (§4.19/§4.23) sit on. It reconciles part of user-flow.md §2.6
+("Circle"), which is still an unreconciled draft for everything not decided here.
+
+**Already decided elsewhere (restated, not re-decided):** one club per user (§4.19); roles `owner` /
+`admin` / `member` (T4.2a's `club_member`); a Club is a *Premium Club* when its owner has active
+Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
+
+**Decided (2026-09-23, PM):**
+1. **Any tier can create a club.** Premium gates only *starting a Club War* (the Premium Club rule),
+   never club creation. (Supersedes user-flow.md §1's draft "Membuat circle: Premium only".)
+2. **Description is in v1.**
+3. **Privacy: public and invite-only, both in v1.**
+4. **Joining:** a public club is joined directly; an invite-only club only with its invite code.
+   **No request-and-approve flow in v1.**
+5. **Admin tools (club analytics, internal challenges) deferred entirely** — they overlap T4.8's
+   B2B dashboard and must not be built twice.
+6. **Club feed deferred** — it depends on Social Feed (T4.15). **Internal club leaderboard: a simple
+   ranking of members by their existing season points** — reuses the data the Global leaderboard
+   already computes, no new scoring system.
+
+**Acceptance Criteria:**
+- AC1: A user of any tier can create a club. Creating one never requires Premium.
+- AC2: A club has a name, a description, and a privacy setting (`public` or `invite_only`). The user
+  who creates it becomes its `owner`.
+- AC3: A user belongs to at most one club (§4.19); to join another, they leave their current one
+  first.
+- AC4: Any user can join a `public` club directly, with no approval step.
+- AC5: An `invite_only` club can be joined only with its invite code; it can't be joined directly.
+- AC6: No join-request / approval flow exists in v1, for either privacy setting.
+- AC7: A member can leave their club. *(Whether the **owner** can leave is open — below.)*
+- AC8: Public clubs can be found in-app (browse/search) so they can be joined directly — follows from
+  AC4; draft §2.6 describes it as "Browse publik".
+- AC9: A club's internal leaderboard ranks its current members by their current-season points,
+  taken from the existing season points (no new scoring).
+- AC10: No club admin tools (analytics, internal challenges) and no club feed exist in v1.
+
+**NOT decided — flagged, not invented:**
+- **Can the owner leave?** Ownership transfer and club deletion are both deferred (T4.1 extended
+  scope). If the owner can leave, the club is left without an owner — and without a Premium Club
+  owner, so it can never start a Club War again. Options: owner can't leave in v1; or owner leaving
+  deletes/freezes the club; or pull ownership transfer into v1.
+- **How does a member become an admin?** Roles exist (§4.19 lets an owner *or admin* start a Club
+  War), but no way to appoint an admin is decided, and admin tools are deferred. v1 could simply
+  have no admins (owner only).
+- **Account deletion of a member or owner (T2.22).** Nothing removes a deleted account's
+  `club_member` row today. With Club Aktif's live roster (§4.20 AC11), deleted accounts would stay
+  in the denominator. Same question for an owner who deletes their account.
+- **Where the Club UI lives.** The app's tabs are Track / You / Ranks; draft §2.6 assumes a "Tab
+  Circle". A new tab, or inside an existing one?
+- **Who can see and share the invite code, and can it be regenerated?**
+
+**Still deferred (T4.1 extended scope):** ownership transfer, club deletion, member cap.
+
 ## 5. Non-Goals (v1) — dan alasannya
 
 | Non-goal | Alasan |

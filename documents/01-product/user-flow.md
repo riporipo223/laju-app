@@ -15,6 +15,11 @@ T4.15-T4.16. Freemium/Premium tiering, Circle admin tools, Cloud Backup,
 dan detail lain di dokumen ini **masih** belum direkonsiliasi — dokumen
 ini tetap berstatus draft standalone untuk sisanya.
 
+**Update 2026-09-23:** §2.6 (Circle → Club) sebagian sudah direkonsiliasi ke
+product-spec.md §4.24 (siapa boleh membuat club, deskripsi, privasi, cara
+join, admin tools & feed ditunda). Kalau berbeda, §4.24 yang berlaku. Sisa
+dokumen ini tetap draft.
+
 ## 1. Feature Matrix — Final
 
 | Fitur | Freemium | Premium |
@@ -28,7 +33,7 @@ ini tetap berstatus draft standalone untuk sisanya.
 | Leaderboard — Global, semua liga terlihat | ❌ | ✅ |
 | Custom profile (foto, bio) | ❌ | ✅ |
 | Ganti icon app Laju | ❌ | ✅ |
-| Membuat circle | ❌ | ✅ |
+| ~~Membuat circle~~ | ~~❌~~ | ~~✅~~ — **superseded 2026-09-23**: semua tier boleh membuat club (product-spec.md §4.24) |
 | Advanced statistics (tren mingguan/bulanan, personal record history, grafik) | ❌ | ✅ |
 | Exclusive badge/cosmetic di profile & post | ❌ | ✅ |
 | Seasonal cosmetic reward (bukan bonus poin) | ❌ | ✅ |

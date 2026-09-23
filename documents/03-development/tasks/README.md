@@ -277,7 +277,10 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [x] T3.10 — End-to-end verification: season close/open cycle (phase DoD gate) — **DONE 2026-09-22**, Phase 3 signed off (lihat [phase-3-season.md](./phase-3-season.md))
 
 ## Fase 4 — Backlog (out of scope for now)
-- [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 — scoped 2026-09-23 (§4.24 AC1-AC10), built after T4.15 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [ ] T4.1a — extend `club` (description, privacy, invite code) — separate migration, T4.2a untouched
+  - [ ] T4.1b — backend: create / join / leave / browse / internal leaderboard
+  - [ ] T4.1c — iOS UI — blocked on where the Club UI lives
 - [ ] T4.2 — Club War — confirmed to build 2026-09-23, mechanism finalized 2026-09-23 (§4.19 AC1-AC13), still not scheduled (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.2a — data model (club, roster, club_war tables)
   - [ ] T4.2b — backend API (challenge, precompute, forfeit rules) — blocked on T4.20 being implemented

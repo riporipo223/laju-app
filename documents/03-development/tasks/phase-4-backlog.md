@@ -31,9 +31,37 @@ implemented.
   **One club per user — deliberate, decided 2026-09-23** (product-spec.md
   §4.19): avoids cross-Club double-counting in Participation Rate and the
   Club War snapshot. Already enforced by T4.2a's migration.
-  **T4.1 extended scope, belum dijadwalkan**: description, privacy/
+  **T4.1 extended scope, belum dijadwalkan**: ~~description, privacy/
   visibility, join flow, leave/transfer/delete, member cap — deferred,
-  not decided (user-flow.md §2.6 is still an unreconciled draft).
+  not decided (user-flow.md §2.6 is still an unreconciled draft).~~
+  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC10**: any tier creates
+  clubs, description + public/invite-only in v1, public = direct join,
+  invite-only = invite code, no request/approval, leave in v1, internal
+  leaderboard from existing season points; admin tools and club feed
+  deferred. **Still deferred:** ownership transfer, club deletion, member
+  cap. **Still open (§4.24):** can the owner leave; how admins are
+  appointed; club membership on account deletion; where the Club UI
+  lives; invite-code visibility/regeneration. **Ordering (2026-09-23):**
+  Social Feed (T4.15) is built **before** this task (see T4.15).
+- **T4.1a — Club: extend the `club` table.** Depends on T4.2a's migration
+  (which creates the minimal `club` stub). **Scope**: a **separate, new**
+  inert migration — T4.2a's file is not modified — adding `description`,
+  a privacy column (`public` | `invite_only`), and an invite code (unique,
+  required only for `invite_only`), with RLS unchanged (already
+  deny-all). Reviewed before apply. **Reference**: product-spec.md §4.24
+  AC2, AC5.
+- **T4.1b — Club: backend.** Depends on T4.1a. **Scope**: create (any
+  tier, creator = owner), join public directly, join invite-only with the
+  code, leave, browse/search public clubs, and the internal leaderboard
+  read (members ranked by existing season points). One-club-per-user is
+  already enforced by `club_member`'s primary key (T4.2a). Owner-leave,
+  admin appointment and account-deletion handling wait on §4.24's open
+  points. **Reference**: product-spec.md §4.24 AC1-AC9.
+- **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
+  join (direct or code), leave, club page with the internal leaderboard.
+  Blocked on where the Club UI lives (§4.24 open point). Not wireframed
+  yet (screen-inventory.md §4). **Reference**: product-spec.md §4.24
+  AC1-AC10.
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
