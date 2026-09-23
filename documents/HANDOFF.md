@@ -113,6 +113,14 @@ tackled — each still needs either a user decision or something only the user c
 - **Fase 4 backlog** (Club, monetization, etc. — several items now have more decided detail as of 2026-09-23, see phase-4-backlog.md, still all "ask first") — only if the user explicitly asks to start
   it. Local Leaderboard specifically (former T3.2–T3.5) is **cancelled permanently**, not part of
   this "ask first" backlog — don't offer it as an option, it will never be scheduled.
+- **Operational deadline — Season 2 must exist before 2026-11-30** (added 2026-09-23). Season 1
+  ends 2026-11-30 and **no successor Season row has been created**. Nothing crashes if this is
+  missed — `advance_seasons` never leaves zero active seasons, so Season 1 just stays `active` past
+  its end date and is reported as `overrun` (database-api-spec.md, Season lifecycle) — but the season
+  never closes and no new one starts. Also note T4.18 (60-day seasons from Season 2) is decided but
+  **not implemented**, so creating Season 2 means either implementing T4.18 first or creating it by
+  hand with a 60-day period (`backend/scripts/season.ts`). Reminder only — not a product decision,
+  not queued work; raise it with the user well before the date.
 
 Full detail on all of these: `documents/README.md` §1 and §3.
 
