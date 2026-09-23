@@ -461,7 +461,8 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
 - **Win condition** — what determines a winner, and what a winner/loser actually gets.
 - **Duration** — how long one Club War runs. Note: this is separate from the *reset cadence*
   question resolved in §4.20 below (how often the **Club War Record** — the running win/loss
-  history — resets), which is decided (60 days). An individual Club War's own duration is not.
+  history — resets), which is decided: every 60 days, **starting Season 2** (T4.18). An individual
+  Club War's own duration is not decided.
 
 A task cannot be scoped precisely from this section alone — see tasks/phase-4-backlog.md's proposed
 T4.18+ breakdown for what's blocked on these still-open points.
@@ -473,32 +474,43 @@ T4.18+ breakdown for what's blocked on these still-open points.
 separate precompute jobs, no combined score between them.
 
 - **Section 1 — "Club Aktif"**: ranked by **Participation Rate** (% of a club's members who ran in
-  the period). **Reset cadence: every 60 days** (PM decision, 2026-09-23 — reverses an earlier design
-  conversation that specifically chose a *rolling* 30-day window instead of a periodic reset,
-  because a hard reset undermines the "is this club alive right now" purpose a rolling window gives
-  it; the PM was presented that tradeoff directly and chose the 60-day reset anyway, so this is a
-  deliberate override, not an oversight). **Minimum 10 members to qualify** — below that, a
-  "Belum Cukup Data" state, mirroring the cancelled Local Leaderboard's `insufficient_data` pattern
+  the period). **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23 —
+  reverses an earlier design conversation that specifically chose a *rolling* 30-day window instead
+  of a periodic reset, because a hard reset undermines the "is this club alive right now" purpose a
+  rolling window gives it; the PM was presented that tradeoff directly and chose the 60-day reset
+  anyway, so this is a deliberate override, not an oversight). Follows the User Season boundary
+  (below) — during Season 1 there is no 60-day cadence to align to yet, since Season 1 itself is 91
+  days; this section's own reset timing during Season 1 is not yet specified and is part of T4.18/
+  T4.17's implementation scoping, not decided here. **Minimum 10 members to qualify** — below that,
+  a "Belum Cukup Data" state, mirroring the cancelled Local Leaderboard's `insufficient_data` pattern
   (§4.6, historical reference only; the mechanism itself was removed with that cancellation and
   would need to be rebuilt here, not reused directly).
 - **Section 2 — "Club War Record"**: ranked by win/loss record from Club War (§4.19) matches only.
-  **Reset cadence: every 60 days** (PM decision, 2026-09-23, no prior conflicting design — this one
-  was always meant to align with a periodic reset, matching the Season pattern). A club that has
-  never fought a Club War is **unranked here, not zero** — absent from the list entirely.
+  **Reset cadence: every 60 days, starting Season 2** (PM decision, 2026-09-23, no prior conflicting
+  design — this one was always meant to align with a periodic reset, matching the Season pattern).
+  Same Season-1 caveat as Section 1 above — the 60-day cadence has nothing to align to until Season 2
+  begins. A club that has never fought a Club War is **unranked here, not zero** — absent from the
+  list entirely.
 
-**User Season reset cadence — DECIDED, NOT YET IMPLEMENTED:** the PM confirmed changing the User
-Season length from 91 days to **60 days** (2026-09-23), to match the two sections above. This is a
-real conflict with the **currently live, currently active** Season row (`Season 1 — 2026`,
-2026-09-01 → 2026-11-30, 91 days, seeded by `20260917211241_seed_initial_season.sql`) and with
-tech-spec.md §2.5's documented quarterly (~91-day) cadence. **Neither the live season row nor any
-season-length constant has been touched by this decision** — per this repo's "docs only" rule for
-undecided-mechanics Fase-4 work, changing the length is implementation work for a scoped future
-task (tasks/phase-4-backlog.md's proposed T4.18+ breakdown), not something to execute from a docs
-pass alone. That task must also resolve, concretely, what happens to Season 1 specifically: does it
-get cut short to end at a 60-day mark (disrupting standings users are currently competing under), or
-does the 60-day length apply starting Season 2 only (Season 1 finishes its already-communicated 91
-days as a one-time exception)? This document deliberately does not pick one — flagged for that
-task's own scoping, not decided here.
+**User Season reset cadence — T4.18 DECIDED 2026-09-23, NOT YET IMPLEMENTED:**
+
+> **Season 1: 91 days (unchanged). Season 2 and onward: 60 days.**
+
+The PM confirmed changing the User Season length to 60 days, but explicitly **not retroactively**:
+the **currently live, currently active** Season row (`Season 1 — 2026`, 2026-09-01 → 2026-11-30, 91
+days, seeded by `20260917211241_seed_initial_season.sql`) **finishes on its original schedule,
+unmodified** — it is not cut short. The cadence change applies **forward-only**, starting with
+Season 2. Reasoning (PM, 2026-09-23): cutting Season 1 short mid-run would damage the trust of users
+who already invested effort under a 91-day expectation set at the start; a forward-only change costs
+nothing users have already been promised. tech-spec.md §2.5's documented quarterly (~91-day) cadence
+is therefore correct **for Season 1 specifically**, not the general rule going forward — see that
+section's own T4.18 note for the Season League point-band calibration consequence this has.
+
+**Still not done — implementation, not documentation, is next:** neither the live season row nor any
+season-length constant has been touched by this decision. That is deliberately left as a separate,
+scoped task (tasks/phase-4-backlog.md T4.18) — this docs pass only records *what* was decided, not
+*how* it gets built (e.g. how `advance_seasons`/`transition_season` should know Season 1 is 91 days
+but every season after it is 60).
 
 ## 5. Non-Goals (v1) — dan alasannya
 

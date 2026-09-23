@@ -54,9 +54,12 @@ implemented.
   and, for its Section 2, T4.2 (Club War must exist — Section 2 has
   nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**
   — see product-spec.md §4.20 for the two-section spec (Club Aktif /
-  Club War Record) and the still-unresolved question of what happens to
-  the currently-live 91-day Season 1 if/when the User Season length
-  changes to 60 days to match.
+  Club War Record). Both sections' 60-day reset cadence is **resolved by
+  T4.18 below: applies starting Season 2, not from now** — Season 1
+  (currently live, 91 days) has no 60-day cadence to align to yet, so
+  this task's own scoping must decide what either section does during
+  Season 1 specifically (T4.18 doesn't answer that, only the User
+  Season's own length).
 - ~~**T4.10 — Route map visualization** (Mapbox integration, per
   tech-spec.md §1 Maps SDK row).~~ **Moved to Fase 1, 2026-09-12** — split
   into live map + static map (product-spec.md §4.8-4.9,
@@ -126,18 +129,32 @@ implemented.
   revisiting explicitly, not something to default into via this cleanup.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
-- **T4.18 — Change User Season length from 91 to 60 days** (added
-  2026-09-23, PM decision — see product-spec.md §4.20). Distinct from
-  T4.17: this is a live-data migration on the **currently active**
-  production Season row, not new feature work, and genuinely blocks
-  T4.17's Section 1/2 reset cadence from actually matching the User
-  Season cadence they're meant to mirror. **Not scoped precisely yet** —
-  needs an explicit answer on what happens to the already-running
-  `Season 1 — 2026` (2026-09-01→2026-11-30, 91 days): cut short to a
-  60-day mark (disrupts in-progress standings), or apply 60 days starting
-  Season 2 only (Season 1 finishes its already-communicated length as a
-  one-time exception)? See product-spec.md §4.20's own note — deliberately
-  left open there too, not decided in this docs pass.
+- **T4.18 — Change User Season length from 91 to 60 days, forward-only.**
+  Added 2026-09-23 (PM decision — see product-spec.md §4.20). **DECIDED
+  2026-09-23, NOT YET IMPLEMENTED:**
+  - **Season 1 — 2026 (currently live, 2026-09-01→2026-11-30, 91 days):
+    finishes on its original schedule, unmodified. Not cut short.**
+  - **Season 2 and every season after it: 60 days.**
+  - **Reasoning (record, don't relitigate without asking again):** cutting
+    the live Season 1 short mid-run would damage the trust of users who
+    already invested effort under a 91-day expectation set at the start;
+    the cadence change is forward-only specifically to avoid that — it
+    costs nothing users were already promised.
+  - **Still not implemented — this is the real remaining work:** the live
+    Season row and any season-length constant/config are untouched.
+    Concretely still needs scoping: how `advance_seasons`/
+    `transition_season` (database-api-spec.md's Season lifecycle,
+    T3.6) knows Season 1 specifically is 91 days while every season it
+    creates after that is 60 — a hardcoded one-time exception, a
+    `season.length_days` column, or something else. Also needs: the
+    Season League point-band recalibration this triggers for Season 2+
+    specifically (tech-spec.md §2.5's own T4.18 note), and what T4.17's
+    Club Aktif/Club War Record sections do during Season 1, when there
+    is no 60-day cadence yet to align to (see T4.17's own note above).
+  - Distinct from T4.17: this is a live-data/config change on the
+    **currently active** production Season row, not new feature work —
+    but T4.17's reset cadences can't actually match the User Season
+    cadence they're meant to mirror until this ships.
 
 ---
 

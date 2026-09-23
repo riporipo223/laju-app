@@ -189,6 +189,13 @@ One-liners only. Full rationale: `documents/02-architecture/adr/README.md` (13 A
   8 items, not 9). Correction while acting on this: the removal request cited T1.10, but T1.10 is
   actually splits-per-km — auto-pause is T1.11 (verified against tasks/phase-1-core-loop-offline.md
   before touching any code).
+- **User Season length changes 91→60 days, but forward-only — Season 1 stays 91 days, unmodified**
+  (T4.18, decided 2026-09-23, PM decision). The **currently live** `Season 1 — 2026`
+  (2026-09-01→2026-11-30) finishes on its original schedule; the 60-day cadence starts with Season 2.
+  Reason: cutting a live season short mid-run breaks the trust of users who invested effort under the
+  original 91-day expectation. **Not implemented yet — the live season row and any season-length
+  constant are untouched.** Do not touch them without a separate, explicitly scoped task (see
+  tasks/phase-4-backlog.md T4.18). Full detail: product-spec.md §4.20.
 
 ---
 

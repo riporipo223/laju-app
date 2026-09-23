@@ -638,11 +638,20 @@ database-api-spec.md §1) supaya dua sistem itu tidak tertukar di UI.
 **Kalibrasi — starting point, bukan final** (pola yang sama dengan tabel pace
 §2.3, `STREAK_BONUS_PER_DAY`, dan `trust_multiplier`). Angka di atas berasal
 dari rumus poin (§2.2: ≈`jarak_km × 1.0` untuk pace normal + bonus streak
-maks 14) dan panjang season kuartalan (~91 hari, Season entity), BUKAN dari
-data user asli — belum ada. **Wajib dikalibrasi ulang** setelah ada satu-dua
-season data nyata; target awal distribusi yang layak dijaga: mayoritas user di
-Bronze/Silver, Platinum kecil (mis. ±40% / 35% / 20% / 5%), supaya liga terasa
-bisa dicapai tapi tetap prestisius. Band adalah konfigurasi
+maks 14) dan panjang season kuartalan (~91 hari, Season entity — **hanya
+Season 1**; lihat T4.18 di bawah), BUKAN dari data user asli — belum ada.
+**Wajib dikalibrasi ulang** setelah ada satu-dua season data nyata; target awal
+distribusi yang layak dijaga: mayoritas user di Bronze/Silver, Platinum kecil
+(mis. ±40% / 35% / 20% / 5%), supaya liga terasa bisa dicapai tapi tetap
+prestisius. **T4.18 (2026-09-23, PM decision):** panjang User Season berubah
+jadi **60 hari mulai Season 2** — Season 1 tetap 91 hari, selesai natural
+sesuai jadwal aslinya (2026-09-01 → 2026-11-30), tidak dipotong. Season yang
+lebih pendek berarti lebih sedikit waktu untuk menumpuk poin di periode yang
+sama, jadi band di atas **butuh kalibrasi ulang tambahan untuk Season 2+**
+secara khusus — bukan cuma "kalibrasi ulang setelah ada data nyata" yang
+sudah disebutkan, tapi sebuah perubahan struktural pada asumsi dasarnya.
+Belum diimplementasikan — lihat tasks/phase-4-backlog.md T4.18. Band adalah
+konfigurasi
 (`LEAGUE_BANDS`), bukan hardcode inline, supaya bisa dituning tanpa mengubah
 logika.
 
