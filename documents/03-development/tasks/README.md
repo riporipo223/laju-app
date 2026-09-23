@@ -289,6 +289,9 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [ ] T4.7 — Monetization: premium profile (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.8 — B2B dashboard: running club (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events, concept replaced 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [ ] T4.9a — `event` table (no region column)
+  - [ ] T4.9b — staff-only tooling (CLI recommended) + read endpoint
+  - [ ] T4.9c — iOS Events feed + external redirect — blocked on two open points (which tab; "Join X Runners" source)
 - ~~T4.10 — Route map visualization (Mapbox)~~ — moved to Fase 1 (MapKit, T1.8/T1.9), no longer backlog (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.11 — Android support (postponed indefinitely) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.12 — Redis-backed real-time global leaderboard cache (lihat [phase-4-backlog.md](./phase-4-backlog.md))
@@ -300,7 +303,10 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
   - [ ] T4.14d — Huawei Watch companion — placeholder, not scoped
 - [ ] T4.15 — Social Feed (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build — §4.20 AC1-AC9, Season 1 = no reset (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [ ] T4.17a — precompute tables for both sections
+  - [ ] T4.17b — two precompute jobs + read endpoint — blocked on Club War Record ordering rule
+  - [ ] T4.17c — iOS two-section screen
 - [ ] T4.18 — User Season 91→60 days, forward-only from Season 2 — decided 2026-09-23, not implemented (was missing from this list; added 2026-09-23) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.20 — Premium subscription infrastructure — decided 2026-09-23 (§4.23 AC1-AC14); T4.20b/c blocked by Apple Developer Program (verified); T4.20a unblocked (user_id non-null FK, decided 2026-09-23) and buildable before enrollment; T4.2b, §4.5 AC4, and T4.4–T4.7 depend on it (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.20a — `subscription` table (append-only) + RLS

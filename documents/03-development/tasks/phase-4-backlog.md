@@ -161,16 +161,65 @@ implemented.
   rule says not to break Fase-4 items into granular tasks until the phase is scheduled. Recommended
   creation mechanism carries over unchanged: an admin CLI script (same family as
   `backend/scripts/season.ts`), no dashboard UI, since only Laju staff ever create an Event.
+  **Broken into sub-tasks 2026-09-23 on explicit PM instruction** (same exception as T4.2, T4.14,
+  T4.20) — Scope + Reference only, no DoD; the phase itself is still not scheduled. Two open points
+  found while doing it (not decided here): where "Social tab → Events sub-tab" lives, since no Social
+  tab exists (the app's tabs are Track / You / Ranks — "social" was the old placeholder name for
+  Ranks, `RootTabView.swift:48`); and where the "Join X Runners" count comes from, since sponsored
+  registration happens off-platform and announcement-only events have no registration at all.
+- **T4.9a — Events: `event` table.** Depends on T4.9. **Scope**: one table per §4.21's rough data
+  model — `id`, `title`, `image_url`, `description`, `type` (`sponsored` | `announcement`),
+  `external_url` (required when `sponsored`, null when `announcement` — enforce with a CHECK),
+  `sponsor_name` (sponsored only), `starts_at`, `ends_at`, `is_active`. **No region column** (§4.21
+  AC4). RLS enabled with no grants. Where the image file itself is hosted is decided in this task.
+  Any column for the "Join X Runners" count waits on that open point. Written inert, reviewed before
+  apply. **Reference**: product-spec.md §4.21 data model, AC1, AC4.
+- **T4.9b — Events: staff tooling + read endpoint.** Depends on T4.9a. **Scope**: internal-only
+  create/edit/activate/deactivate for Laju staff — an admin CLI script is §4.21's recommendation
+  (its "Should"), never a self-serve surface (§4.21 AC5 Must, ADR-0014). A read endpoint returning
+  every active Event to every signed-in user, no region or other eligibility filter (AC4). No
+  registration or reward logic of any kind (AC2-AC3). **Reference**: product-spec.md §4.21 AC2-AC5.
+- **T4.9c — Events: iOS feed + detail.** Depends on T4.9b. **Scope**: card feed (full-width image,
+  "Join X Runners" overlay), detail view, and for `sponsored` events opening `external_url`
+  externally (AC2). Blocked on the two open points above (which tab; where X comes from), and not
+  wireframed yet (screen-inventory.md §4 excludes Fase 4). **Reference**: product-spec.md §4.21
+  AC1-AC2, AC4.
 - **T4.17 — Club Global Leaderboard.** Depends on T4.1 (Club must exist)
   and, for its Section 2, T4.2 (Club War must exist — Section 2 has
   nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**
   — see product-spec.md §4.20 for the two-section spec (Club Aktif /
   Club War Record). Both sections' 60-day reset cadence is **resolved by
   T4.18 below: applies starting Season 2, not from now** — Season 1
-  (currently live, 91 days) has no 60-day cadence to align to yet, so
+  (currently live, 91 days) has no 60-day cadence to align to yet. ~~so
   this task's own scoping must decide what either section does during
   Season 1 specifically (T4.18 doesn't answer that, only the User
-  Season's own length).
+  Season's own length).~~ **Decided 2026-09-23 (PM): neither section
+  resets during Season 1** — one period from launch to Season 2 start.
+  Club Aktif's 60-day reset re-confirmed (not rolling 30 days). AC1-AC9
+  in §4.20. Still open there: Club War Record ordering, Club Aktif roster
+  edge cases, "never fought" after a reset. Sub-tasks below.
+- **T4.17a — Club leaderboard: precompute tables.** Depends on T4.2a
+  (`club`/`club_member`/`club_war_club` must exist). **Scope**: storage
+  for both sections' precomputed results, each row tied to its period
+  (Season 1 = launch→Season 2 start; afterwards one 60-day period per
+  Season), same rebuild-per-run shape as `leaderboard_entry` (ADR-0013);
+  RLS enabled with no grants. Written inert, reviewed before apply (same
+  gate as T4.2a). **Reference**: product-spec.md §4.20 AC1-AC2, AC8-AC9.
+- **T4.17b — Club leaderboard: two precompute jobs + read endpoint.**
+  Depends on T4.17a; the Club War Record job also needs T4.2b (wars must
+  exist). **Scope**: Club Aktif job — Participation Rate per club with the
+  shared activity threshold and the 10-member minimum ("Belum Cukup
+  Data"); Club War Record job — aggregate `club_war_club.outcome` over
+  wars with `club_war.status = 'ended'` only, clubs with no ended war in
+  the period omitted. Period boundaries depend on Season rows, so from
+  Season 2 on this relies on T4.18 being implemented. Blocked on §4.20's
+  open ordering rule for Club War Record. **Reference**: product-spec.md
+  §4.20 AC1-AC9, §4.19 AC13.
+- **T4.17c — Club leaderboard: iOS UI.** Depends on T4.17b. **Scope**: one
+  screen with the two sections, the "Belum Cukup Data" state, clubs
+  without wars absent from Club War Record; shares its Club War Record
+  view with T4.2c. Not wireframed yet (screen-inventory.md §4 excludes
+  Fase 4). **Reference**: product-spec.md §4.20 AC3-AC6.
 - ~~**T4.10 — Route map visualization** (Mapbox integration, per
   tech-spec.md §1 Maps SDK row).~~ **Moved to Fase 1, 2026-09-12** — split
   into live map + static map (product-spec.md §4.8-4.9,
@@ -293,9 +342,11 @@ implemented.
     creates after that is 60 — a hardcoded one-time exception, a
     `season.length_days` column, or something else. Also needs: the
     Season League point-band recalibration this triggers for Season 2+
-    specifically (tech-spec.md §2.5's own T4.18 note), and what T4.17's
+    specifically (tech-spec.md §2.5's own T4.18 note). ~~, and what T4.17's
     Club Aktif/Club War Record sections do during Season 1, when there
-    is no 60-day cadence yet to align to (see T4.17's own note above).
+    is no 60-day cadence yet to align to (see T4.17's own note above).~~
+    (T4.17's Season 1 behavior was decided 2026-09-23 — no reset during
+    Season 1, product-spec.md §4.20 AC9 — so it's no longer open here.)
   - Distinct from T4.17: this is a live-data/config change on the
     **currently active** production Season row, not new feature work —
     but T4.17's reset cadences can't actually match the User Season
