@@ -34,11 +34,15 @@ implemented.
   **T4.1 extended scope, belum dijadwalkan**: ~~description, privacy/
   visibility, join flow, leave/transfer/delete, member cap — deferred,
   not decided (user-flow.md §2.6 is still an unreconciled draft).~~
-  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC10**: any tier creates
+  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC15**: any tier creates
   clubs, description + public/invite-only in v1, public = direct join,
   invite-only = invite code, no request/approval, leave in v1, internal
-  leaderboard from existing season points; admin tools and club feed
-  deferred. **Still deferred:** ownership transfer, club deletion, member
+  leaderboard from existing season points; ~~admin tools and club feed
+  deferred.~~ club feed deferred. **Admin tools in scope (revised
+  2026-09-23 — T4.8 merged here):** Premium-included, owner/admin of a
+  Premium Club only, internal to the club only — minimal viable member
+  list + aggregate distance/points, and internal challenges with a target
+  distance and a time window (AC11-AC15). **Still deferred:** ownership transfer, club deletion, member
   cap. **Still open (§4.24):** can the owner leave; how admins are
   appointed; club membership on account deletion; where the Club UI
   lives; invite-code visibility/regeneration. **Ordering (2026-09-23):**
@@ -48,20 +52,33 @@ implemented.
   inert migration — T4.2a's file is not modified — adding `description`,
   a privacy column (`public` | `invite_only`), and an invite code (unique,
   required only for `invite_only`), with RLS unchanged (already
-  deny-all). Reviewed before apply. **Reference**: product-spec.md §4.24
-  AC2, AC5.
+  deny-all). **Plus (2026-09-23, admin tools):** a new internal-challenge
+  table (club, name, target distance, start/end) with RLS enabled and no
+  grants. Analytics needs no table — aggregated from existing runs.
+  Reviewed before apply. **Reference**: product-spec.md §4.24 AC2, AC5,
+  AC13.
 - **T4.1b — Club: backend.** Depends on T4.1a. **Scope**: create (any
   tier, creator = owner), join public directly, join invite-only with the
   code, leave, browse/search public clubs, and the internal leaderboard
   read (members ranked by existing season points). One-club-per-user is
-  already enforced by `club_member`'s primary key (T4.2a). Owner-leave,
-  admin appointment and account-deletion handling wait on §4.24's open
-  points. **Reference**: product-spec.md §4.24 AC1-AC9.
+  already enforced by `club_member`'s primary key (T4.2a). **Plus admin
+  tools (2026-09-23):** analytics read (member list, aggregate
+  distance/points) and create/read internal challenges with progress —
+  both gated server-side on "caller is owner/admin AND the club is a
+  Premium Club" through T4.20b's check (so, like T4.2b, blocked until
+  T4.20 is implemented), and never readable by non-members. Owner-leave,
+  admin appointment, account-deletion handling and the admin-tools
+  details (aggregate period, counting rule, concurrent challenges,
+  notifications) wait on §4.24's open points. **Reference**:
+  product-spec.md §4.24 AC1-AC9, AC11-AC15.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
-  join (direct or code), leave, club page with the internal leaderboard.
-  Blocked on where the Club UI lives (§4.24 open point). Not wireframed
-  yet (screen-inventory.md §4). **Reference**: product-spec.md §4.24
-  AC1-AC10.
+  join (direct or code), leave, club page with the internal leaderboard,
+  **and (2026-09-23) the admin-tools screens** — analytics and creating/
+  viewing internal challenges — shown only to owner/admins of a Premium
+  Club; members see challenge progress, nobody outside the club sees
+  anything. Blocked on where the Club UI lives (§4.24 open point). Not
+  wireframed yet (screen-inventory.md §4). **Reference**: product-spec.md
+  §4.24 AC1-AC15.
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
@@ -194,11 +211,16 @@ implemented.
 - **T4.4–T4.7 all depend on T4.20** (added 2026-09-23): each is a Premium
   *feature* and had silently assumed a subscription system existed. None
   does yet — see T4.20 below.
-- **T4.8 — B2B dashboard: running club.** Unchanged — still a self-serve
+- ~~**T4.8 — B2B dashboard: running club.** Unchanged — still a self-serve
   tool, unlike T4.9 below. **Direction (2026-09-23, PM): a web dashboard,
   separate from the mobile app, sold separately from Premium $7.99 (not
   bundled).** Price and exact features not scoped — needs its own scoping
-  session. (Club admin tools deferred from T4.1 land here, not twice.)
+  session. (Club admin tools deferred from T4.1 land here, not twice.)~~
+  **MERGED into T4.1, 2026-09-23 (PM).** No separate B2B product and no
+  web dashboard: club admin tools (analytics, internal challenges) are now
+  part of T4.1, a Premium feature included in the $7.99 subscription, for
+  owners/admins of a Premium Club, internal to the club only
+  (product-spec.md §4.24 AC11-AC15). Task number T4.8 retired, not reused.
 - **T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events.**
   **Concept replaced 2026-09-23 — second reframe, kept at T4.9 (same feature slot, not renumbered),
   same reasoning as product-spec.md §4.21 keeping its own section number.** The prior "EO managed

@@ -34,7 +34,9 @@ untuk "leveling up". Ini kategori berbeda, bukan sekadar Strava-clone.
   termotivasi oleh validasi sosial & kompetisi ringan antar teman/club
 
 **Secondary User**
-- Running club — butuh tools untuk kelola member & kompetisi internal
+- Running club — butuh tools untuk kelola member & kompetisi internal. **2026-09-23:** dilayani
+  lewat fitur Club (product-spec.md §4.24) — admin tools-nya (analytics, challenge internal) adalah
+  fitur **Premium** untuk owner/admin Club Premium, bukan produk B2B terpisah (T4.8 digabung ke T4.1).
 - ~~Event organizer (EO) — butuh platform partisipasi & leaderboard untuk event~~
   ~~**Direframe 2026-09-23 (ADR-0014):** EO bukan pengguna dashboard aktif — EO adalah **klien yang
   meminta** (requesting client), bukan yang mengoperasikan tool sendiri. Event-scale reach (partisipasi
@@ -126,11 +128,17 @@ berbasis poin/leaderboard kompetitif.
   (2026-09-23): bulanan saja — tanpa paket tahunan, tanpa free trial**,
   keputusan sadar membatasi scope. Infrastruktur langganannya (StoreKit +
   verifikasi server) belum ada sama sekali — product-spec.md §4.23 / T4.20.
-- **B2B — running club**: Dashboard untuk running club (kelola member,
+- ~~**B2B — running club**: Dashboard untuk running club (kelola member,
   leaderboard privat) — model tetap tool self-serve, tidak berubah.
   **Arah 2026-09-23 (PM): dashboard web, terpisah dari app mobile, dijual
   terpisah dari Premium $7.99 (bukan bundling).** Harga dan fitur pastinya
-  belum di-scope (T4.8).
+  belum di-scope (T4.8).~~ **Direvisi 2026-09-23 (PM): bukan lagi revenue
+  stream terpisah.** Tidak ada dashboard web, tidak ada produk B2B untuk
+  running club. Admin tools Club (analytics, challenge internal) masuk ke
+  fitur Club (T4.1, product-spec.md §4.24) sebagai bagian dari **Premium
+  $7.99** — pendapatannya ikut baris Premium di atas. Tetap internal ke
+  Club itu sendiri; menjangkau seluruh user tetap eksklusif Laju (§4.21,
+  ADR-0014).
 - ~~**B2B — event organizer**: Dashboard untuk event organizer (partisipasi,
   hasil real-time)~~ ~~**Direframe 2026-09-23 (ADR-0014), lihat §2**: bukan lagi
   tool-subscription. EO tidak dapat akses dashboard sendiri — model jadi

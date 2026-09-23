@@ -277,7 +277,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [x] T3.10 — End-to-end verification: season close/open cycle (phase DoD gate) — **DONE 2026-09-22**, Phase 3 signed off (lihat [phase-3-season.md](./phase-3-season.md))
 
 ## Fase 4 — Backlog (out of scope for now)
-- [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 — scoped 2026-09-23 (§4.24 AC1-AC10), built after T4.15 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 — scoped 2026-09-23 (§4.24 AC1-AC15, incl. Premium admin tools — T4.8 merged in), built after T4.15 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.1a — extend `club` (description, privacy, invite code) — separate migration, T4.2a untouched
   - [ ] T4.1b — backend: create / join / leave / browse / internal leaderboard
   - [ ] T4.1c — iOS UI — blocked on where the Club UI lives
@@ -290,7 +290,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 - [ ] T4.5 — Monetization: advanced statistics (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.6 — Monetization: exclusive badge (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.7 — Monetization: premium profile (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.8 — B2B dashboard: running club — web, sold separately from Premium (2026-09-23); not scoped in detail (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- ~~T4.8 — B2B dashboard: running club~~ — **MERGED into T4.1, 2026-09-23**: club admin tools are part of Club, included in Premium; number retired (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events, concept replaced 2026-09-23 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.9a — `event` table (no region column)
   - [ ] T4.9b — staff-only tooling (CLI recommended) + read endpoint

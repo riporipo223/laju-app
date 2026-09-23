@@ -274,7 +274,8 @@ same job to a new `season_id`.
   Connect regional tiers, product-spec.md §5; monthly only, no annual,
   no trial in v1 — all of these depend on T4.20, Premium subscription
   infrastructure, which does not exist yet — product-spec.md §4.23),
-  B2B dashboard for clubs;
+  ~~B2B dashboard for clubs;~~ club admin tools as part of Premium
+  (T4.8 merged into T4.1, 2026-09-23 — product-spec.md §4.24);
   ~~EO reframed as a managed service, not a dashboard (ADR-0014,
   lean-canvas.md §2/§6)~~ **concept replaced 2026-09-23 — Laju Branded
   Events** (product-spec.md §4.21, lean-canvas.md §2/§6): brand-sponsored

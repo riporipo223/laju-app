@@ -65,7 +65,7 @@ Run again
   tervalidasi. Club War sendiri **confirmed to build (Fase 4)**, 2026-09-23
   — tetap bukan v1, ~~hanya bentuknya sudah tidak lagi 100% terbuka~~
   mekanismenya sudah final (product-spec.md §4.19 AC1-AC13)
-- Monetisasi (Freemium/Premium/B2B) — fokus dulu ke retention, monetisasi
+- Monetisasi (Freemium/Premium/~~B2B~~ — B2B dihapus 2026-09-23, lihat bawah) — fokus dulu ke retention, monetisasi
   baru relevan setelah ada basis user aktif. **Harga Premium sudah
   diputuskan 2026-09-23** ($7.99/bulan + tier regional App Store Connect,
   product-spec.md §5; bulanan saja, tanpa paket tahunan/trial di v1), tapi
@@ -86,7 +86,9 @@ Run again
   untuk logic leaderboard yang dibutuhkan. Task T3.2–T3.5
   (tasks/phase-4-backlog.md) dan tiga AC di product-spec.md §4.6 disimpan
   sebagai catatan sejarah, tidak akan pernah dikerjakan.
-- Monetisasi Premium & B2B (dashboard club/EO)
+- Monetisasi Premium ~~& B2B (dashboard club/EO)~~ — 2026-09-23: tidak ada
+  produk B2B lagi; admin tools club masuk Premium (§4.24), EO diganti Laju
+  Branded Events (§4.21)
 - Android support — ditunda tanpa timeline (bukan technical debt; keputusan
   platform, lihat tech-spec.md §1)
 - Live Activities, Dynamic Island, HealthKit, WidgetKit — kapabilitas native

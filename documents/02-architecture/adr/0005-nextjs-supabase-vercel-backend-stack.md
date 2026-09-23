@@ -30,7 +30,7 @@ Keep Next.js (App Router, API routes) + TypeScript as the backend framework, Ver
 - No framework-switch cost paid; existing TypeScript backend investment (pre-pivot) carries forward unchanged.
 - Supabase Auth (JWT) integrates directly with Postgres — no second identity system to keep in sync, and Row Level Security is available if needed later.
 - Vercel Cron (v1) covers both scheduled jobs the product needs (leaderboard precompute, `resolve-flagged-runs`) without standing up separate worker infrastructure — tech-spec.md §1's background-jobs row notes a migration path (dedicated worker) if volume grows.
-- Next.js/TypeScript can be reused for a future admin/B2B dashboard (club/EO tooling, Fase 4 backlog) without a second stack.
+- Next.js/TypeScript can be reused for a future admin/B2B dashboard (club/EO tooling, Fase 4 backlog) without a second stack. *(Note 2026-09-23: neither dashboard is planned any more — the EO idea became Laju Branded Events (product-spec.md §4.21) and club admin tools moved into the app as a Premium feature (§4.24, T4.8 merged into T4.1). This consequence no longer applies; the stack decision itself is unaffected.)*
 
 ### Negative
 - Backend and mobile client are now two fully separate languages/ecosystems with zero code sharing — every cross-cutting contract (point formula, API request/response shapes) must be kept in sync manually or via fixture files, not enforced by a shared compiler (see ADR-0007).

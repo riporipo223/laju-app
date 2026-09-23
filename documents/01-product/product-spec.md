@@ -56,7 +56,7 @@ Non-goals).
 | Streak reminder notification                                                                | **Must**       | Added 2026-09-12; see §4.16. Local notification only — streak is already tracked entirely on-device (T1.1/T1.4), no backend needed                                                                                       |
 | Account deletion                                                                            | **Must**       | Added 2026-09-12; see §4.17. App Store Guideline 5.1.1(v) — release blocker once Fase 2 auth exists, not optional                                                                                                        |
 | Seasonal pass / Premium stats / Exclusive badge / Premium profile                           | Could          | Monetization, post-core-loop validation                                                                                                                                                                                  |
-| B2B dashboard (club, ~~EO~~)                                                                | Could          | Depends on club entity, which is Won't for v1. **2026-09-23:** EO part replaced by Laju Branded Events (§4.21), not a dashboard. Club dashboard (T4.8) = web, separate from the app, sold separately from Premium — not scoped in detail |
+| ~~B2B dashboard (club, EO)~~                                                                | ~~Could~~      | **Removed as a separate item, 2026-09-23.** EO part → Laju Branded Events (§4.21). Club part → merged into Club (§4.24, T4.1) as Premium-included admin tools; no web dashboard, no separate B2B product (T4.8 retired) |
 | ~~Circle~~ Club / Group                                                                     | **Won't (v1)** | Explicit scope cut, see Non-goals. Renamed "Circle"→"Club" 2026-09-23                                                                                                                                                    |
 | Club War                                                                                    | **Won't (v1)** | Depends on Club. **Confirmed to build (Fase 4), 2026-09-23** — see §4.19. Still Won't for v1 itself                                                                                                                     |
 | Matchmaking (club-to-club)                                                                  | **Won't (v1)** | Depends on Club. **Confirmed to build (Fase 4), 2026-09-23** — suggestion-only (T4.3), not scoped in detail. Still Won't for v1 itself |
@@ -1108,8 +1108,15 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 3. **Privacy: public and invite-only, both in v1.**
 4. **Joining:** a public club is joined directly; an invite-only club only with its invite code.
    **No request-and-approve flow in v1.**
-5. **Admin tools (club analytics, internal challenges) deferred entirely** — they overlap T4.8's
-   B2B dashboard and must not be built twice.
+5. ~~**Admin tools (club analytics, internal challenges) deferred entirely** — they overlap T4.8's
+   B2B dashboard and must not be built twice.~~ **Revised 2026-09-23 (PM): admin tools are IN
+   scope for T4.1** — T4.8 (a separate B2B web dashboard) is dissolved and merged here, so there's
+   still only one place they're built. They are a **Premium feature included in the $7.99
+   subscription** (no separate product or purchase), available **only to the owner or an admin of a
+   Premium Club** (the club's owner has active Premium — same rule as §4.19/§4.23). They stay
+   **entirely internal**: analytics and challenges are seen by, and apply to, that club's own members
+   only — never public, never reaching anyone outside the club. Reaching or notifying the whole Laju
+   user base stays Laju-exclusive through §4.21 (ADR-0014), unchanged.
 6. **Club feed deferred** — it depends on Social Feed (T4.15). **Internal club leaderboard: a simple
    ranking of members by their existing season points** — reuses the data the Global leaderboard
    already computes, no new scoring system.
@@ -1128,7 +1135,22 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   AC4; draft §2.6 describes it as "Browse publik".
 - AC9: A club's internal leaderboard ranks its current members by their current-season points,
   taken from the existing season points (no new scoring).
-- AC10: No club admin tools (analytics, internal challenges) and no club feed exist in v1.
+- AC10: ~~No club admin tools (analytics, internal challenges) and no club feed exist in v1.~~ No club
+  feed exists in v1. *(Admin tools moved into scope 2026-09-23 — AC11–AC15.)*
+- AC11 (added 2026-09-23): admin tools are available only to the owner or an admin of a **Premium
+  Club**, and are part of the Premium subscription — never sold separately. The owner and admins of
+  a non-Premium club don't get them. Because Premium Club status is checked when used (§4.23 decided
+  #10), the tools stop being available if the owner's Premium lapses.
+- AC12 (added 2026-09-23 — minimal viable analytics): the admin view shows the club's member list and
+  the club's aggregate total distance and total points. Nothing more in v1.
+- AC13 (added 2026-09-23 — minimal viable internal challenge): an owner/admin can create an internal
+  challenge with a name, a target distance and a time window (start/end) — the draft's example is
+  "500km bareng bulan ini". Progress is the club members' combined distance inside the window. No
+  rewards, no penalties, no other challenge types in v1.
+- AC14 (added 2026-09-23): club analytics and internal challenges are visible only to that club's
+  members. Nothing about them is public, shown to, or sent to any user outside the club.
+- AC15 (added 2026-09-23): anything that would reach the whole Laju user base is not an admin tool —
+  it remains Laju-exclusive (§4.21, ADR-0014).
 
 **NOT decided — flagged, not invented:**
 - **Can the owner leave?** Ownership transfer and club deletion are both deferred (T4.1 extended
@@ -1144,6 +1166,15 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 - **Where the Club UI lives.** The app's tabs are Track / You / Ranks; draft §2.6 assumes a "Tab
   Circle". A new tab, or inside an existing one?
 - **Who can see and share the invite code, and can it be regenerated?**
+
+- **Admin tools details not settled by the decision (2026-09-23)** — AC12/AC13 are the stated
+  minimum; these are still open: which **period** the aggregate distance/points cover (all time,
+  current season, a rolling window?); whether "target jarak/durasi" means a distance target inside a
+  time window (how AC13 reads it, following the draft's example) or can also be a pure duration
+  target; which runs count toward a challenge (reusing §4.20's activity threshold would keep it
+  consistent); whether a club can run more than one challenge at once; whether members are notified
+  of a new challenge. The "how does a member become an admin" point above matters more now, since
+  admins get these tools.
 
 **Still deferred (T4.1 extended scope):** ownership transfer, club deletion, member cap.
 
