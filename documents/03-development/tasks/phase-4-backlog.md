@@ -29,10 +29,43 @@ implemented.
   (database-api-spec.md §1) and the sketched `Club` entity never migrated
   in Fase 2, so this brings the name into alignment with existing code.
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
-  (was "nice to have v2+") — see product-spec.md §4.19 for what's decided
+  (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
-  event-scale rule) vs. genuinely open (mechanics, win condition,
-  duration).
+  event-scale rule). ~~vs. genuinely open (mechanics, win condition,
+  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC9): Participation
+  Rate win condition (reused from §4.20 Club Aktif), fixed 48-hour duration,
+  targeted challenge/invite start (not matchmaking — stays separate from
+  T4.3 below), tie-break + forfeit rules, no anti-farming limit in v1. One
+  point still open — see §4.19's own flagged note (does a forfeited/declined
+  challenge produce a Club War Record entry). Sub-task breakdown: T4.2a
+  (data model), T4.2b (backend API), T4.2c (iOS UI) — see their own entries
+  below.
+- **T4.2a — Club War: data model.** Depends on T4.2 (mechanism decided),
+  T4.1 (Club must exist — currently neither does; `user.club_id` is only
+  a reserved nullable column with no FK, `database-api-spec.md` §1 /
+  `20260917162813_create_core_schema.sql`). **Scope**: `club` table (does
+  not exist yet at all), a membership/roster table (`user.club_id` alone
+  may not be enough if owner/admin/member roles need to be distinguished
+  — not decided here, this task's own scoping question), and a `club_war`
+  table (pending/accepted/declined/active/ended state, per-club score,
+  win/loss outcome) — including deciding whether `user.club_id` gets
+  promoted to a real FK against the new `club` table or membership stays
+  fully separate. **Reference**: product-spec.md §4.19 AC1-AC9, §4.20
+  Section 2 (Club War Record's own data needs).
+- **T4.2b — Club War: backend API.** Depends on T4.2a. **Scope**: create
+  a challenge (target 1-2 specific clubs), accept/decline per invited
+  club, a precompute job scoring Participation Rate per war-entered
+  member over the 48-hour window (reusing §4.20 Section 1's metric, not
+  reimplementing it), the tie-break and forfeit rules (total inactivity,
+  24-hour invitation timeout), and an endpoint to read the Club War
+  Record. **Reference**: product-spec.md §4.19 AC2-AC9, ADR-0013
+  (precompute-not-live-derive pattern), §4.20 Section 1.
+- **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
+  challenge (Premium Club owner/admin only), accept/decline an incoming
+  challenge, view an active war's status/score, view the Club War Record
+  (shares a screen with §4.20's Club Global Leaderboard, not a separate
+  screen — no `screen-inventory.md` entry added by this task itself).
+  **Reference**: product-spec.md §4.19 AC1-AC9, §4.20.
 - **T4.3 — Matchmaking between clubs.** Depends on T4.1. Still Non-goal,
   no decided shape.
 - **T4.4 — Monetization: seasonal pass.**
