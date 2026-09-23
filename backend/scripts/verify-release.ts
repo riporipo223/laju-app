@@ -55,9 +55,8 @@ async function main() {
       auth_user_id: session.authUserId,
       email,
       username: `t221${Date.now()}`,
-      region_kecamatan: "Kebayoran Baru",
-      region_kabupaten_kota: "Jakarta Selatan",
-      region_provinsi: "DKI Jakarta",
+      // region_* no longer set (2026-09-22, D1 reversed — product-spec.md §4.1). The columns still
+      // exist until Task B's migration; this script just stops populating them.
     })
     .select("id")
     .single();

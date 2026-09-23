@@ -7,9 +7,6 @@ export interface UserRow {
   id: string;
   auth_user_id: string;
   deleted_at: string | null;
-  region_kecamatan: string | null;
-  region_kabupaten_kota: string | null;
-  region_provinsi: string | null;
 }
 
 export type AuthSuccess = { user: UserRow };
@@ -89,7 +86,10 @@ export async function requireUser(request: Request, rule?: RateLimitRule): Promi
 
   const { data: userRow, error: userError } = await supabaseAdmin
     .from("user")
-    .select("id, auth_user_id, deleted_at, region_kecamatan, region_kabupaten_kota, region_provinsi")
+    // Region columns are deliberately NOT selected (2026-09-22: D1 reversed, region removed —
+    // product-spec.md §4.1). They still physically exist until Task B's migration drops them; not
+    // selecting them is what makes that drop safe to apply without an outage.
+    .select("id, auth_user_id, deleted_at")
     .eq("auth_user_id", identity.authUserId)
     .maybeSingle<UserRow>();
 

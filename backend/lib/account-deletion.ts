@@ -66,6 +66,12 @@ export async function deleteAccount(authUserId: string): Promise<AccountDeletion
           username: null,
           display_name: null,
           avatar_url: null,
+          // DELIBERATELY KEPT until Task B's migration drops these columns (2026-09-22). Region
+          // collection stopped everywhere else in this change, but the columns still physically hold
+          // values written before it. Removing these three lines now would leave that data behind for
+          // anyone who deletes their account during the window between this deploy and the migration —
+          // a privacy regression against database-api-spec.md §2.1b's "no field left untouched by
+          // default". These lines get deleted together with the columns, not before.
           region_kecamatan: null,
           region_kabupaten_kota: null,
           region_provinsi: null,

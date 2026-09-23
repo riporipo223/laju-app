@@ -2,11 +2,32 @@ import SwiftUI
 
 /// T2.20: global leaderboard screen — product-spec.md §4.5. Top N from the precomputed board plus the
 /// caller's own position even when outside that window (AC 4.5.1), with the board's age stated (AC 4.5.2).
-/// Region filters are Fase 3 (T3.4/T3.5).
+///
+/// **Gated on location permission since 2026-09-22 (AC 4.5.5).** Region-based access was removed with
+/// decision D1's reversal; the board is visible only once location permission is granted. Status only —
+/// no coordinate is read, nothing is geocoded, nothing is stored. The gate affects this screen alone:
+/// run tracking, points and level all keep working without it.
+/// ~~Region filters are Fase 3 (T3.4/T3.5).~~ Local Leaderboard cancelled permanently (§4.6).
 struct LeaderboardView: View {
     @StateObject private var viewModel = LeaderboardViewModel()
+    @StateObject private var authorization = LocationAuthorizationObserver()
 
     var body: some View {
+        Group {
+            switch LeaderboardAccessState.state(for: authorization.status) {
+            case .unlocked:
+                board
+            case .needsPermission:
+                LeaderboardLockedView(state: .needsPermission) { authorization.requestWhenInUseAuthorization() }
+            case .denied:
+                LeaderboardLockedView(state: .denied, onRequest: nil)
+            case .restricted:
+                LeaderboardLockedView(state: .restricted, onRequest: nil)
+            }
+        }
+    }
+
+    private var board: some View {
         ScrollView {
             VStack(spacing: 16) {
                 if viewModel.loadFailed, viewModel.response != nil {
