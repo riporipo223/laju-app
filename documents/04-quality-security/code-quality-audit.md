@@ -107,7 +107,7 @@ Caught and fixed on a second read-through, same day, before handoff: the first v
 RoutePointBuffer.flush: failed to encode route for run ... — keeping the previously-persisted gpsRoute untouched; 1 pending point(s) kept for retry: invalidValue(nan, ...)
 RoutePointBuffer.flush: existing gpsRoute for run ... could not be decoded — refusing to overwrite it; 1 pending point(s) kept for retry
 ```
-PR #1 stays **open, not merged** — this session only used it to get CI signal, per the user's explicit instruction; the merge decision is the user's own.
+**Merged 2026-09-23** ([riporipo223/laju-app#1](https://github.com/riporipo223/laju-app/pull/1), commit `99cd7ef`). Before merging, an independent audit found and fixed one thing CQ-2's own evidence didn't cover: `Build + test` on the PR's next real code change (Task C, `6a4cfb4`) failed with a genuine Swift 6 data-race error in the newly-added `LocationAuthorizationObserver.swift` — a `CLLocationManagerDelegate` callback's own `manager` parameter (non-Sendable, task-isolated) was read inside a `MainActor.assumeIsolated` closure. Fixed by reading `self.manager` (already actor-isolated) instead of the closure parameter. Also found: `LocationAuthorizationObserver.swift`/`LeaderboardLockedView.swift` shipped with zero test coverage, violating repo-coding-rules.md §4's PR checklist — closed with `LocationAuthorizationObserverTests.swift` (5 tests, the pure `LeaderboardAccessState.state(for:)` mapping). Final CI on the merged tip: iOS 187/187, Backend 292/292 (real Supabase integration suite, run against the actually-migrated production schema).
 
 ### CQ-3 — `@unchecked Sendable` on `StreakReminderScheduler` extends a safety promise to types it does not control — **Warning**
 

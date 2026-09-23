@@ -70,46 +70,49 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 | Fase 0 — Setup | Closed. |
 | Fase 1 — Core Loop Offline | Code complete. Gate (T1.17) open — needs physical-device dogfood runs only the user can do. |
 | Fase 2 — Backend + Sync + Global Leaderboard | 26/33 closed, 4 PARTIAL. All 4 PARTIAL items blocked on the Apple Developer Program (see §4) or a real device. |
-| **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. **Superseded same day**: T3.1 (region onboarding) needs reworking — region removed entirely, see §5. |
+| **Fase 3 — Season** | **DONE, 2026-09-22.** All 7 tasks (T3.1, T3.6, T3.7, T3.7a, T3.8, T3.9, T3.10) complete and signed off — see [phase-3-season.md](./03-development/tasks/phase-3-season.md)'s T3.10 sign-off block. T3.1 (region onboarding) was superseded 2026-09-22 and **fully reworked 2026-09-23** — region removed entirely, live in production. See §5. |
 | Fase 4 — Backlog (T4.1+, Circle/Club/monetization/etc.) | **Not scheduled. Do not build without explicit user go-ahead.** Local Leaderboard (former T3.2–T3.5) is a separate case: **cancelled permanently 2026-09-22**, not part of this "not scheduled, ask first" backlog — it will never be scheduled, don't offer it as an option. |
 
 ---
 
 ## 3. If the user types "Lanjutkan" right now
 
-**Update, 2026-09-22**: CQ-2 and SEC-1 below were both acted on this session, and both are now
-**closed**. CQ-2: this project is worked across two machines — this Windows session implements
-against the docs/specs, and CI (not a local Mac run) ended up providing the real evidence, via a PR
-opened specifically to trigger `ci-ios.yml`'s `pull_request` check (a plain push to `luvfr` doesn't
-trigger CI — its `push` trigger is scoped to `main` only). One real bug was caught and fixed on a
-same-day re-read before the first push: the first pass used `assertionFailure` on the failure
-paths, which would have crashed any Debug build (including `xcodebuild test` and T1.17
-dogfooding) — removed in favor of `print`-only logging. A second real bug then surfaced from actual
-CI (not caught locally, since this machine has no SwiftFormat either): a `redundantThrows` lint
-violation in the new test file, fixed and amended into the same commit. Final CI run
-([35717568035](https://github.com/riporipo223/laju-app/actions/runs/35717568035)) passed clean:
-191/191 tests. See CQ-2's status block in `code-quality-audit.md` for full detail.
-[PR #1](https://github.com/riporipo223/laju-app/pull/1) is **open, not merged** — that decision is
-the user's. **SEC-1 is closed** — indefinite retention was chosen (see security-review.md SEC-1's
-decision block, 2026-09-22) and propagated to `database-api-spec.md`, `tech-spec.md`,
-`pre-launch-checklist.md`, and the live Privacy Policy text (`backend/lib/legal.ts`, verified via
-`lib/legal.test.ts` 6/6).
+**Update, 2026-09-23**: the `luvfr` branch (12 commits: CQ-2, SEC-1, auto-pause removal, Local
+Leaderboard cancellation + full region removal) was independently re-audited from scratch, merged to
+`main` (`99cd7ef`), and Task B's migration was applied for real to production. Everything below is
+now **closed and live**, not just merged:
 
-Original guidance, kept for what's still open: Fase 3 just closed; Fase 4 is explicitly "do not
-build." Do not guess and start building something from Fase 4. Tell the user where things stand
-and ask which of the following they want tackled — each still needs either a user decision or
-something only the user can physically do:
+- **CQ-2, SEC-1, auto-pause removal (T1.11)** — all closed 2026-09-22, verified again during the
+  merge audit. See `code-quality-audit.md` (CQ-2), `security-review.md` (SEC-1) for full detail.
+- **Region removed entirely, Leaderboard gated on location permission (Task A/B/C of the D1
+  reversal)** — fully done and live as of 2026-09-23. `region_kecamatan`/`region_kabupaten_kota`/
+  `region_provinsi` are **physically gone** from the production `user` table (migration
+  `20260923090000`, applied and verified: 0 columns remain, the new check constraint genuinely
+  rejects a regional `leaderboard_scope`/`leaderboard_entry` insert). `LocationAuthorizationObserver`
+  + `LeaderboardLockedView` are live; confirmed with a real request against the live backend
+  (`POST /api/profile/complete` with no region fields → `201`).
+- **Two real bugs were found and fixed during the merge audit, not by the original session**: (1)
+  a Swift 6 data-race compile error in `LocationAuthorizationObserver.swift` that had never
+  actually been built (the machine that wrote it has no Xcode) — CI's `Build + test` step was
+  failing on it; (2) `lib/account-deletion.ts` was still nulling the three region columns on every
+  account deletion, which — once the migration above actually ran — would have made `DELETE
+  /api/account` fail for every real user (PostgREST rejects unknown columns). Both fixed and
+  verified live (a real `DELETE /api/account` call now returns `200 {"deleted":true}` post-migration).
+  A stale Privacy Policy claim ("we collect your wilayah/region") was also caught and fixed in both
+  languages (`backend/lib/legal.ts`) — region collection stopped days before this policy text did.
+- The `luvfr` branch itself is now merged and historical — a future session should branch fresh from
+  `main`, not continue pushing to `luvfr`.
 
-- ~~**CQ-2 (Blocker, code written, evidence pending)**~~ — **closed 2026-09-22**, see the update above; stale by the time you're reading this bullet.
+Nothing is queued next. Fase 4 is explicitly "do not build." Do not guess and start building
+something from Fase 4. Tell the user where things stand and ask which of the following they want
+tackled — each still needs either a user decision or something only the user can physically do:
+
 - **T1.17 gate** — needs physical-device dogfood sessions (battery-with-map-on-screen, audio cue
   with screen locked, ≥5 runs across ≥3 days). User-only; you cannot do this.
 - **T2.3/T2.22/T2.21 remaining items** — all blocked on the Apple Developer Program, see §4.
-  (T2.4 dropped from this list — its region-`409`-guard scope is being reworked/removed, not
-  blocked on Apple; see §5's D1 reversal.)
-- ~~**Fase 4 backlog** (Local Leaderboard: T3.2–T3.5) — only if the user explicitly asks to start
-  it.~~ **No longer an option to offer as of 2026-09-22** — Local Leaderboard is cancelled
-  permanently, not part of the "ask first" Fase 4 backlog. Other Fase 4 items (Circle, monetization,
-  etc.) are still "ask first."
+- **Fase 4 backlog** (Circle/Club, monetization, etc.) — only if the user explicitly asks to start
+  it. Local Leaderboard specifically (former T3.2–T3.5) is **cancelled permanently**, not part of
+  this "ask first" backlog — don't offer it as an option, it will never be scheduled.
 
 Full detail on all of these: `documents/README.md` §1 and §3.
 
@@ -159,14 +162,17 @@ One-liners only. Full rationale: `documents/02-architecture/adr/README.md` (13 A
 - **Region (kecamatan/kabupaten/provinsi) is REMOVED from v1 entirely** — reverses the prior
   "mandatory in v1 onboarding" decision (D1, 2026-09-21), reversed 2026-09-22 (PM sign-off) as a
   direct consequence of the Local Leaderboard cancellation above (region was collected specifically
-  to prepare for that feature). Not replaced with GPS-based text detection — just removed.
+  to prepare for that feature). Not replaced with GPS-based text detection — just removed. **Live
+  2026-09-23**: `region_*` columns physically dropped from production (`20260923090000`), no code
+  reads or writes them.
 - **Global leaderboard visibility is gated on granted location permission, not on region** —
   decided 2026-09-22, the replacement mechanism for the region removal above. Boolean/status only
   (`CLLocationManager` authorization state) — no place name, no reverse geocoding, no admin
   hierarchy stored anywhere. Reuses the existing run-tracking location-permission infrastructure,
-  no second permission flow. See `product-spec.md` §4.5 AC5 — its permission-denied fallback (a
-  locked Leaderboard tab + Settings CTA) is flagged there as the PM's stated assumption, not yet
-  confirmed in detail.
+  no second permission flow. **Live 2026-09-23** (`LocationAuthorizationObserver` +
+  `LeaderboardLockedView`, merged `99cd7ef`). See `product-spec.md` §4.5 AC5 — its permission-denied
+  fallback (a locked Leaderboard tab + Settings CTA) is flagged there as the PM's stated assumption,
+  still not confirmed in detail even though it's built.
 - `resolve-flagged-runs` cron runs **daily**, not ≤12h — Vercel Hobby plan limitation, accepted
   (OPS-1). Revisit only if/when the project upgrades to Vercel Pro.
 - `POST /api/runs` p95 latency currently **does not** meet the 1.5s budget (PERF-1) — accepted
