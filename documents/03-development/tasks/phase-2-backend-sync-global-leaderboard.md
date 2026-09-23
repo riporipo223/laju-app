@@ -23,7 +23,7 @@ follows the same precedent as the `T2.12a`/`T2.14b` sub-IDs already in use
 here, and `T0.5`'s removal-without-renumber in Fase 0.
 
 **Why this is first in the phase:** T2.20 (global leaderboard), T3.5
-(local leaderboard — deferred to Fase 4 since 2026-09-21, the argument
+(local leaderboard — CANCELLED PERMANENTLY 2026-09-22, was deferred since 2026-09-21; the screen-scaffolding argument
 still holds for it) and T3.9 (season info) each build a screen with no
 entry point. Before this task, `RunTrackingView` was the app root with
 floating overlay buttons pushing to History and Profile — a structure with

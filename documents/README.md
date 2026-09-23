@@ -28,7 +28,7 @@ All Fase-1 code is written. Nothing is waiting on more implementation. What rema
 
 | # | What | Why now | Blocked by |
 |---|---|---|---|
-| 1 | **Decide on CQ-2** — `RoutePointBuffer.flush` can silently destroy a recorded route | Open **Blocker** in [code-quality-audit.md](./04-quality-security/code-quality-audit.md). It defeats T1.14's crash-recovery guarantee. The audit reported it and deliberately changed no code — it needs a go-ahead | **Your decision.** Say the word and it gets fixed |
+| 1 | ~~**Decide on CQ-2** — `RoutePointBuffer.flush` can silently destroy a recorded route~~ **DONE 2026-09-22** | ~~Open **Blocker** in [code-quality-audit.md](./04-quality-security/code-quality-audit.md). It defeats T1.14's crash-recovery guarantee. The audit reported it and deliberately changed no code — it needs a go-ahead~~ Fixed and verified: CI run [35717568035](https://github.com/riporipo223/laju-app/actions/runs/35717568035), 191/191 tests green, incl. 5 new regression tests | ~~**Your decision.**~~ Nothing — closed. [PR #1](https://github.com/riporipo223/laju-app/pull/1) left open for your review |
 | 2 | **Fase 2's remaining work is not build work** | Every Fase-2 build task is now done or PARTIAL. What is left — T2.3/T2.4 (Sign in with Apple), T2.22's real-device half, T2.21's four open gate items, and the Apple-token revocation added to pre-launch §4 — all need the Apple Developer Program and a real signed-in device. Decision for you: enrol, or accept some items as limitations | Apple Developer Program |
 | 3 | **T1.17 sign-off** — close the Fase 1 gate | Needs the dogfood runs in §2 | Device testing (§2) |
 
@@ -46,7 +46,7 @@ Tracked separately; they do not block the sequence above.
 
 | Finding | Severity | Blocks |
 |---|---|---|
-| [CQ-2](./04-quality-security/code-quality-audit.md) — route data loss | **Blocker** | Item 1 above |
+| ~~[CQ-2](./04-quality-security/code-quality-audit.md) — route data loss~~ | ~~**Blocker**~~ **RESOLVED 2026-09-22** | Fixed + 191/191 CI green (PR #1); no longer open |
 | [SEC-1](./04-quality-security/security-review.md) — no GPS retention policy | **Blocker** | App Store submission (via Privacy Policy) |
 | **No successor season exists** (2026-09-21) — `Season 1 — 2026` ends 2026-11-30; without a next season the hourly job reports `overrun` and Season 1 just stays active (nothing breaks, but it never rolls) | Note | Before 2026-11-30: `npx tsx --env-file=.env.local scripts/season.ts create "Season 2 — 2026" 2026-12-01T00:00:00Z 2027-02-28T23:59:59Z` from `backend/` |
 | ~~**Region is free text** (2026-09-21) — the new onboarding profile step takes kecamatan / kabupaten-kota / provinsi as plain text, no catalog exists~~ **MOOT 2026-09-22: region removed entirely** (D1 reversed, Local Leaderboard cancelled) | ~~Note~~ Closed | ~~Local Leaderboard (v1.1): data must be normalized first; T3.1's cascading picker replaces the fields~~ No normalization needed — the fields and the never-built picker are both gone (Tasks B/C) |
@@ -103,7 +103,7 @@ Not blocking either track today, but each will block something soon.
 
 | # | Decision | Blocks | Detail |
 |---|---|---|---|
-| 1 | **Fix CQ-2?** | The Blocker in §1 item 1 | [code-quality-audit.md](./04-quality-security/code-quality-audit.md) |
+| 1 | ~~**Fix CQ-2?**~~ **Answered: yes, fixed 2026-09-22** | ~~The Blocker in §1 item 1~~ Closed with real CI evidence | [code-quality-audit.md](./04-quality-security/code-quality-audit.md) |
 | 2 | **GPS retention policy** — how long are routes kept, on device and on server? | Privacy Policy, which blocks App Store submission | [security-review.md](./04-quality-security/security-review.md) SEC-1 |
 | 3 | **Low-trust leaderboard threshold** — below what `trust_multiplier` is a user hidden from the public leaderboard? | T2.19's third DoD item | The `trust_multiplier` formula itself is now defined (tech-spec §2.4), including its `0.3` floor. The separate threshold for *hiding* a user is still undefined. Moved out of T2.11 on 2026-09-17 because verifying it needs T2.19, which transitively depends on T2.11 — the DoD item could never be checked in sequence | **RESOLVED 2026-09-19:** cutoff `trust_score < 0.5` hidden (user decision, T2.19); one constant `v_min_trust` in the leaderboard precompute migration.
 | 4 | **Observability for the two Vercel Cron jobs** | Nothing yet; becomes real in Fase 2 | No document covers monitoring or alerting for precompute / `resolve-flagged-runs`. If either stops, failure is silent |
@@ -122,7 +122,7 @@ Not blocking either track today, but each will block something soon.
 
 | Was | Resolution |
 |---|---|
-| **Navigation shell undecided** — Leaderboard/Season unreachable, no task owned it | **Closed.** `TabView` built with two tabs (Track, You), `RootTabView` is the app root. New task **T2.0a** owns it, placed first in Fase 2 so T2.20/T3.5 (deferred to Fase 4, 2026-09-21)/T3.9 have an entry point. Structure takes a third tab as one enum case plus one `tabItem` block |
+| **Navigation shell undecided** — Leaderboard/Season unreachable, no task owned it | **Closed.** `TabView` built with two tabs (Track, You), `RootTabView` is the app root. New task **T2.0a** owns it, placed first in Fase 2 so T2.20/T3.5 (T3.5 CANCELLED PERMANENTLY 2026-09-22, was deferred to Fase 4)/T3.9 have an entry point. Structure takes a third tab as one enum case plus one `tabItem` block |
 | **`trust_multiplier` undefined** — T2.11 not executable | **Closed.** Formula defined in [tech-spec.md](./02-architecture/tech-spec.md) §2.4: base 1.0, −0.10 per HIGH flag, −0.05 per non-auto-approved LOW flag, +0.02 per clean run, floor 0.3, ceiling 1.0, rolling 30-day window. T2.11 rewritten with 9 checkable DoD items |
 | **T2.14 family listed out of dependency order** | **Closed.** Reordered to T2.14 → T2.14c → T2.15 → T2.16 → T2.14d → T2.14b, in both the phase file and the checklist. The `Depends on` fields were already correct; only the listing order was wrong |
 | **T3.9 orphaned** — Fase 3 could close with the Season screen unbuilt | **Closed.** Added to T3.10's `Depends on`, plus a DoD item verifying the countdown and past-season rank |

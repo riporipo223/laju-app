@@ -91,7 +91,7 @@ Profile / Level (8)  ◄────────  level-up treatment
    │  streak grid                shared with 6a
    │
    ▼
-Leaderboard global (11)  ─ ─ ─ ►  [Leaderboard local (12) — DEFERRED to v1.1]
+Leaderboard global (11)  ─ ─ ─ ►  [Leaderboard local (12) — CANCELLED PERMANENTLY 2026-09-22]
    │  row + rank + own-rank          (would add scope filter chips
    │  pinned row                     + insufficient-data state; not in v1)
    ▼
@@ -104,7 +104,7 @@ Reading the graph:
 - **Run Tracking (5) is the base identity screen.** Everything downstream inherits its hero-number treatment and stat-card system. Restyle it first; it is the reference the others are judged against.
 - **Run Summary (6) is the highest-stakes screen in the product.** It is where the core reward moment lands (product-spec §1's whole hypothesis), and it carries the most states — level-up, confetti, flagged, streak prompt, empty map. Budget the most design time here.
 - **Run History (7) and Profile (8) are card-system consumers.** Once 5 and 6 are settled, these are largely composition.
-- **Leaderboard (11) introduces one genuinely new pattern** — a dense repeating row with rank, name, points, and a pinned "your rank" row. Nothing earlier in the product has this. Design 11 now; 12 (11 plus filter chips) is deferred to v1.1 with the Local Leaderboard.
+- **Leaderboard (11) introduces one genuinely new pattern** — a dense repeating row with rank, name, points, and a pinned "your rank" row. Nothing earlier in the product has this. Design 11 now; 12 (11 plus filter chips) is CANCELLED PERMANENTLY (2026-09-22) with the Local Leaderboard — never to be designed.
 - **Season Info (13) reuses the leaderboard row** for historical rank, so it should come last.
 
 ### Cross-cutting: navigation shell — **decided and built 2026-09-17**

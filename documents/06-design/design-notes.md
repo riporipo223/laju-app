@@ -152,4 +152,4 @@ sheet, or behind the stats in z-order). Never loops.
 | Run Summary | #6(bottom) stat grid + confetti (accent-colored) | Restyle after |
 | Run History | #6(bottom) card system, dark list rows | Restyle after |
 | Profile/Level (new) | #6(top)'s streak-grid heatmap, re-colored | Build after |
-| Leaderboard (Global built in Fase 2, T2.20; Local deferred to v1.1) / Circle (Fase 4, not built) | #5's podium + per-rank progress bars | Reference only, not built yet |
+| Leaderboard (Global built in Fase 2, T2.20; Local CANCELLED PERMANENTLY 2026-09-22, was deferred to v1.1) / Circle (Fase 4, not built) | #5's podium + per-rank progress bars | Reference only, not built yet |
