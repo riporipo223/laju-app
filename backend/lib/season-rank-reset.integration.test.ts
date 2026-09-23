@@ -48,9 +48,6 @@ describe.skipIf(!hasRealCredentials)("season rank reset — real database", () =
         email: `t37-${label}-${Date.now()}-${runCounter++}@laju-test.local`,
         username: `t37${label}${Date.now()}${runCounter}`,
         display_name: `T37 ${label}`,
-        region_kecamatan: "x",
-        region_kabupaten_kota: "y",
-        region_provinsi: "z",
       })
       .select("id")
       .single();
@@ -248,9 +245,6 @@ describe.skipIf(!hasRealCredentials)("season rank reset — real database", () =
         auth_user_id: session.authUserId,
         email,
         username: `t37route${Date.now()}`,
-        region_kecamatan: "x",
-        region_kabupaten_kota: "y",
-        region_provinsi: "z",
       })
       .select("id")
       .single();

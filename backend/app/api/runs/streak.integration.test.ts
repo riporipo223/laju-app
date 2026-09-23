@@ -37,9 +37,6 @@ describe.skipIf(!hasRealCredentials)("POST /api/runs — server-side streak bonu
         auth_user_id: session.authUserId,
         email,
         username: `streak${label}${Date.now()}`,
-        region_kecamatan: "Kebayoran Baru",
-        region_kabupaten_kota: "Jakarta Selatan",
-        region_provinsi: "DKI Jakarta",
       })
       .select("id")
       .single();

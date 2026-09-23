@@ -48,9 +48,6 @@ describe.skipIf(!hasRealCredentials)("POST /api/runs — real pipeline against T
         auth_user_id: authUserId,
         email,
         username: `t213runner${Date.now()}`,
-        region_kecamatan: "Cilandak",
-        region_kabupaten_kota: "Jakarta Selatan",
-        region_provinsi: "DKI Jakarta",
       })
       .select("id")
       .single();

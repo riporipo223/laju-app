@@ -14,7 +14,7 @@
  */
 
 export const CONTACT_EMAIL = "designbyripo@gmail.com";
-export const PRIVACY_LAST_UPDATED = "22 September 2026";
+export const PRIVACY_LAST_UPDATED = "23 September 2026";
 export const APP_NAME = "Laju";
 
 export interface PolicySection {
@@ -39,7 +39,7 @@ export const privacySections: PolicySection[] = [
     paragraphs: ["Hanya data yang dibutuhkan agar fitur-fitur Laju berjalan:"],
     bullets: [
       "Akun: pengenal akun dari Apple atau Google yang kamu pakai untuk masuk, dan alamat email yang diberikan penyedia login itu (Apple bisa menyamarkannya). Kami tidak menyimpan kata sandi karena Laju tidak memakai email dan kata sandi.",
-      "Profil: nama panggilan dan wilayah (kecamatan, kabupaten/kota, provinsi) yang kamu isi saat pertama kali masuk.",
+      "Profil: nama panggilan yang kamu isi saat pertama kali masuk.",
       'Lokasi presisi: dipakai untuk merekam jalur lari. Laju meminta izin lokasi saat app dipakai dan, agar lari tetap tercatat saat layar terkunci, izin "Selalu". Di luar lari, Laju hanya memakai satu pembacaan lokasi untuk memusatkan peta.',
       "Data lari: jalur GPS (titik koordinat, waktu, dan ketinggian), jarak, durasi, pace, poin yang diberikan, level, serta hasil pemeriksaan anti-curang (status lari, tanda anomali, dan skor kepercayaan).",
     ],
@@ -57,7 +57,7 @@ export const privacySections: PolicySection[] = [
     paragraphs: [],
     bullets: [
       "Merekam dan menghitung lari, poin, dan level.",
-      "Menampilkan papan peringkat. Nama panggilan dan poinmu terlihat oleh pengguna lain di papan peringkat; jalur GPS dan wilayahmu tidak.",
+      "Menampilkan papan peringkat. Nama panggilan dan poinmu terlihat oleh pengguna lain di papan peringkat; jalur GPS-mu tidak.",
       "Mencegah kecurangan (misalnya kecepatan yang tidak masuk akal) dengan memeriksa jalur lari yang dikirim.",
       "Menjalankan akunmu: masuk, menyimpan progres, dan menghapus akun.",
     ],
@@ -95,7 +95,7 @@ export const privacySections: PolicySection[] = [
     ],
     bullets: [
       "Jalur GPS semua larimu dihapus.",
-      "Nama panggilan, nama tampilan, alamat email, foto, dan wilayahmu dihapus atau diganti dengan pengganti anonim.",
+      "Nama panggilan, nama tampilan, alamat email, dan foto dihapus atau diganti dengan pengganti anonim.",
       "Identitas login (akun Apple/Google yang tertaut ke Laju) dihapus, sehingga token lama tidak bisa dipakai lagi.",
       "Catatan poin dipertahankan tanpa identitas pribadi. Buku poin bersifat tetap agar papan peringkat dan riwayat poin tetap konsisten; setelah penghapusan ia tidak lagi bisa dikaitkan denganmu. Ringkasan lari (jarak, durasi, poin, status) dan skor turunan dipertahankan dengan cara yang sama.",
       "Data di perangkatmu dihapus oleh app saat proses selesai.",
@@ -131,9 +131,9 @@ export const privacySections: PolicySection[] = [
 
 export const privacyEnglishSummary: string[] = [
   "Laju is an iOS running app. Summary in English — the Indonesian text above is the authoritative version.",
-  "We collect: your Apple or Google sign-in identifier and email, a nickname and region you enter, precise location and the GPS route of each run (only to record it), and run statistics with anti-cheat results.",
-  "We do not show ads, use third-party analytics or trackers, or sell personal data. Your nickname and points are visible to other users on the leaderboard; your GPS route and region are not.",
+  "We collect: your Apple or Google sign-in identifier and email, a nickname you enter, precise location and the GPS route of each run (only to record it), and run statistics with anti-cheat results.",
+  "We do not show ads, use third-party analytics or trackers, or sell personal data. Your nickname and points are visible to other users on the leaderboard; your GPS route is not.",
   "Processors: Supabase (database and authentication, Singapore), Vercel (API hosting, Singapore), Apple and Google (sign-in), Apple Maps (maps). Data is therefore processed outside Indonesia.",
-  "Retention: we deliberately do not apply automatic time-based deletion. Run data, including GPS routes, is kept on your device while the app is installed and on our servers while your account exists — full run history is a core part of Laju. Deleting your account erases all GPS routes, clears your nickname, display name, email and region, removes your sign-in identity, and keeps only an identity-free points ledger; that is the only way your data is deleted.",
+  "Retention: we deliberately do not apply automatic time-based deletion. Run data, including GPS routes, is kept on your device while the app is installed and on our servers while your account exists — full run history is a core part of Laju. Deleting your account erases all GPS routes, clears your nickname, display name, email and photo, removes your sign-in identity, and keeps only an identity-free points ledger; that is the only way your data is deleted.",
   `You can delete your account inside the app (Profile → Hapus akun). For access, copy, correction or any other request: ${CONTACT_EMAIL}.`,
 ];

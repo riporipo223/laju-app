@@ -30,9 +30,6 @@ erDiagram
         string username
         string display_name
         string avatar_url "cleared on deletion (§2.1b) — an image URL is personal data"
-        string region_kecamatan "REMOVED 2026-09-22 — dropped by migration 20260923090000 (D1 reversed, product-spec.md §4.1; Local Leaderboard cancelled §4.6). Listed here only until that migration is applied; no code reads or writes it as of Task C"
-        string region_kabupaten_kota "REMOVED 2026-09-22 — same migration. (Was: merged tier — kabupaten and kota are the same administrative level in Indonesia, never both for one user)"
-        string region_provinsi "REMOVED 2026-09-22 — same migration"
         int total_points
         int current_level
         float trust_score

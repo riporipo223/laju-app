@@ -20,7 +20,7 @@ describe("privacy policy text", () => {
   });
 
   it("names every category the system actually handles, and every processor and where it runs", () => {
-    for (const phrase of ["Lokasi presisi", "jalur GPS", "Nama panggilan", "wilayah", "skor kepercayaan"]) {
+    for (const phrase of ["Lokasi presisi", "jalur GPS", "Nama panggilan", "skor kepercayaan"]) {
       expect(sectionText("data-yang-dikumpulkan") + sectionText("tujuan"), phrase).toContain(phrase);
     }
     for (const processor of ["Supabase", "Vercel", "Apple", "Google", "Apple Maps"]) {
@@ -52,7 +52,6 @@ describe("privacy policy text", () => {
       display_name: "nama tampilan",
       email: "alamat email",
       avatar_url: "foto",
-      region_kecamatan: "wilayah",
       gps_route: "jalur gps",
     };
     for (const [field, wording] of Object.entries(cleared)) {

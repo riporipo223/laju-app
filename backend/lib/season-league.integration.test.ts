@@ -37,9 +37,6 @@ describe.skipIf(!hasRealCredentials)("season league — real database", () => {
         auth_user_id: authUserId,
         email: `t37a-${label}-${Date.now()}-${counter}@laju-test.local`,
         username: `t37a${label}${Date.now()}${counter}`,
-        region_kecamatan: "x",
-        region_kabupaten_kota: "y",
-        region_provinsi: "z",
       })
       .select("id")
       .single();

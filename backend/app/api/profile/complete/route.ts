@@ -18,8 +18,9 @@ function isNonEmptyString(value: unknown): value is string {
  *
  * Region validation was removed 2026-09-22 (D1 reversed — product-spec.md §4.1; Local Leaderboard,
  * the only consumer region data was ever collected for, was cancelled permanently, §4.6). The
- * `region_*` columns still exist in the table until Task B's migration drops them; this endpoint
- * simply no longer reads or writes them.
+ * `region_*` columns were physically dropped from `user` by migration 20260923090000 (applied
+ * 2026-09-23); this endpoint stopped reading/writing them the day before, as the EXPAND half of
+ * expand→migrate→verify→contract.
  */
 export async function POST(request: Request) {
   const identity = await requireAuthenticatedIdentity(request, "profile.complete");

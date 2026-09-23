@@ -34,9 +34,6 @@ describe.skipIf(!hasRealCredentials)("POST /api/runs — fractional duration", (
         auth_user_id: authUserId,
         email,
         username: `duration${Date.now()}`,
-        region_kecamatan: "Kebayoran Baru",
-        region_kabupaten_kota: "Jakarta Selatan",
-        region_provinsi: "DKI Jakarta",
       })
       .select("id")
       .single();

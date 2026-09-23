@@ -55,9 +55,6 @@ describe.skipIf(!hasRealCredentials)("T3.10 — season close/open cycle, phase D
         auth_user_id: authUserId,
         email: `t310-${label}-${Date.now()}-${counter}@laju-test.local`,
         username: `t310${label}${Date.now()}${counter}`,
-        region_kecamatan: "x",
-        region_kabupaten_kota: "y",
-        region_provinsi: "z",
       })
       .select("id")
       .single();

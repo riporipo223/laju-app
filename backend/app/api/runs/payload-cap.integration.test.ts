@@ -32,9 +32,6 @@ describe.skipIf(!hasRealCredentials)("POST /api/runs — payload caps (SEC-10)",
         auth_user_id: authUserId,
         email,
         username: `t220acap${Date.now()}`,
-        region_kecamatan: "Kebayoran Baru",
-        region_kabupaten_kota: "Jakarta Selatan",
-        region_provinsi: "DKI Jakarta",
       })
       .select("id")
       .single();

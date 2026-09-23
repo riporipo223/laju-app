@@ -51,9 +51,6 @@ describe.skipIf(!hasRealCredentials)("DELETE /api/account — real DB + real Aut
           username: `${tag}${label}`,
           display_name: `Name ${label}`,
           avatar_url: "https://example.com/a.png",
-          region_kecamatan: "Kebayoran Baru",
-          region_kabupaten_kota: "Jakarta Selatan",
-          region_provinsi: "DKI Jakarta",
         })
         .select("id")
         .single()
@@ -136,7 +133,7 @@ describe.skipIf(!hasRealCredentials)("DELETE /api/account — real DB + real Aut
     expect(user?.deleted_at).not.toBeNull();
     expect(user?.email).toMatch(/^deleted\+[0-9a-f-]{36}@laju\.invalid$/);
     expect(user?.email).not.toBe(identity.email);
-    for (const field of ["username", "display_name", "avatar_url", "region_kecamatan", "region_kabupaten_kota", "region_provinsi"]) {
+    for (const field of ["username", "display_name", "avatar_url"]) {
       expect(user?.[field], `${field} must be cleared`).toBeNull();
     }
     // retained on purpose (derived from the immutable ledger), never cleared
@@ -174,12 +171,7 @@ describe.skipIf(!hasRealCredentials)("DELETE /api/account — real DB + real Aut
       new Request("https://example.com/api/profile/complete", {
         method: "POST",
         headers: { authorization: `Bearer ${identity.jwt}`, "content-type": "application/json" },
-        body: JSON.stringify({
-          username: "revived",
-          region_kecamatan: "x",
-          region_kabupaten_kota: "y",
-          region_provinsi: "z",
-        }),
+        body: JSON.stringify({ username: "revived" }),
       })
     );
     expect(profile.status).toBe(401);
@@ -199,7 +191,7 @@ describe.skipIf(!hasRealCredentials)("DELETE /api/account — real DB + real Aut
       new Request("https://example.com/api/profile/complete", {
         method: "POST",
         headers: { authorization: `Bearer ${identity.jwt}`, "content-type": "application/json" },
-        body: JSON.stringify({ username: "revived", region_kecamatan: "x", region_kabupaten_kota: "y", region_provinsi: "z" }),
+        body: JSON.stringify({ username: "revived" }),
       })
     );
     expect(revive.status).toBe(401); // the B7-10 hole: without the guard this would re-populate `username`

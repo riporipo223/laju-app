@@ -55,8 +55,8 @@ async function main() {
       auth_user_id: session.authUserId,
       email,
       username: `t221${Date.now()}`,
-      // region_* no longer set (2026-09-22, D1 reversed — product-spec.md §4.1). The columns still
-      // exist until Task B's migration; this script just stops populating them.
+      // region_* no longer set (2026-09-22, D1 reversed — product-spec.md §4.1). The columns were
+      // physically dropped by migration 20260923090000, applied 2026-09-23.
     })
     .select("id")
     .single();
