@@ -35,11 +35,12 @@ implemented.
   duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC9): Participation
   Rate win condition (reused from §4.20 Club Aktif), fixed 48-hour duration,
   targeted challenge/invite start (not matchmaking — stays separate from
-  T4.3 below), tie-break + forfeit rules, no anti-farming limit in v1. One
-  point still open — see §4.19's own flagged note (does a forfeited/declined
-  challenge produce a Club War Record entry). Sub-task breakdown: T4.2a
-  (data model), T4.2b (backend API), T4.2c (iOS UI) — see their own entries
-  below.
+  T4.3 below), tie-break + forfeit rules, no anti-farming limit in v1.
+  **AC7 resolved 2026-09-23**: a declined/timed-out challenge dissolves
+  with zero Club War Record entry for anyone — not a forfeit, the war
+  never started. Fully unblocked for schema scoping now. Sub-task
+  breakdown: T4.2a (data model), T4.2b (backend API), T4.2c (iOS UI) —
+  see their own entries below.
 - **T4.2a — Club War: data model.** Depends on T4.2 (mechanism decided),
   T4.1 (Club must exist — currently neither does; `user.club_id` is only
   a reserved nullable column with no FK, `database-api-spec.md` §1 /
@@ -50,16 +51,24 @@ implemented.
   table (pending/accepted/declined/active/ended state, per-club score,
   win/loss outcome) — including deciding whether `user.club_id` gets
   promoted to a real FK against the new `club` table or membership stays
-  fully separate. **Reference**: product-spec.md §4.19 AC1-AC9, §4.20
+  fully separate. **Per §4.19 AC7 (resolved 2026-09-23)**: a `club_war`
+  row that dissolves in the pending phase (declined or 24h timeout) must
+  NOT feed the Club War Record aggregation — schema needs to distinguish
+  "dissolved, never fought" from "ended, real win/loss outcome," not
+  just track a single win/loss field that both states would populate.
+  **Reference**: product-spec.md §4.19 AC1-AC9, §4.20
   Section 2 (Club War Record's own data needs).
 - **T4.2b — Club War: backend API.** Depends on T4.2a. **Scope**: create
   a challenge (target 1-2 specific clubs), accept/decline per invited
-  club, a precompute job scoring Participation Rate per war-entered
-  member over the 48-hour window (reusing §4.20 Section 1's metric, not
-  reimplementing it), the tie-break and forfeit rules (total inactivity,
-  24-hour invitation timeout), and an endpoint to read the Club War
-  Record. **Reference**: product-spec.md §4.19 AC2-AC9, ADR-0013
-  (precompute-not-live-derive pattern), §4.20 Section 1.
+  club, **challenge dissolution on decline or 24h timeout (AC7 — no
+  Club War Record write, distinct from and not a "forfeit")**, a
+  precompute job scoring Participation Rate per war-entered member over
+  the 48-hour window once a war is actually active (reusing §4.20
+  Section 1's metric, not reimplementing it), the tie-break and
+  total-inactivity forfeit rules (AC5-AC6 — active-war-only, do write
+  the Club War Record), and an endpoint to read the Record. **Reference**:
+  product-spec.md §4.19 AC2-AC9, ADR-0013 (precompute-not-live-derive
+  pattern), §4.20 Section 1.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
   challenge, view an active war's status/score, view the Club War Record
