@@ -195,9 +195,11 @@ implemented.
   Season 1 specifically (T4.18 doesn't answer that, only the User
   Season's own length).~~ **Decided 2026-09-23 (PM): neither section
   resets during Season 1** — one period from launch to Season 2 start.
-  Club Aktif's 60-day reset re-confirmed (not rolling 30 days). AC1-AC9
-  in §4.20. Still open there: Club War Record ordering, Club Aktif roster
-  edge cases, "never fought" after a reset. Sub-tasks below.
+  Club Aktif's 60-day reset re-confirmed (not rolling 30 days). AC1-AC12
+  in §4.20. ~~Still open there: Club War Record ordering, Club Aktif roster
+  edge cases, "never fought" after a reset.~~ All three decided 2026-09-23
+  (AC10 net wins, tie → more wins; AC11 live roster, Club Aktif only;
+  AC12 per-period). No open points left in §4.20. Sub-tasks below.
 - **T4.17a — Club leaderboard: precompute tables.** Depends on T4.2a
   (`club`/`club_member`/`club_war_club` must exist). **Scope**: storage
   for both sections' precomputed results, each row tied to its period
@@ -208,13 +210,13 @@ implemented.
 - **T4.17b — Club leaderboard: two precompute jobs + read endpoint.**
   Depends on T4.17a; the Club War Record job also needs T4.2b (wars must
   exist). **Scope**: Club Aktif job — Participation Rate per club with the
-  shared activity threshold and the 10-member minimum ("Belum Cukup
-  Data"); Club War Record job — aggregate `club_war_club.outcome` over
-  wars with `club_war.status = 'ended'` only, clubs with no ended war in
-  the period omitted. Period boundaries depend on Season rows, so from
-  Season 2 on this relies on T4.18 being implemented. Blocked on §4.20's
-  open ordering rule for Club War Record. **Reference**: product-spec.md
-  §4.20 AC1-AC9, §4.19 AC13.
+  shared activity threshold, the 10-member minimum ("Belum Cukup
+  Data") and the **live** roster at run time (AC11); Club War Record job —
+  aggregate `club_war_club.outcome` over wars with `club_war.status =
+  'ended'` only, clubs with no ended war in the period omitted (AC12),
+  ordered by net wins, tie → more wins (AC10). Period boundaries depend on
+  Season rows. ~~Blocked on §4.20's open ordering rule for Club War
+  Record.~~ **Reference**: product-spec.md §4.20 AC1-AC12, §4.19 AC13.
 - **T4.17c — Club leaderboard: iOS UI.** Depends on T4.17b. **Scope**: one
   screen with the two sections, the "Belum Cukup Data" state, clubs
   without wars absent from Club War Record; shares its Club War Record

@@ -666,8 +666,7 @@ separate precompute jobs, no combined score between them.
 - AC3: A club's Club Aktif score is its Participation Rate for the current period: members who ran
   ÷ members. "Ran" = at least one `validated`, `approved` or `flagged` run in the period whose
   distance clears `MIN_DISTANCE_KM_FOR_POINTS` (ADR-0009) — the same definition §4.19 AC3 uses.
-  Members = the club's roster at precompute time *(reading, not a stated decision — see the open
-  question in the 2026-09-23 report on runs from before a member joined)*.
+  Members = the club's **live** roster at the moment the precompute runs (decided 2026-09-23 — AC11).
 - AC4: A club with fewer than 10 members is not ranked in Club Aktif; it shows a "Belum Cukup Data"
   state instead.
 - AC5: Club War Record counts only wars with status `ended` (§4.19). Dissolved challenges (§4.19 AC7,
@@ -681,14 +680,27 @@ separate precompute jobs, no combined score between them.
 - AC9: During Season 1, neither section resets: the period runs from the feature's launch until
   Season 2 starts.
 
-**NOT decided — flagged, not invented (2026-09-23):**
-- **Club War Record ordering.** "Ranked by win/loss record" doesn't say how: most wins, best win
-  rate, or wins minus losses — and what breaks a tie.
-- **Club Aktif roster (AC3).** Does a run count if the member did it before joining the club, within
+- AC10 (added 2026-09-23, PM decision): Club War Record is ordered by **net wins** (wins minus
+  losses) in the current period, highest first; ties are broken by **more total wins**. Not a
+  rating system such as Elo.
+- AC11 (added 2026-09-23, PM decision): Club Aktif uses the club's **live roster** at the moment the
+  precompute runs — not a point-in-time snapshot. A member who has left drops out of both the
+  numerator and the denominator on the next precompute, with no special handling. Consequence: a
+  current member's qualifying runs anywhere in the period count, including runs from before they
+  joined (no join-date filter). **This live-roster rule is Club Aktif only** — a Club War keeps its
+  frozen participant snapshot (§4.19 AC11).
+- AC12 (added 2026-09-23, PM decision): "never fought" (AC6) means **no ended war in the current
+  period** — confirmed, not "ever". After a reset every club starts absent from Club War Record
+  until its first ended war in the new period.
+
+~~**NOT decided — flagged, not invented (2026-09-23):**~~
+- ~~**Club War Record ordering.** "Ranked by win/loss record" doesn't say how: most wins, best win
+  rate, or wins minus losses — and what breaks a tie.~~ → AC10.
+- ~~**Club Aktif roster (AC3).** Does a run count if the member did it before joining the club, within
   the same period? And does a member who left mid-period still count in either the numerator or
-  the denominator?
-- **"Never fought" after a reset (AC6).** AC6 reads "never fought" as "no ended war in the current
-  period". The original wording ("has never fought a Club War") could also mean "ever".
+  the denominator?~~ → AC11.
+- ~~**"Never fought" after a reset (AC6).** AC6 reads "never fought" as "no ended war in the current
+  period". The original wording ("has never fought a Club War") could also mean "ever".~~ → AC12.
 
 **User Season reset cadence — T4.18 DECIDED 2026-09-23, NOT YET IMPLEMENTED:**
 
