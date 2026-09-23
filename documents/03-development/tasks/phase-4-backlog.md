@@ -44,20 +44,35 @@ implemented.
   one of them specifically.
 - **T4.8 — B2B dashboard: running club.** Unchanged — still a self-serve
   tool, unlike T4.9 below.
-- **T4.9 — ~~B2B dashboard: event organizer~~ EO managed service.**
-  **Reframed 2026-09-23 (ADR-0014)** — EO gets no dashboard access at all;
+- **T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events.**
+  **Concept replaced 2026-09-23 — second reframe, kept at T4.9 (same feature slot, not renumbered),
+  same reasoning as product-spec.md §4.21 keeping its own section number.** The prior "EO managed
+  service" reframe (2026-09-23, struck through) correctly established Laju-exclusive ownership
+  (ADR-0014) but never answered what an "event" technically *is*, which blocked real scoping. That's
+  resolved now: see **product-spec.md §4.21** for the full definition — two types (Sponsored /
+  Announcement-only), sponsored redirects to an external sponsor site (no registration/reward
+  handling in Laju's system), winner determination is a manual Laju-staff process (no automated
+  payout), available to all users with no region filter, UI is a card feed in Social tab → Events
+  sub-tab. Revenue model changed again along with it: **sponsorship fee** (brand pays for exposure,
+  not a per-event service fee — lean-canvas.md §6).
+  ~~**Reframed 2026-09-23 (ADR-0014)** — EO gets no dashboard access at all;
   Laju's own team creates/manages events on an EO client's behalf. Revenue
   model changed from tool-subscription to per-event service fee (pricing
   not decided, lean-canvas.md §6). Task name may need to change along with
-  it — "dashboard" no longer describes what ships. **Real scoping done
-  2026-09-23** — see product-spec.md §4.21: recommended minimal shape is
+  it — "dashboard" no longer describes what ships. Real scoping done
+  2026-09-23 — see product-spec.md §4.21: recommended minimal shape is
   an admin CLI script (same family as `backend/scripts/season.ts`), no
   dashboard UI at all, since there is zero self-serve surface to build
-  one for. **Still not a real task (no DoD written)** — blocked on one
+  one for. Still not a real task (no DoD written) — blocked on one
   genuinely open question that determines the entire shape of the work:
   what an "event" technically *is* (a time-boxed leaderboard scope? a
   data export? something else?). Cannot be scoped into concrete DoD
-  items until that's answered.
+  items until that's answered.~~
+  **Still not a real task (no DoD written) even now** — the "what is an event" blocker is resolved
+  (product-spec.md §4.21 has AC1–AC5 and a rough data model), but this backlog file's own top-of-file
+  rule says not to break Fase-4 items into granular tasks until the phase is scheduled. Recommended
+  creation mechanism carries over unchanged: an admin CLI script (same family as
+  `backend/scripts/season.ts`), no dashboard UI, since only Laju staff ever create an Event.
 - **T4.17 — Club Global Leaderboard.** Depends on T4.1 (Club must exist)
   and, for its Section 2, T4.2 (Club War must exist — Section 2 has
   nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**
