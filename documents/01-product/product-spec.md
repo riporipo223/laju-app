@@ -61,7 +61,7 @@ Non-goals).
 | Club War                                                                                    | **Won't (v1)** | Depends on Club. **Confirmed to build (Fase 4), 2026-09-23** — see §4.19. Still Won't for v1 itself                                                                                                                     |
 | Matchmaking (club-to-club)                                                                  | **Won't (v1)** | Depends on Club                                                                                                                                                                                                          |
 | Social Feed (post run achievements, likes, comments)                                        | **Won't (v1)** | Only existed as an unreconciled draft in user-flow.md — see Non-goals; recommendation: Fase 4 backlog (T4.15), not Fase 3 — same "prove the loop alone first" rationale as Club                                          |
-| Apple Watch companion app                                                                   | **Won't (v1)** | Low priority, large effort (separate target, WatchConnectivity) — added 2026-09-13, tasks/phase-4-backlog.md T4.14                                                                                                       |
+| Apple Watch companion app                                                                   | **Won't (v1)** | ~~Low priority, large effort~~ **Confirmed to build (Fase 4), 2026-09-23** — Apple Watch v1 shape finalized, see §4.22 (mirror-only, live metrics + pause/stop). Still Won't for v1 itself. tasks/phase-4-backlog.md T4.14 |
 | Government / sports-brand partnership tooling                                               | **Won't (v1)** | No product surface needed until B2B validated                                                                                                                                                                            |
 | Android support                                                                             | **Won't (v1)** | v1 launches iOS-exclusive; ditunda tanpa timeline pasti — lihat tech-spec.md §1                                                                                                                                          |
 
@@ -701,18 +701,61 @@ work `tasks/phase-4-backlog.md`'s own top-of-file rule warns against.
 Not scoped into a real task (no T4.x DoD written) because the "what is an event" question is not a
 detail — until it's answered, any task breakdown here would be guessing at the actual work.~~
 
-### 4.22 Apple Watch Companion (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+### 4.22 Apple Watch Companion (Fase 4, added 2026-09-23, **v1 shape finalized 2026-09-23** — NOT v1/Must-have)
 
-**Status: real scoping done 2026-09-23** (still Fase 4, not scheduled, not built). T4.14 in
+**Status: v1 shape decided** (still Fase 4, not scheduled, not built). T4.14 in
 tasks/phase-4-backlog.md, Apple Watch phase specifically — Garmin/Huawei are separate future scoping
-passes per that task's own note, not covered here.
+passes per that task's own note, **not covered here and deliberately given no AC**.
 
-**Decided:**
+> **Finalized 2026-09-23** — the PM was presented 2–3 options for each of 5 open questions (Q0–Q4)
+> and chose one per question; nothing below was decided unilaterally. The earlier "recommended
+> shape, not yet decided" proposal and its open-question list are kept struck through below per
+> this repo's convention.
+
+**Decided (base):**
 - Apple Watch first, before Garmin/Huawei (2026-09-23, PM decision) — fits the existing native stack
   directly (ADR-0001: Swift/SwiftUI; WatchOS apps are Swift too), no new language/toolchain.
 - Separate target + WatchConnectivity, per the original 2026-09-12 scope note.
 
-**Recommended minimal shape — a proposal for PM confirmation, not yet decided:** the Watch app
+**Decided (v1 shape, finalized 2026-09-23):**
+1. **Mirror-only (Q0).** The Watch app mirrors a run already being tracked by the phone; it does
+   **not** track GPS independently. The phone stays the single source of truth for the run — GPS
+   ingestion, the anti-drift/anti-cheat pipeline (ADR-0003, ADR-0004, ADR-0008, §4.2 AC1-3), and run
+   persistence. **Phone-free tracking is NOT committed as a v2 roadmap item** — it stays genuinely
+   open for the future, deliberately not locked in either direction now.
+2. **Live metrics + pause/stop from the watch; no start (Q1).** The watch shows live distance, pace
+   and elapsed time, and can send pause, resume and stop to the phone (**resume is an inference**, not
+   stated in the PM's "pause/stop" decision — included because a watch that can pause but not resume
+   forces the runner back to the phone mid-run; flagged for confirmation). It **cannot start a run** —
+   the technical research that would be needed for that (whether WatchConnectivity can reliably wake
+   a backgrounded/locked phone's tracking session) has not been done, so it is out of v1.
+3. **Watch is always optional (Q2, consequence of Q1).** The iPhone remains the complete primary
+   flow whether or not a watch is paired; every run can be started, controlled and finished from the
+   phone alone. The watch adds nothing the phone can't do, only convenience.
+4. **Real-time streaming during the run (Q3).** Live stats are pushed to the watch continuously while
+   a run is in progress, not only as an end-of-run summary. The concrete update interval (per second
+   vs per GPS point, etc.) is an **implementation detail for T4.14's task breakdown**, not a product
+   decision — deliberately not fixed here.
+5. **Garmin/Huawei: not decided (Q4).** Consistent with T4.14's existing note ("not bundled, needs its
+   own future scoping pass"). No AC below applies to them.
+
+**Acceptance Criteria (Apple Watch v1 only):**
+- AC1: While a phone-tracked run is in progress and a paired watch has the Laju app open, the watch
+  shows the run's live distance, pace and elapsed time.
+- AC2: The values the watch displays are the phone's own computed values, relayed — the watch
+  performs no GPS sampling and no distance/pace calculation of its own.
+- AC3: Watch display updates continuously during the run (streaming), not only when the run ends.
+- AC4: Pause, resume and stop tapped on the watch are executed by the phone and produce exactly the
+  same result as the same action tapped on the phone (same persisted run, same points, same
+  anti-cheat path).
+- AC5: The watch offers no way to start a run.
+- AC6: With no watch paired — or the watch app closed, or the watch disconnected mid-run — every run
+  can still be started, paused, resumed and stopped from the phone alone, and the run completes
+  normally.
+- AC7: A watch that disconnects mid-run does not stop, pause or corrupt the phone's run; tracking
+  continues on the phone unaffected.
+
+~~**Recommended minimal shape — a proposal for PM confirmation, not yet decided:** the Watch app
 **mirrors an in-progress run already being tracked by the phone**, it does **not** track GPS
 independently on the watch. Concretely: phone remains the single source of truth for the run (start/
 stop, GPS ingestion, the anti-drift/anti-cheat pipeline — ADR-0003's direct-`CLLocationManager`
@@ -739,7 +782,7 @@ tracking as a later, explicitly separate feature.
 
 Not scoped into a real task (no T4.x DoD written) because "does the watch ever track independently"
 is a scope-defining fork, same category as T4.21's "what is an event" — answering it changes the
-size of the work by an order of magnitude, so it is not a detail to fill in during implementation.
+size of the work by an order of magnitude, so it is not a detail to fill in during implementation.~~
 
 ## 5. Non-Goals (v1) — dan alasannya
 
