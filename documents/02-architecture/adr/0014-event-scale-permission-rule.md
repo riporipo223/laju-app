@@ -25,7 +25,12 @@ of what else that tier is allowed to do. Concretely:
 - **EO Dashboard reframed as a managed service, not a self-serve tool** (lean-canvas.md §2/§6): EO
   clients never get dashboard access. Laju's own team creates and manages events on their behalf.
   This was the immediate trigger for writing this rule down — an EO running their own event-wide
-  campaign is exactly the "whole user base" reach this ADR restricts.
+  campaign is exactly the "whole user base" reach this ADR restricts. **Concept replaced 2026-09-23,
+  same day — see product-spec.md §4.21 "Laju Branded Events":** the underlying "EO managed service"
+  framing turned out to be the wrong shape entirely (no per-event service, no registration/reward
+  handling by Laju — brands sponsor an Event and Laju sells exposure, not a managed-event service).
+  This ADR's rule is unaffected: only Laju staff can ever create an Event, no self-serve at any
+  tier, for the same reason stated here.
 - **Club War stays bounded, and deliberately doesn't need this restriction**: a Club War's reach is
   the ≤3 clubs actually entered (product-spec.md §4.19), never the whole user base, so it can stay
   self-serve by a Premium Club's owner/admin without conflicting with this rule. This ADR is *why*
@@ -56,7 +61,9 @@ of what else that tier is allowed to do. Concretely:
 
 - Any new feature proposal that includes "notify/reach all users" as a self-serve capability, at any
   tier, should be flagged against this ADR before being scoped.
-- The EO Dashboard's own name may no longer accurately describe what it is — flagged as an open
-  question in lean-canvas.md §2, not resolved here.
+- ~~The EO Dashboard's own name may no longer accurately describe what it is — flagged as an open
+  question in lean-canvas.md §2, not resolved here.~~ **Resolved 2026-09-23**: not a naming question
+  anymore — the feature is "Laju Branded Events" (product-spec.md §4.21, lean-canvas.md §2/§6), a
+  different concept, not an EO Dashboard by any name.
 - No code changes yet — this session's Part 4 work is docs-only (per its own scope); enforcement of
   this rule in actual EO-management tooling is future implementation work, not yet scoped as a task.
