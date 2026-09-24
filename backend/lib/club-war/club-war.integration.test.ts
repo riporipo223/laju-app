@@ -8,6 +8,7 @@
  * schema is missing. Don't add a schema-presence skip: that would hide exactly what this is waiting on.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { ClubBusyError } from "./repository";
 
 const hasRealCredentials = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -77,6 +78,10 @@ describe.skipIf(!hasRealCredentials)("[PENDING T4.2a APPLY] Club War repository 
 
     const pending = await repo.getWar(warId);
     expect(pending?.status).toBe("pending");
+    // The inviter's acceptance time is its send time — AC5's final tie-break reads it.
+    expect(pending?.clubs.find((c) => c.role === "inviter")?.respondedAt?.getTime()).toBe(now.getTime());
+    expect(await repo.clubsInOpenWar([clubA, clubB, club(2)])).toEqual(expect.arrayContaining([clubA, clubB]));
+    expect(await repo.clubsInOpenWar([club(2)])).toEqual([]);
     expect(pending?.clubs.map((c) => [c.clubId, c.role, c.inviteStatus]).sort()).toEqual(
       [
         [clubA, "inviter", "accepted"],
@@ -124,11 +129,21 @@ describe.skipIf(!hasRealCredentials)("[PENDING T4.2a APPLY] Club War repository 
       .from("club_war_club")
       .insert({ club_war_id: warId, club_id: clubD, role: "invited", invite_status: "pending" });
     expect(error?.message).toMatch(/already has 3 clubs/);
+    expect(await repo.dissolveWar(warId)).toBe(true);
   });
 
-  it("the database rejects win_reason 'forfeit_premium_lapse' until T4.2a's CHECK includes it", async () => {
-    // Documents a known schema gap (see the T4.2b report): the code can produce this reason, the schema
-    // as written can't store it. When T4.2a is amended, flip this expectation.
+  it("the database refuses a club a second open war (T4.2a trigger, §4.19 AC14)", async () => {
+    const [clubA, clubB, clubC] = [club(0), club(1), club(2)];
+    const now = new Date();
+    const warId = await repo.createWar({ inviterClubId: clubA, invitedClubIds: [clubB], sentAt: now, deadline: now });
+    created.wars.push(warId);
+    await expect(
+      repo.createWar({ inviterClubId: clubC, invitedClubIds: [clubB], sentAt: now, deadline: now })
+    ).rejects.toBeInstanceOf(ClubBusyError);
+    expect(await repo.dissolveWar(warId)).toBe(true);
+  });
+
+  it("the database stores win_reason 'forfeit_premium_lapse' (T4.2a CHECK, amended 2026-09-24)", async () => {
     const [clubA, clubB] = [club(0), club(1)];
     const now = new Date();
     const warId = await repo.createWar({ inviterClubId: clubA, invitedClubIds: [clubB], sentAt: now, deadline: now });
@@ -138,6 +153,6 @@ describe.skipIf(!hasRealCredentials)("[PENDING T4.2a APPLY] Club War repository 
       .from("club_war")
       .update({ status: "ended", winner_club_id: clubB, win_reason: "forfeit_premium_lapse" })
       .eq("id", warId);
-    expect(error).not.toBeNull();
+    expect(error).toBeNull();
   });
 });

@@ -7,9 +7,19 @@ import type { InviteStatus, Membership, Participant, RunRecord, War, WarResult }
  * Conditional transitions (`dissolveWar`, `activateWar`, `recordResult`) only succeed from the
  * expected status and report whether they did — two concurrent callers can't both win a transition.
  */
+/** Thrown by `createWar` when the database's one-open-war trigger (T4.2a, §4.19 AC14) refuses a club. */
+export class ClubBusyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ClubBusyError";
+  }
+}
+
 export interface ClubWarRepository {
   getMembership(userId: string): Promise<Membership | null>;
   existingClubIds(clubIds: string[]): Promise<string[]>;
+  /** Of `clubIds`, those already in a pending or active war (§4.19 AC14). */
+  clubsInOpenWar(clubIds: string[]): Promise<string[]>;
   createWar(input: { inviterClubId: string; invitedClubIds: string[]; sentAt: Date; deadline: Date }): Promise<string>;
   getWar(warId: string): Promise<War | null>;
   setInviteStatus(warId: string, clubId: string, status: InviteStatus, at: Date): Promise<void>;

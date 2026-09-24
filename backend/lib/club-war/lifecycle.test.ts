@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createChallenge, expirePendingChallenges, finalizeDueWars, respondToChallenge, type Deps } from "./lifecycle";
 import { isPremiumClub } from "./premium";
-import type { ClubWarRepository } from "./repository";
+import { ClubBusyError, type ClubWarRepository } from "./repository";
 import { ACCEPT_WINDOW_MS, WAR_DURATION_MS } from "./scoring";
 import type { ClubRole, Participant, RunRecord, War, WarResult } from "./types";
 
@@ -13,6 +13,8 @@ class InMemoryRepo implements ClubWarRepository {
   participants = new Map<string, Participant[]>();
   runs: RunRecord[] = [];
   results = new Map<string, WarResult>();
+  /** Simulates the T4.2a trigger firing after the lifecycle's own check passed (a concurrent challenge). */
+  raceOnCreate = false;
   private seq = 0;
 
   async getMembership(userId: string) {
@@ -21,7 +23,12 @@ class InMemoryRepo implements ClubWarRepository {
   async existingClubIds(ids: string[]) {
     return ids.filter((id) => this.clubs.has(id));
   }
+  async clubsInOpenWar(ids: string[]) {
+    const open = [...this.wars.values()].filter((w) => w.status === "pending" || w.status === "active");
+    return ids.filter((id) => open.some((w) => w.clubs.some((c) => c.clubId === id)));
+  }
   async createWar(input: { inviterClubId: string; invitedClubIds: string[]; sentAt: Date; deadline: Date }) {
+    if (this.raceOnCreate) throw new ClubBusyError("club is already in a pending or active war");
     const id = `war-${++this.seq}`;
     this.wars.set(id, {
       id,
@@ -33,8 +40,13 @@ class InMemoryRepo implements ClubWarRepository {
       winnerClubId: null,
       winReason: null,
       clubs: [
-        { clubId: input.inviterClubId, role: "inviter", inviteStatus: "accepted" },
-        ...input.invitedClubIds.map((clubId) => ({ clubId, role: "invited" as const, inviteStatus: "pending" as const })),
+        { clubId: input.inviterClubId, role: "inviter", inviteStatus: "accepted", respondedAt: input.sentAt },
+        ...input.invitedClubIds.map((clubId) => ({
+          clubId,
+          role: "invited" as const,
+          inviteStatus: "pending" as const,
+          respondedAt: null,
+        })),
       ],
     });
     return id;
@@ -43,9 +55,12 @@ class InMemoryRepo implements ClubWarRepository {
     const war = this.wars.get(id);
     return war ? structuredClone(war) : null;
   }
-  async setInviteStatus(warId: string, clubId: string, status: "pending" | "accepted" | "declined") {
+  async setInviteStatus(warId: string, clubId: string, status: "pending" | "accepted" | "declined", at: Date) {
     const entry = this.wars.get(warId)?.clubs.find((c) => c.clubId === clubId && c.inviteStatus === "pending");
-    if (entry) entry.inviteStatus = status;
+    if (entry) {
+      entry.inviteStatus = status;
+      entry.respondedAt = at;
+    }
   }
   async dissolveWar(warId: string) {
     const war = this.wars.get(warId);
@@ -158,6 +173,42 @@ describe("createChallenge", () => {
   ])("rejects invited_club_ids %j with %s", async (ids, error) => {
     const { deps } = setup(["A"]);
     expect(await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ids })).toEqual({ ok: false, error });
+  });
+
+  it("AC14: refuses when the inviter is already in a pending or active war", async () => {
+    const { deps, repo } = setup(["A"]);
+    await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ["B"] });
+    expect(await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ["C"] })).toEqual({
+      ok: false,
+      error: "club_busy",
+    });
+    expect(repo.wars.size).toBe(1);
+  });
+
+  it("AC14: refuses when an invited club is already in another club's war", async () => {
+    const { deps } = setup(["A", "C"]);
+    await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ["B"] });
+    expect(await createChallenge(deps, { callerUserId: "ownerC", invitedClubIds: ["B", "D"] })).toEqual({
+      ok: false,
+      error: "club_busy",
+    });
+  });
+
+  it("AC14: a dissolved war no longer blocks a new challenge", async () => {
+    const { deps, repo } = setup(["A"]);
+    const first = await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ["B"] });
+    if (!first.ok) throw new Error(first.error);
+    await repo.dissolveWar(first.value.warId);
+    expect((await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ["B"] })).ok).toBe(true);
+  });
+
+  it("AC14: the database trigger refusing a concurrent challenge maps to club_busy", async () => {
+    const { deps, repo } = setup(["A"]);
+    repo.raceOnCreate = true;
+    expect(await createChallenge(deps, { callerUserId: "ownerA", invitedClubIds: ["B"] })).toEqual({
+      ok: false,
+      error: "club_busy",
+    });
   });
 
   it("requires club membership and an owner/admin role", async () => {
@@ -282,14 +333,14 @@ describe("finalizeDueWars", () => {
   it("does nothing before the 48h mark", async () => {
     const { deps, advance } = await activeWar(["A"]);
     advance(WAR_DURATION_MS - 1);
-    expect(await finalizeDueWars(deps)).toEqual({ ended: [], unresolvedTies: [] });
+    expect(await finalizeDueWars(deps)).toEqual({ ended: [] });
   });
 
   it("records the participation-rate winner at 48h", async () => {
     const { deps, repo, warId, advance } = await activeWar(["A"]);
     repo.runs.push(runAt("ownerA", 1000), runAt("memberA", 2000), runAt("adminB", 3000));
     advance(WAR_DURATION_MS);
-    expect(await finalizeDueWars(deps)).toEqual({ ended: [warId], unresolvedTies: [] });
+    expect(await finalizeDueWars(deps)).toEqual({ ended: [warId] });
     const war = repo.wars.get(warId)!;
     expect(war).toMatchObject({ status: "ended", winnerClubId: "A", winReason: "participation_rate" });
     expect(repo.results.get(warId)?.clubs).toEqual([
@@ -315,12 +366,34 @@ describe("finalizeDueWars", () => {
     expect(repo.wars.get(warId)).toMatchObject({ winnerClubId: "B", winReason: "forfeit_premium_lapse" });
   });
 
-  it("leaves a fully tied war active and reports it instead of inventing a winner", async () => {
+  it("a fully tied war still ends: earliest acceptance wins, which is the inviter (AC5)", async () => {
     const { deps, repo, warId, advance } = await activeWar(["A"]);
     repo.runs.push(runAt("ownerA", 1000), runAt("memberA", 1000), runAt("adminB", 1000), runAt("memberB", 1000));
     advance(WAR_DURATION_MS);
-    expect(await finalizeDueWars(deps)).toEqual({ ended: [], unresolvedTies: [warId] });
-    expect(repo.wars.get(warId)?.status).toBe("active");
+    expect(await finalizeDueWars(deps)).toEqual({ ended: [warId] });
+    expect(repo.wars.get(warId)).toMatchObject({ status: "ended", winnerClubId: "A", winReason: "tie_break" });
+  });
+
+  it("among invited clubs in a full tie, the one that accepted first wins (AC5)", async () => {
+    const ctx = await pendingWar(["A"], ["B", "C"]);
+    ctx.repo.members.set("memberC", { clubId: "C", role: "member" });
+    ctx.advance(1000);
+    await respondToChallenge(ctx.deps, { callerUserId: "ownerC", warId: ctx.warId, accept: true });
+    ctx.advance(1000);
+    await respondToChallenge(ctx.deps, { callerUserId: "adminB", warId: ctx.warId, accept: true });
+    // Inviter A has no runs and forfeits; B and C tie on rate, distance and points; C accepted first.
+    ctx.repo.runs.push(runAt("adminB", 3000), runAt("ownerC", 3000));
+    ctx.advance(WAR_DURATION_MS);
+    expect(await finalizeDueWars(ctx.deps)).toEqual({ ended: [ctx.warId] });
+    expect(ctx.repo.wars.get(ctx.warId)).toMatchObject({ winnerClubId: "C", winReason: "tie_break" });
+  });
+
+  it("finalizes a war the daily cron reaches ~24h late, still scoring only the 48h window (AC15)", async () => {
+    const { deps, repo, warId, advance } = await activeWar(["A"]);
+    repo.runs.push(runAt("adminB", 1000), runAt("ownerA", WAR_DURATION_MS + 1000));
+    advance(WAR_DURATION_MS + 23 * 60 * 60 * 1000);
+    expect(await finalizeDueWars(deps)).toEqual({ ended: [warId] });
+    expect(repo.wars.get(warId)).toMatchObject({ winnerClubId: "B", winReason: "forfeit_inactivity" });
   });
 
   it("ignores runs outside the window and rejected runs", async () => {

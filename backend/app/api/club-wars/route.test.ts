@@ -6,6 +6,7 @@ const requireUserMock = vi.fn();
 const repo = {
   getMembership: vi.fn(),
   existingClubIds: vi.fn(),
+  clubsInOpenWar: vi.fn(),
   createWar: vi.fn(),
   getWar: vi.fn(),
   setInviteStatus: vi.fn(),
@@ -70,9 +71,22 @@ describe("POST /api/club-wars", () => {
     authed();
     repo.getMembership.mockResolvedValue({ clubId: "A", role: "owner" });
     repo.existingClubIds.mockResolvedValue(["B"]);
+    repo.clubsInOpenWar.mockResolvedValue([]);
     const res = await POST(post({ invited_club_ids: ["B"] }));
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: "not_premium_club" });
+    expect(repo.createWar).not.toHaveBeenCalled();
+  });
+
+  it("409 club_busy when a club is already in a pending or active war (§4.19 AC14)", async () => {
+    authed();
+    repo.getMembership.mockResolvedValue({ clubId: "A", role: "owner" });
+    repo.existingClubIds.mockResolvedValue(["B"]);
+    repo.clubsInOpenWar.mockResolvedValue(["B"]);
+    const res = await POST(post({ invited_club_ids: ["B"] }));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "club_busy" });
+    expect(repo.clubsInOpenWar).toHaveBeenCalledWith(["A", "B"]);
     expect(repo.createWar).not.toHaveBeenCalled();
   });
 
@@ -209,7 +223,7 @@ describe("GET /api/cron/club-wars", () => {
     const res = await CRON(
       new Request("https://example.com/api/cron/club-wars", { headers: { authorization: "Bearer s3cret" } })
     );
-    expect(await res.json()).toEqual({ dissolved: ["w9"], ended: [], unresolved_ties: [] });
+    expect(await res.json()).toEqual({ dissolved: ["w9"], ended: [] });
     vi.unstubAllEnvs();
   });
 });

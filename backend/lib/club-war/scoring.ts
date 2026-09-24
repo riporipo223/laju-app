@@ -23,6 +23,8 @@ export interface ClubTally {
   activeCount: number;
   totalDistanceMeters: number;
   totalPoints: number;
+  /** When the club accepted the war (inviter: when it sent the challenge) — AC5's final tie-break. */
+  acceptedAtMs: number;
 }
 
 /** Tallies one club's frozen participant snapshot (§4.19 AC11) against runs inside the 48h window. */
@@ -31,7 +33,8 @@ export function summarizeClub(
   role: WarClubRole,
   participants: Participant[],
   runs: RunRecord[],
-  startedAt: Date
+  startedAt: Date,
+  acceptedAt: Date
 ): ClubTally {
   const memberIds = new Set(participants.filter((p) => p.clubId === clubId).map((p) => p.userId));
   const counted = runs.filter((r) => memberIds.has(r.userId) && isQualifyingRun(r) && isInWarWindow(r, startedAt));
@@ -42,19 +45,12 @@ export function summarizeClub(
     activeCount: new Set(counted.map((r) => r.userId)).size,
     totalDistanceMeters: counted.reduce((sum, r) => sum + r.distanceMeters, 0),
     totalPoints: counted.reduce((sum, r) => sum + (r.finalPointsAwarded ?? 0), 0),
+    acceptedAtMs: acceptedAt.getTime(),
   };
 }
 
 export function participationRate(tally: ClubTally): number {
   return tally.participantCount === 0 ? 0 : tally.activeCount / tally.participantCount;
-}
-
-/** Thrown when clubs stay exactly equal through every tie-break — no rule in §4.19 covers it. */
-export class UnresolvableTieError extends Error {
-  constructor(readonly clubIds: string[]) {
-    super(`Club War tie not resolvable by §4.19 AC5 between: ${clubIds.join(", ")}`);
-    this.name = "UnresolvableTieError";
-  }
 }
 
 function leaders<T>(items: T[], score: (item: T) => number): T[] {
@@ -63,12 +59,23 @@ function leaders<T>(items: T[], score: (item: T) => number): T[] {
 }
 
 /**
+ * AC5's last step (PM, 2026-09-24): earliest acceptance wins, so a war always ends with a winner.
+ * Club id order only separates two clubs that accepted at the identical millisecond — an
+ * implementation detail so the result can never be undetermined.
+ */
+function earliestAccepted(tied: ClubTally[]): ClubTally {
+  const first = [...tied].sort((a, b) => a.acceptedAtMs - b.acceptedAtMs || (a.clubId < b.clubId ? -1 : 1))[0];
+  if (!first) throw new Error("earliestAccepted needs at least one club");
+  return first;
+}
+
+/**
  * §4.19 Phase 2 rules, applied per club:
  *  - AC10: the inviter forfeits if its owner's Premium has lapsed (`inviterPremiumActive === false`).
  *  - AC6: any club with zero active participants forfeits.
  *  - AC4: among the rest, the strictly highest Participation Rate wins (one ranking, not pairwise).
- *  - AC5: a tie at the top is broken by combined distance, then combined points (implementation
- *    reading of "total combined distance/points" — flagged in the T4.2b report).
+ *  - AC5: a tie at the top is broken by combined distance, then combined points (order confirmed by the
+ *    PM 2026-09-24), then earliest acceptance — so there is always a winner among contenders.
  * If every club forfeits, each forfeit is applied literally: all lose, there is no winner.
  */
 export function decideWarResult(tallies: ClubTally[], inviterPremiumActive: boolean): WarResult {
@@ -99,9 +106,7 @@ export function decideWarResult(tallies: ClubTally[], inviterPremiumActive: bool
     } else {
       const byDistance = leaders(byRate, (t) => t.totalDistanceMeters);
       const byPoints = byDistance.length === 1 ? byDistance : leaders(byDistance, (t) => t.totalPoints);
-      const [tieBreakWinner] = byPoints;
-      if (byPoints.length !== 1 || !tieBreakWinner) throw new UnresolvableTieError(byPoints.map((t) => t.clubId));
-      winnerClubId = tieBreakWinner.clubId;
+      winnerClubId = earliestAccepted(byPoints).clubId;
       winReason = "tie_break";
     }
   }

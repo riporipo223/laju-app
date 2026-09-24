@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import type { ClubWarRepository } from "./repository";
+import { ClubBusyError, type ClubWarRepository } from "./repository";
 import type { ClubRole, InviteStatus, Participant, RunRecord, RunStatus, War, WarClubRole, WarStatus, WinReason } from "./types";
 
 // Written against T4.2a's schema (20260923200000_club_war_schema.sql), which is NOT applied yet —
@@ -14,11 +14,11 @@ interface WarRow {
   ended_at: string | null;
   winner_club_id: string | null;
   win_reason: WinReason | null;
-  club_war_club: { club_id: string; role: WarClubRole; invite_status: InviteStatus }[];
+  club_war_club: { club_id: string; role: WarClubRole; invite_status: InviteStatus; responded_at: string | null }[];
 }
 
 const WAR_SELECT =
-  "id, status, challenge_sent_at, accept_deadline_at, started_at, ended_at, winner_club_id, win_reason, club_war_club(club_id, role, invite_status)";
+  "id, status, challenge_sent_at, accept_deadline_at, started_at, ended_at, winner_club_id, win_reason, club_war_club(club_id, role, invite_status, responded_at)";
 
 function toWar(row: WarRow): War {
   const date = (value: string | null) => (value ? new Date(value) : null);
@@ -31,13 +31,21 @@ function toWar(row: WarRow): War {
     endedAt: date(row.ended_at),
     winnerClubId: row.winner_club_id,
     winReason: row.win_reason,
-    clubs: row.club_war_club.map((c) => ({ clubId: c.club_id, role: c.role, inviteStatus: c.invite_status })),
+    clubs: row.club_war_club.map((c) => ({
+      clubId: c.club_id,
+      role: c.role,
+      inviteStatus: c.invite_status,
+      respondedAt: date(c.responded_at),
+    })),
   };
 }
 
 function check(error: { message: string } | null, what: string): void {
   if (error) throw new Error(`Club War ${what} failed: ${error.message}`);
 }
+
+// Raised by T4.2a's `club_war_club_enforce_one_open_war` trigger (§4.19 AC14).
+const ONE_OPEN_WAR_MESSAGE = "already in a pending or active war";
 
 export const supabaseClubWarRepository: ClubWarRepository = {
   async getMembership(userId) {
@@ -56,6 +64,16 @@ export const supabaseClubWarRepository: ClubWarRepository = {
     return (data ?? []).map((row: { id: string }) => row.id);
   },
 
+  async clubsInOpenWar(clubIds) {
+    const { data, error } = await supabaseAdmin
+      .from("club_war_club")
+      .select("club_id, club_war!inner(status)")
+      .in("club_id", clubIds)
+      .in("club_war.status", ["pending", "active"]);
+    check(error, "open war lookup");
+    return [...new Set((data ?? []).map((row: { club_id: string }) => row.club_id))];
+  },
+
   async createWar({ inviterClubId, invitedClubIds, sentAt, deadline }) {
     const { data, error } = await supabaseAdmin
       .from("club_war")
@@ -66,13 +84,15 @@ export const supabaseClubWarRepository: ClubWarRepository = {
     const warId = data!.id;
 
     const rows = [
-      { club_war_id: warId, club_id: inviterClubId, role: "inviter", invite_status: "accepted" },
+      // The inviter "accepts" by sending — its responded_at is AC5's acceptance time for the final tie-break.
+      { club_war_id: warId, club_id: inviterClubId, role: "inviter", invite_status: "accepted", responded_at: sentAt.toISOString() },
       ...invitedClubIds.map((clubId) => ({ club_war_id: warId, club_id: clubId, role: "invited", invite_status: "pending" })),
     ];
     const { error: clubsError } = await supabaseAdmin.from("club_war_club").insert(rows);
     if (clubsError) {
       // No transaction across the two inserts: remove the half-created war rather than leave an orphan.
       await supabaseAdmin.from("club_war").delete().eq("id", warId);
+      if (clubsError.message.includes(ONE_OPEN_WAR_MESSAGE)) throw new ClubBusyError(clubsError.message);
       check(clubsError, "war clubs insert");
     }
     return warId;

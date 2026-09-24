@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  UnresolvableTieError,
   WAR_DURATION_MS,
   decideWarResult,
   isInWarWindow,
@@ -25,6 +24,7 @@ const tally = (overrides: Partial<ClubTally> & { clubId: string }): ClubTally =>
   activeCount: 5,
   totalDistanceMeters: 10_000,
   totalPoints: 10,
+  acceptedAtMs: start.getTime(),
   ...overrides,
 });
 
@@ -67,7 +67,8 @@ describe("summarizeClub", () => {
       run({ userId: "x" }),
       run({ userId: "outsider" }),
     ];
-    const t = summarizeClub("c1", "inviter", participants, runs, start);
+    const acceptedAt = new Date(start.getTime() - 60_000);
+    const t = summarizeClub("c1", "inviter", participants, runs, start, acceptedAt);
     expect(t).toEqual({
       clubId: "c1",
       role: "inviter",
@@ -75,6 +76,7 @@ describe("summarizeClub", () => {
       activeCount: 1,
       totalDistanceMeters: 5000,
       totalPoints: 5,
+      acceptedAtMs: acceptedAt.getTime(),
     });
   });
 });
@@ -128,10 +130,33 @@ describe("decideWarResult", () => {
     expect(result).toMatchObject({ winnerClubId: "a", winReason: "tie_break" });
   });
 
-  it("refuses to invent a winner when every tie-break is equal", () => {
-    expect(() =>
-      decideWarResult([tally({ clubId: "a", role: "inviter" }), tally({ clubId: "b" })], true)
-    ).toThrow(UnresolvableTieError);
+  it("AC5 final step: a tie on rate, distance and points goes to the club that accepted earliest", () => {
+    const result = decideWarResult(
+      [
+        tally({ clubId: "a", role: "inviter", acceptedAtMs: start.getTime() - 3000 }),
+        tally({ clubId: "b", acceptedAtMs: start.getTime() - 1000 }),
+        tally({ clubId: "c", acceptedAtMs: start.getTime() - 2000 }),
+      ],
+      true
+    );
+    expect(result).toMatchObject({ winnerClubId: "a", winReason: "tie_break" });
+  });
+
+  it("AC5 final step only compares clubs still tied after distance and points", () => {
+    const result = decideWarResult(
+      [
+        tally({ clubId: "a", role: "inviter", totalPoints: 9, acceptedAtMs: start.getTime() - 9000 }),
+        tally({ clubId: "b", acceptedAtMs: start.getTime() - 1000 }),
+        tally({ clubId: "c", acceptedAtMs: start.getTime() - 2000 }),
+      ],
+      true
+    );
+    expect(result).toMatchObject({ winnerClubId: "c", winReason: "tie_break" });
+  });
+
+  it("an identical acceptance instant falls back to club id, so a result always exists", () => {
+    const result = decideWarResult([tally({ clubId: "z" }), tally({ clubId: "m", role: "inviter" })], true);
+    expect(result).toMatchObject({ winnerClubId: "m", winReason: "tie_break" });
   });
 
   it("AC6: a club with zero active participants forfeits; the other club wins", () => {

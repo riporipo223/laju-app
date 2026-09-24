@@ -1,6 +1,6 @@
 import type { PremiumChecker } from "./premium";
-import type { ClubWarRepository } from "./repository";
-import { ACCEPT_WINDOW_MS, UnresolvableTieError, WAR_DURATION_MS, decideWarResult, summarizeClub } from "./scoring";
+import { ClubBusyError, type ClubWarRepository } from "./repository";
+import { ACCEPT_WINDOW_MS, WAR_DURATION_MS, decideWarResult, summarizeClub } from "./scoring";
 
 export interface Deps {
   repo: ClubWarRepository;
@@ -14,6 +14,7 @@ export type LifecycleError =
   | "not_club_admin"
   | "cannot_challenge_own_club"
   | "club_not_found"
+  | "club_busy"
   | "not_premium_club"
   | "war_not_found"
   | "not_invited"
@@ -44,16 +45,25 @@ export async function createChallenge(
   const existing = await deps.repo.existingClubIds(invited);
   if (existing.length !== invited.length) return fail("club_not_found");
 
+  // §4.19 AC14: no club — inviter or invited — may already be in a pending or active war.
+  if ((await deps.repo.clubsInOpenWar([membership.clubId, ...invited])).length > 0) return fail("club_busy");
+
   if (!(await deps.isPremiumClub(membership.clubId))) return fail("not_premium_club");
 
   const sentAt = deps.now();
-  const warId = await deps.repo.createWar({
-    inviterClubId: membership.clubId,
-    invitedClubIds: invited,
-    sentAt,
-    deadline: new Date(sentAt.getTime() + ACCEPT_WINDOW_MS),
-  });
-  return { ok: true, value: { warId } };
+  try {
+    const warId = await deps.repo.createWar({
+      inviterClubId: membership.clubId,
+      invitedClubIds: invited,
+      sentAt,
+      deadline: new Date(sentAt.getTime() + ACCEPT_WINDOW_MS),
+    });
+    return { ok: true, value: { warId } };
+  } catch (error) {
+    // A concurrent challenge got there first; the database trigger is the backstop for this check.
+    if (error instanceof ClubBusyError) return fail("club_busy");
+    throw error;
+  }
 }
 
 export type RespondOutcome = "pending" | "active" | "dissolved";
@@ -133,18 +143,18 @@ export async function expirePendingChallenges(deps: Deps): Promise<string[]> {
 
 export interface FinalizeReport {
   ended: string[];
-  unresolvedTies: string[];
 }
 
 /**
  * The 48-hour result (§4.19 AC3–AC6, AC10, AC13). The inviter's Premium is checked here, on demand
- * (§4.23 decided #10). A war whose clubs tie through every tie-break is left active and reported —
- * §4.19 has no rule for it, so no winner is invented.
+ * (§4.23 decided #10). Every due war gets a result — AC5's final tie-break (earliest acceptance) means
+ * no war is ever left active. Run by the daily cron, so it may land up to ~24h after the 48h mark
+ * (AC15); the window it scores is still exactly the 48 hours.
  */
 export async function finalizeDueWars(deps: Deps): Promise<FinalizeReport> {
   const now = deps.now();
   const wars = await deps.repo.listActiveWarsStartedBefore(new Date(now.getTime() - WAR_DURATION_MS));
-  const report: FinalizeReport = { ended: [], unresolvedTies: [] };
+  const report: FinalizeReport = { ended: [] };
 
   for (const war of wars) {
     const startedAt = war.startedAt;
@@ -155,17 +165,14 @@ export async function finalizeDueWars(deps: Deps): Promise<FinalizeReport> {
       startedAt,
       new Date(startedAt.getTime() + WAR_DURATION_MS)
     );
-    const tallies = war.clubs.map((c) => summarizeClub(c.clubId, c.role, participants, runs, startedAt));
+    const tallies = war.clubs.map((c) =>
+      summarizeClub(c.clubId, c.role, participants, runs, startedAt, c.respondedAt ?? war.challengeSentAt)
+    );
     const inviter = war.clubs.find((c) => c.role === "inviter");
     const inviterPremiumActive = inviter ? await deps.isPremiumClub(inviter.clubId) : false;
 
-    try {
-      const result = decideWarResult(tallies, inviterPremiumActive);
-      if (await deps.repo.recordResult(war.id, now, result)) report.ended.push(war.id);
-    } catch (error) {
-      if (error instanceof UnresolvableTieError) report.unresolvedTies.push(war.id);
-      else throw error;
-    }
+    const result = decideWarResult(tallies, inviterPremiumActive);
+    if (await deps.repo.recordResult(war.id, now, result)) report.ended.push(war.id);
   }
   return report;
 }

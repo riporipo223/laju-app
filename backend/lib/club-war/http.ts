@@ -19,6 +19,7 @@ const STATUS: Record<LifecycleError, number> = {
   not_invited: 403,
   club_not_found: 404,
   war_not_found: 404,
+  club_busy: 409,
   war_not_pending: 409,
   already_responded: 409,
 };

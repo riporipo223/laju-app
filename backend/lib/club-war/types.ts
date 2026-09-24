@@ -7,7 +7,7 @@ export type WarClubRole = "inviter" | "invited";
 export type InviteStatus = "pending" | "accepted" | "declined";
 export type Outcome = "win" | "loss";
 
-// `forfeit_premium_lapse` is NOT in T4.2a's `club_war.win_reason` CHECK yet — see the T4.2b report.
+// All four are allowed by T4.2a's `club_war.win_reason` CHECK (amended 2026-09-24).
 export type WinReason = "participation_rate" | "tie_break" | "forfeit_inactivity" | "forfeit_premium_lapse";
 
 export type RunStatus = "validated" | "flagged" | "approved" | "rejected";
@@ -21,6 +21,8 @@ export interface WarClub {
   clubId: string;
   role: WarClubRole;
   inviteStatus: InviteStatus;
+  /** When the club accepted (the inviter: when it sent the challenge). Null while pending. */
+  respondedAt: Date | null;
 }
 
 export interface War {
