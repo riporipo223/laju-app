@@ -203,6 +203,14 @@ Harmless in practice: onboarding's instance exists only for the permission step 
 
 **Update, 2026-09-23 — the "does not extend" prediction landed.** Task C of the Local Leaderboard/region reversal (product-spec.md §4.5 AC5) added a third surface: `LeaderboardView` now owns `LocationAuthorizationObserver` (`ios/Laju/ViewModels/LocationAuthorizationObserver.swift`), its own thin `CLLocationManager` wrapper reading only `authorizationStatus`. That is **three** independent `CLLocationManager`-adjacent instances in the process now (`RunTrackingView`'s and `OnboardingContainerView`'s `LocationTrackingService`, plus `LeaderboardView`'s `LocationAuthorizationObserver`). Not fixed as part of that change — deliberately out of scope, flagged in that commit's own message and here for tracking, not drift. Still a Note, not upgraded to Warning: the three cannot disagree (all read the same OS-level authorization state), and `LocationAuthorizationObserver` never calls `startUpdatingLocation`, so it does not introduce the "two tracking sessions" risk CQ-1/CQ-9's original framing was about — it only makes the "single shared instance injected through the environment" fix this entry already recommended cover one more consumer.
 
+## 4a. Backend (added 2026-09-24)
+
+### CQ-10 — `resolve-flagged-runs` cron accepts `Bearer undefined` when `CRON_SECRET` is unset — **Warning** (open, not fixed)
+
+`backend/app/api/cron/resolve-flagged-runs/route.ts` authorizes with `authHeader !== \`Bearer ${process.env.CRON_SECRET}\``. If `CRON_SECRET` is missing in an environment, the template literal becomes the string `"Bearer undefined"`, so a request carrying exactly `Authorization: Bearer undefined` is let in — and this route writes real ledger and trust-score changes (the same blast radius as any write path).
+
+Mitigated today, not closed: production has `CRON_SECRET` set, so the hole only opens in an environment where it is missing (a new preview/dev project, a rotated-and-forgotten variable). Found 2026-09-24 while writing the Club War cron route (T4.2b), which copied the same pattern and was fixed there with a `!secret` guard plus a test for the unset case. **This route is deliberately not changed yet** — recorded as technical debt rather than silently patched outside that task's scope. Fix: the same one-line `!secret ||` guard and the same test.
+
 ---
 
 ## 5. Findings summary
@@ -213,6 +221,7 @@ Harmless in practice: onboarding's instance exists only for the permission step 
 | CQ-1 | Concurrency | Main-thread safety assumed but never declared; no `@MainActor` anywhere in the tracking path | **Warning** |
 | CQ-3 | Concurrency | `@unchecked Sendable` on `StreakReminderScheduler` covers an unconstrained protocol; test spies hold mutable state | **Warning** |
 | CQ-7 | Performance | Full-route decode/re-encode per flush is O(n²) main-thread work; ~200KB synchronous writes late in a 24km run | **Warning** |
+| CQ-10 | Security (backend) | `resolve-flagged-runs` cron accepts `Bearer undefined` if `CRON_SECRET` is unset; mitigated in prod, not fixed (added 2026-09-24) | **Warning** |
 | CQ-4 | Concurrency | `PersistenceController`'s `nonisolated(unsafe)` is correctly reasoned and sound | **Note** |
 | CQ-5 | Persistence | No background contexts exist, so no cross-context race exists; `automaticallyMergesChangesFromParent` is inert until Fase 2 | **Note** |
 | CQ-6 | Persistence | Seven `try? context.save()` sites discard errors; diagnostic gap, not a correctness one | **Note** |
@@ -220,7 +229,7 @@ Harmless in practice: onboarding's instance exists only for the permission step 
 | CQ-9 | SwiftUI | Two `LocationTrackingService` instances can coexist; harmless now, does not extend | **Note** |
 | — | Build | **Swift 6 language mode, complete strict concurrency, warnings-as-errors — builds clean** | **Verified sound** |
 
-**Zero open Blockers** (CQ-2 resolved 2026-09-22), three Warnings, five Notes.
+**Zero open Blockers** (CQ-2 resolved 2026-09-22), ~~three~~ four Warnings (CQ-10 added 2026-09-24), five Notes.
 
 No code was changed as part of the original audit; CQ-2 was fixed in a later session (2026-09-22, see its status block above) with real CI evidence. The rest are safely deferrable, and CQ-1 is best done together with the toolchain question below.
 
