@@ -550,6 +550,13 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   highest rate wins and the rest lose (one ranking, not pairwise comparisons).
 - AC5: An exact tie in Participation Rate between the leading clubs is broken by total combined
   distance/points during the war period; the result stays win/loss, never a recorded draw.
+  **Order confirmed 2026-09-24 (PM): distance first, then points. Final deterministic tie-break
+  added 2026-09-24 (PM):** if still tied, the club that **accepted the war earliest** wins — a war
+  is never left active without an outcome. The inviter's acceptance time is the moment it sent the
+  challenge, so it is always earliest: **in a full tie the inviter wins** (a direct consequence of
+  this rule, noted so it isn't a surprise). *(Implementation detail, not a PM decision: two invited
+  clubs accepting at the identical instant fall back to club id order, purely so the result can
+  never be undetermined.)*
 - AC6: A club with zero participating members during an **active** (already-started) war period
   forfeits automatically — a real, recorded win/loss outcome (Phase 2 rule).
 - AC7 (RESOLVED 2026-09-23): if any invited club explicitly declines, or does not accept within 24
@@ -587,6 +594,16 @@ this repo's convention that Fase-4 items get full detail once genuinely decided,
   already the war's last check point (§4.23 decided #10), and revising a result users have already
   seen creates more confusion than the rare reversal it would fix. (§4.20's Club Aktif is different:
   it's rebuilt on every precompute, so a rejected run simply drops out of it.)
+- AC14 (added 2026-09-24, PM decision): a club takes part in **at most one pending-or-active war at a
+  time** — no overlap. A challenge that would involve a club already in a pending or active war
+  (as inviter or invited) is refused. Enforced both in the backend logic and by the database
+  (T4.2a).
+- AC15 (added 2026-09-24, PM decision): the 24-hour accept deadline and the 48-hour result are
+  applied by the **existing once-a-day scheduled job** (same pattern as the flagged-run resolver,
+  OPS-1) checking "is this past its time?" — not by a precise timer. A dissolve or a result can be
+  recorded up to ~24h after its moment; accepted. The *window itself* stays exact: only runs that
+  started inside the 48 hours count, however late the result is written, and answering a challenge
+  after its deadline still dissolves it on the spot.
 
 ~~**NOT decided — new, created by the 2026-09-23 status-set correction (flagged, not invented):**
 counting `flagged` runs means a war's result can depend on a run that is later `rejected` by the
@@ -1146,7 +1163,8 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   the club's aggregate total distance and total points. Nothing more in v1.~~ the admin analytics
   view shows: the club's aggregate total distance and total points; the number of **active members**
   (the same "ran" definition and live roster as §4.20 Club Aktif's Participation Rate — reused, not
-  a new metric); and the **top-N contributors**. Nothing more in v1.
+  a new metric); and the **top-N contributors**. Nothing more in v1. **Settled 2026-09-24 (PM):** all
+  three figures cover a **rolling 30-day window**, and N = **5** (top-5 contributors).
 - AC13 (added 2026-09-23, **revised 2026-09-24**): ~~an owner/admin can create an internal challenge
   with a name, a target distance and a time window (start/end) — the draft's example is "500km
   bareng bulan ini". Progress is the club members' combined distance inside the window. No rewards,
@@ -1154,14 +1172,19 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   with a name, a **collective target — distance or duration** — and a **deadline** (e.g. the draft's
   "500km bareng bulan ini"). Progress is the members' combined distance or run time up to the
   deadline. **No automatic reward and no link to the points system** — a challenge never awards or
-  removes points.
+  removes points. **Settled 2026-09-24 (PM):** runs count toward a challenge by the same rule as §4.20
+  (`validated`, `approved` or `flagged`, over the ADR-0009 distance gate); **at most one active
+  challenge per club** at a time; **no push notifications** for challenges in v1.
 - AC14 (added 2026-09-23): club analytics and internal challenges are visible only to that club's
   members. Nothing about them is public, shown to, or sent to any user outside the club.
 - AC15 (added 2026-09-23): anything that would reach the whole Laju user base is not an admin tool —
   it remains Laju-exclusive (§4.21, ADR-0014).
 
 - AC16 (added 2026-09-24, PM decision): the owner can't leave directly. They must first **transfer
-  ownership** to another member, or — if they are the club's only member — **delete the club**.
+  ownership** to another member, or — if they are the club's only member — ~~**delete the club**~~
+  **archive the club** (corrected 2026-09-24: a club is **always archived, never permanently
+  deleted** — this removes the contradiction with AC18, and keeps Club War history intact, since
+  `club_war_club`/`club_war_participant` reference `club`).
 - AC17 (added 2026-09-24, PM decision): the owner promotes a member to admin (and back) by a direct
   action — no approval step.
 - AC18 (added 2026-09-24, PM decision): when an account is deleted (T2.22), its `club_member` row is
@@ -1187,17 +1210,19 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 - ~~**Admin tools details**~~ → AC12/AC13 revised: analytics = totals + active members + top-N;
   challenges = collective distance or duration target with a deadline, no reward, no points link.
 
-**Still NOT decided — flagged, not invented (2026-09-24):**
-- **"Delete the club" (AC16) vs "archive" (AC18).** A club that has ever been in a Club War can't
+~~**Still NOT decided — flagged, not invented (2026-09-24):**~~ **All resolved 2026-09-24 (PM):**
+- ~~**"Delete the club" (AC16) vs "archive" (AC18).** A club that has ever been in a Club War can't
   be hard-deleted without deleting its war history — `club_war_club` and `club_war_participant`
-  reference `club` (T4.2a), and Club War Record reads them. Should AC16's delete also be an archive?
-- **Analytics details:** which period the totals and top-N cover (all time, current season, current
-  60-day period?), and N.
-- **Challenge details:** which runs count (reusing §4.20's activity threshold would keep it
-  consistent); more than one challenge at once; notifying members.
+  reference `club` (T4.2a), and Club War Record reads them. Should AC16's delete also be an archive?~~
+  → always archive, never delete (AC16).
+- ~~**Analytics details:** which period the totals and top-N cover (all time, current season, current
+  60-day period?), and N.~~ → rolling 30 days, top-5 (AC12).
+- ~~**Challenge details:** which runs count (reusing §4.20's activity threshold would keep it
+  consistent); more than one challenge at once; notifying members.~~ → §4.20's run rule; max one
+  active challenge per club; no push notifications in v1 (AC13).
 
 **Still deferred (T4.1 extended scope):** ~~ownership transfer, club deletion,~~ member cap.
-(Ownership transfer and club deletion moved into v1 by AC16 on 2026-09-24.)
+(Ownership transfer and club archiving moved into v1 by AC16 on 2026-09-24.)
 
 ## 5. Non-Goals (v1) — dan alasannya
 

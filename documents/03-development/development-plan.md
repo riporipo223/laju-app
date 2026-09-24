@@ -257,7 +257,7 @@ same job to a new `season_id`.
 - ~~Circle~~ Club (renamed 2026-09-23), matchmaking (product-spec §5
   Non-goals). Club War specifically **confirmed to build 2026-09-23**
   (product-spec.md §4.19) — still Fase 4/not v1. ~~only the shape is now
-  partly decided.~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC13) —
+  partly decided.~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC15) —
   Participation Rate win condition, 48-hour duration, targeted
   challenge/invite start, tie-break + forfeit rules. **AC7 resolved
   2026-09-23**: a declined/timed-out challenge produces zero Club War

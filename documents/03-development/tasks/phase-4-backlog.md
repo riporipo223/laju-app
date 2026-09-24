@@ -81,13 +81,17 @@ implemented.
   admin appointment, account-deletion handling and the admin-tools
   details (aggregate period, counting rule, concurrent challenges,
   notifications) wait on §4.24's open points.~~ **Plus (2026-09-24):**
-  transfer ownership; owner-only promote/demote admin; delete (sole
-  member) — delete-vs-archive still open; regenerate invite code
+  transfer ownership; owner-only promote/demote admin; ~~delete (sole
+  member) — delete-vs-archive still open;~~ **archive** (sole member —
+  clubs are never permanently deleted, 2026-09-24); regenerate invite code
   (owner/admin); analytics adds active members + top-N; challenges use a
   distance or duration target and a deadline, never touching points; and
   the account-deletion hook — T2.22's `account-deletion.ts` must remove
-  the member and run owner succession (AC18). Analytics period/N and
-  challenge counting/concurrency/notifications still open. **Reference**:
+  the member and run owner succession (AC18). ~~Analytics period/N and
+  challenge counting/concurrency/notifications still open.~~ **Settled
+  2026-09-24:** analytics over a rolling 30 days, top-5; challenges count
+  `validated`/`approved`/`flagged` runs over the distance gate, max one
+  active challenge per club (enforce it), no push notifications. **Reference**:
   product-spec.md §4.24 AC1-AC9, AC11-AC21.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
@@ -103,7 +107,7 @@ implemented.
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
   event-scale rule). ~~vs. genuinely open (mechanics, win condition,
-  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC13): Participation
+  duration).~~ **Mechanism finalized 2026-09-23** (§4.19 AC1-AC15): Participation
   Rate win condition (reused from §4.20 Club Aktif), fixed 48-hour duration,
   targeted challenge/invite start (not matchmaking — stays separate from
   T4.3 below), tie-break + forfeit rules, no anti-farming limit in v1.
@@ -127,7 +131,7 @@ implemented.
   NOT feed the Club War Record aggregation — schema needs to distinguish
   "dissolved, never fought" from "ended, real win/loss outcome," not
   just track a single win/loss field that both states would populate.
-  **Reference**: product-spec.md §4.19 AC1-AC13, §4.20
+  **Reference**: product-spec.md §4.19 AC1-AC15, §4.20
   Section 2 (Club War Record's own data needs).
 - **T4.2b — Club War: backend API.** Depends on T4.2a. **Scope**: create
   a challenge (target 1-2 specific clubs), accept/decline per invited
@@ -156,6 +160,12 @@ implemented.
   **War results are final at the 48-hour mark** (§4.19 AC13): a counted
   `flagged` run rejected later does not revise the recorded win/loss — no
   re-computation path is needed.
+  **Added 2026-09-24 (PM):** a final deterministic tie-break — earliest
+  acceptance wins (so the inviter wins a full tie), a war is never left
+  active (AC5); one pending/active war per club, checked in the lifecycle
+  and backed by a T4.2a trigger (AC14); the 24h/48h deadlines run on the
+  existing daily cron, up to ~24h late, window still exact (AC15); T4.2a's
+  `win_reason` CHECK now accepts `forfeit_premium_lapse`.
   **Premium lapse (decided 2026-09-23)**: checked on demand, never polled
   (§4.23 decided #10), at three points — challenge sent (owner not Premium
   → refuse), `pending → active` (inviter's owner lapsed → dissolve, no
@@ -174,7 +184,7 @@ implemented.
   client flag). Blocked until T4.20 is actually **implemented**, not just
   scoped — and T4.20b is itself blocked in full by the Apple Developer
   Program (verified 2026-09-23, see T4.20b). Also implements §4.19
-  AC10-AC13. **Reference**: product-spec.md §4.19 AC2-AC13, §4.23, ADR-0013
+  AC10-AC15. **Reference**: product-spec.md §4.19 AC2-AC15, §4.23, ADR-0013
   (precompute-not-live-derive pattern), §4.20 Section 1.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
@@ -182,7 +192,7 @@ implemented.
   (lives under **"Club Saya"** in the You tab, following §4.24 AC19 —
   2026-09-24; shares a screen with §4.20's Club Global Leaderboard, not a separate
   screen — no `screen-inventory.md` entry added by this task itself).
-  **Reference**: product-spec.md §4.19 AC1-AC13, §4.20.
+  **Reference**: product-spec.md §4.19 AC1-AC15, §4.20.
 - **T4.3 — Matchmaking between clubs.** Depends on T4.1. ~~Still Non-goal,
   no decided shape.~~ **Confirmed to build (2026-09-23, PM), separate from
   Club War; direction: suggestion-only** — the system suggests candidate
