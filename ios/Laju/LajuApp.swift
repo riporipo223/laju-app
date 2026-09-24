@@ -46,10 +46,18 @@ struct LajuApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if hasCompletedOnboarding {
+                if !hasCompletedOnboarding {
+                    OnboardingContainerView { hasCompletedOnboarding = true }
+                } else if !authService.hasCheckedInitialSession {
+                    // Brief window on cold start before the SDK's Keychain-backed session restore reports
+                    // in — avoids flashing ReturningSignInView for an already-signed-in returning user.
+                    ProgressView().tint(LajuColor.accent)
+                } else if authService.isSignedIn {
                     RootTabView()
                 } else {
-                    OnboardingContainerView { hasCompletedOnboarding = true }
+                    // 2026-09-24 (Bagian B item 7): onboarded before, signed out now (explicit Logout or an
+                    // expired session) — skip the full onboarding flow, straight to sign-in.
+                    ReturningSignInView()
                 }
             }
             .environmentObject(authService)

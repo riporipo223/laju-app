@@ -16,8 +16,13 @@ struct ProfileView: View {
     /// `runs`-derived estimate below — same values this screen showed before T2.16 existed.
     @EnvironmentObject private var progressViewModel: ProgressViewModel
     @EnvironmentObject private var accountDeletion: AccountDeletionService
+    /// 2026-09-24 (Bagian B item 7): Logout is local-session-only, unlike `AccountDeletionService` — reuses
+    /// `AuthService.signOut()` directly rather than going through a service, since there is no data to wipe.
+    @EnvironmentObject private var authService: AuthService
     @State private var showDeleteConfirmation = false
     @State private var showDeleteFailure = false
+    @State private var isLoggingOut = false
+    @State private var showLogoutFailure = false
 
     /// T1.13 AC2: no dedicated Settings screen exists yet — Profile is the closest existing home for this
     /// toggle. Same `UserDefaults` key `AudioCueService.isEnabled` reads/writes, not a separate flag.
@@ -28,9 +33,6 @@ struct ProfileView: View {
             VStack(spacing: 24) {
                 streakSection
                 levelSection
-                #if DEBUG
-                    clubSection
-                #endif
                 settingsSection
                 accountSection
                 recentRunsSection
@@ -62,6 +64,11 @@ struct ProfileView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Akunmu belum dihapus dan datamu masih utuh. Periksa koneksi dan coba lagi.")
+        }
+        .alert("Gagal keluar", isPresented: $showLogoutFailure) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Periksa koneksi dan coba lagi.")
         }
     }
 
@@ -181,33 +188,6 @@ struct ProfileView: View {
         }
     }
 
-    // MARK: - Club
-
-    #if DEBUG
-        /// T4.2c scaffold entry: "Club Saya" in the You tab (product-spec.md §4.24 AC19). DEBUG-only — Club
-        /// (T4.1) isn't built yet, and real Club War use still needs Premium (denied until T4.20, Apple
-        /// Developer Program). T4.2a's schema is applied (2026-09-24) but that alone doesn't unblock this.
-        private var clubSection: some View {
-            NavigationLink {
-                ClubWarView()
-            } label: {
-                HStack {
-                    Text("Club Saya")
-                        .font(LajuFont.heading)
-                        .foregroundStyle(LajuColor.textPrimary)
-                    Spacer()
-                    Text("Club War")
-                        .font(LajuFont.label)
-                        .foregroundStyle(LajuColor.textSecondary)
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(LajuColor.textSecondary)
-                }
-                .padding()
-                .background(LajuColor.surface, in: RoundedRectangle(cornerRadius: 20))
-            }
-        }
-    #endif
-
     // MARK: - Settings
 
     private var settingsSection: some View {
@@ -220,8 +200,43 @@ struct ProfileView: View {
 
     // MARK: - Account
 
-    /// T2.22 (product-spec.md §4.17): initiate account deletion from inside the app.
     private var accountSection: some View {
+        VStack(spacing: 12) {
+            logoutButton
+            deleteAccountButton
+        }
+    }
+
+    /// 2026-09-24 (Bagian B item 7): local session clear only — `AuthService.signOut()` — never touches Core
+    /// Data or `UserDefaults`, unlike `AccountDeletionService`. `hasCompletedOnboarding` (`LajuApp.swift`)
+    /// stays `true`, so a signed-out-but-onboarded user goes straight to `ReturningSignInView`, not the full
+    /// onboarding flow again.
+    private var logoutButton: some View {
+        Button {
+            Task {
+                isLoggingOut = true
+                defer { isLoggingOut = false }
+                do {
+                    try await authService.signOut()
+                } catch {
+                    showLogoutFailure = true
+                }
+            }
+        } label: {
+            HStack {
+                if isLoggingOut {
+                    ProgressView().tint(LajuColor.textPrimary)
+                }
+                Text(isLoggingOut ? "Keluar…" : "Keluar")
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .buttonStyle(LajuSecondaryButtonStyle())
+        .disabled(isLoggingOut)
+    }
+
+    /// T2.22 (product-spec.md §4.17): initiate account deletion from inside the app.
+    private var deleteAccountButton: some View {
         Button(role: .destructive) {
             showDeleteConfirmation = true
         } label: {
@@ -287,6 +302,7 @@ private struct StreakDayDot: View {
             .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
             .environmentObject(ProgressViewModel())
             .environmentObject(AccountDeletionService(persistence: PersistenceController.shared))
+            .environmentObject(AuthService())
     }
     .preferredColorScheme(.dark)
 }
