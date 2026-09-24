@@ -107,6 +107,7 @@ final class ClubWarViewModel: ObservableObject {
         "not_premium_club": "Club War butuh Club Premium — belum tersedia.",
         "not_in_club": "Kamu belum bergabung dengan club.",
         "not_club_admin": "Hanya owner atau admin club yang bisa melakukan ini.",
+        "club_busy": "Salah satu club sedang dalam war lain.",
         "war_not_pending": "Tantangan ini sudah tidak menunggu jawaban.",
         "already_responded": "Club kamu sudah menjawab tantangan ini."
     ]

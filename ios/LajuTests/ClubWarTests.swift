@@ -51,6 +51,10 @@ final class ClubWarTests: XCTestCase {
         let error = APIClientError.server(statusCode: 403, body: #"{"error":"not_premium_club"}"#)
         XCTAssertEqual(ClubWarViewModel.message(for: error), "Club War butuh Club Premium — belum tersedia.")
         XCTAssertEqual(
+            ClubWarViewModel.message(for: APIClientError.server(statusCode: 409, body: #"{"error":"club_busy"}"#)),
+            "Salah satu club sedang dalam war lain."
+        )
+        XCTAssertEqual(
             ClubWarViewModel.message(for: URLError(.notConnectedToInternet)),
             "Tidak ada koneksi. Coba lagi saat online."
         )
