@@ -189,8 +189,9 @@ implemented.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
   challenge, view an active war's status/score, view the Club War Record
-  (lives under **"Club Saya"** in the You tab, following §4.24 AC19 —
-  2026-09-24; shares a screen with §4.20's Club Global Leaderboard, not a separate
+  (~~lives under **"Club Saya"** in the You tab, following §4.24 AC19 — 2026-09-24~~
+  **moved to the new Club tab same day, 2026-09-24** — §4.24 AC19 reversed, see
+  product-spec.md; shares a screen with §4.20's Club Global Leaderboard, not a separate
   screen — no `screen-inventory.md` entry added by this task itself).
   **Reference**: product-spec.md §4.19 AC1-AC15, §4.20.
 - **T4.3 — Matchmaking between clubs.** Depends on T4.1. ~~Still Non-goal,

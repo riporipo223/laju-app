@@ -77,6 +77,31 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 
 ## 3. If the user types "Lanjutkan" right now
 
+**Update, 2026-09-24**: real device dogfood (Google sign-in, not Apple) surfaced product feedback,
+acted on the same day (commits `07e7a6b`, `b33add4`, `6ec3cc0`) — no task number owns this, it's
+ad-hoc PM-directed nav/UX work, not part of the phase-N task files:
+- **Navbar restructured to 5 tabs**: Social, Club, Track, Ranks, You (`RootTabView.swift`). Social
+  (T4.15) and Club (T4.1) have no real content yet — each shows a `ComingSoonView` placeholder, added
+  now so the order is right rather than waiting for those features.
+- **Club War moved** from a DEBUG-only scaffold link buried in the You tab to a real, always-visible
+  entry in the new Club tab (`ClubHomeView.swift`). Ungating from `#if DEBUG` is safe: the backend
+  (`backend/app/api/club-wars/`, T4.2b) is real deployed code, not a stub — it deliberately denies
+  every caller with 403 `not_premium_club` until T4.20 (Premium) ships, and the iOS error map already
+  handles that response gracefully.
+- **Ranks tab got a 3-way segmented toggle** (Users/Club/Club War, `RanksView.swift`). Only Users
+  (the existing global leaderboard) is real — Club and Club War leaderboards have no owning
+  task/endpoint (checked: no such code anywhere in `backend/` or `ios/`); this is a **gap**, not
+  scheduled work — no T4.17 (Club Global Leaderboard) code exists yet despite it being discussed.
+- **Logout added**, separate from the existing Delete Account — `AuthService.signOut()`, clears only
+  the local session (never touches Core Data or `UserDefaults`, unlike account deletion). A
+  previously-onboarded user who logs out now skips the full onboarding flow and lands directly on a
+  sign-in screen (`ReturningSignInView.swift`) instead of `OnboardingContainerView`; a brand-new user
+  is unaffected. Root gating logic: `LajuApp.swift`.
+- **Verification**: `xcodebuild build` and `test` both green (193/193), SwiftLint 0 violations,
+  SwiftFormat clean. **Not yet verified on a physical device** — this needs the user's own dogfood
+  pass (tab order/icons, Club War still reachable and functional, logout → sign back in → lands on
+  Track not onboarding, a brand-new install still gets full onboarding).
+
 **Update, 2026-09-23**: the `luvfr` branch (12 commits: CQ-2, SEC-1, auto-pause removal, Local
 Leaderboard cancellation + full region removal) was independently re-audited from scratch, merged to
 `main` (`99cd7ef`), and Task B's migration was applied for real to production. Everything below is

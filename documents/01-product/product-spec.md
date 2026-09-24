@@ -1191,8 +1191,13 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   removed automatically. If it was the owner, ownership passes to the **longest-standing admin**
   (earliest `joined_at`), or, with no admins, to the **longest-standing member**. A club left with no
   members is **archived**.
-- AC19 (added 2026-09-24, PM decision): the Club UI is a **"Club Saya"** section inside the **You**
-  tab — not a new tab, not under Ranks.
+- ~~AC19 (added 2026-09-24, PM decision): the Club UI is a **"Club Saya"** section inside the **You**
+  tab — not a new tab, not under Ranks.~~ **REVERSED same day, 2026-09-24** (later PM instruction,
+  device-testing feedback session): Club now gets its **own tab**, 5-tab navbar order Social, Club,
+  Track, Ranks, You. "Club Saya"/Club War moved out of You into the new Club tab
+  (`ios/Laju/Views/Club/ClubHomeView.swift`, `ios/Laju/Views/RootTabView.swift`). Flagging this as a
+  same-day reversal of an explicit FINAL decision rather than silently editing it — if this wasn't
+  intentional, the code (commits `07e7a6b`, `6ec3cc0`) needs reverting, not just the doc.
 - AC20 (added 2026-09-24, PM decision): an invite-only club's code is random alphanumeric, generated
   by the system; the owner or an admin can regenerate it (the old code stops working); codes don't
   expire in v1.
@@ -1205,7 +1210,8 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 - ~~**Can the owner leave?**~~ → AC16 (transfer first, or delete the club if sole member).
 - ~~**How does a member become an admin?**~~ → AC17.
 - ~~**Account deletion of a member or owner (T2.22).**~~ → AC18.
-- ~~**Where the Club UI lives.**~~ → AC19 ("Club Saya" in the You tab).
+- ~~**Where the Club UI lives.**~~ → AC19, **reversed 2026-09-24 same day**: own Club tab, not "Club
+  Saya" in You.
 - ~~**Who can see and share the invite code, and can it be regenerated?**~~ → AC20.
 - ~~**Admin tools details**~~ → AC12/AC13 revised: analytics = totals + active members + top-N;
   challenges = collective distance or duration target with a deadline, no reward, no points link.

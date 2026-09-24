@@ -281,10 +281,10 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
   - [ ] T4.1a — extend `club` (description, privacy, invite code) — separate migration, T4.2a untouched
   - [ ] T4.1b — backend: create / join / leave / browse / internal leaderboard
   - [ ] T4.1c — iOS UI — "Club Saya" section in the You tab (decided 2026-09-24)
-- [ ] T4.2 — Club War — confirmed to build 2026-09-23, mechanism finalized 2026-09-23 (§4.19 AC1-AC15), still not scheduled (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-  - [ ] T4.2a — data model (club, roster, club_war tables)
-  - [ ] T4.2b — backend API (challenge, precompute, forfeit rules) — blocked on T4.20 being implemented
-  - [ ] T4.2c — iOS UI (challenge, accept/decline, war status, record)
+- [ ] T4.2 — Club War — confirmed to build 2026-09-23, mechanism finalized 2026-09-23 (§4.19 AC1-AC15); T4.2a/b/c pulled forward and built 2026-09-24 (`9b40c34`) ahead of the rest of Fase 4 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [x] T4.2a — data model (club, roster, club_war tables) — **APPLIED to production 2026-09-24**, verified: 5 tables exist, RLS enabled on all 5, max-3-clubs trigger, one-open-war trigger, and the one-club-per-user PK all genuinely rejected a real bad insert (begin/rollback, zero rows leaked). See the migration file's own APPLIED banner (`20260923200000_club_war_schema.sql`)
+  - [ ] T4.2b — backend API (challenge, precompute, forfeit rules) — code built and tested (364/364 backend incl. integration tests against the real applied schema, `9b40c34`), but **deliberately inert**: `isPremiumClub()` (`backend/lib/club-war/premium.ts`) is a stub that always returns `false` until T4.20 ships — no Club War can actually be created by anyone yet, by design, not a bug
+  - [ ] T4.2c — iOS UI (challenge, accept/decline, war status, record) — self-described "iOS scaffold" in `9b40c34`'s own commit message, iOS 193/193 passing; functionally blocked by the same T4.2b Premium stub above, so leaving unchecked rather than claiming done. **Location changed 2026-09-24**: moved from You tab to the new Club tab (§4.24 AC19 reversed same day — see product-spec.md)
 - [ ] T4.3 — Matchmaking between clubs — confirmed 2026-09-23, suggestion-only; not scoped in detail (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.4 — Monetization: seasonal pass (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.5 — Monetization: advanced statistics — AC-complete 2026-09-24 (§4.25 AC1-AC5) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
@@ -311,8 +311,19 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
   - [ ] T4.17b — two precompute jobs + read endpoint
   - [ ] T4.17c — iOS two-section screen
 - [ ] T4.18 — User Season 91→60 days, forward-only from Season 2 — decided 2026-09-23; implementation scoped 2026-09-23 (Season 2 by hand via season.ts, overrun warning log, bands recalibrated after Season 2 data); not done (was missing from this list; added 2026-09-23) (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-- [ ] T4.20 — Premium subscription infrastructure — decided 2026-09-23 (§4.23 AC1-AC14); T4.20b/c blocked by Apple Developer Program (verified); T4.20a unblocked (user_id non-null FK, decided 2026-09-23) and buildable before enrollment; T4.2b, §4.5 AC4, and T4.4–T4.7 depend on it (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-  - [ ] T4.20a — `subscription` table (append-only) + RLS
+- [ ] T4.20 — Premium subscription infrastructure — decided 2026-09-23 (§4.23 AC1-AC14); T4.20b/c blocked by Apple Developer Program (verified); T4.20a unblocked (user_id non-null FK, decided 2026-09-23) and buildable before enrollment; T4.2b, §4.5 AC4, and T4.4–T4.7 depend on it, but **not unblocked by T4.20a alone** — see T4.20a's own line (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+  - [ ] T4.20a — `subscription` table (append-only) + RLS — **written 2026-09-24**
+    (`20260924210000_add_subscription_table.sql`), verified via a real begin/rollback
+    dry-run against production: table + both indexes + RLS created cleanly, `status`
+    CHECK genuinely rejected an invalid value, `environment` CHECK genuinely rejected
+    an invalid value, two rows for the same `original_transaction_id` with different
+    `status` inserted cleanly (append-only pattern confirmed), then rolled back —
+    zero trace left. **Deliberately NOT applied to production yet**, same two-step
+    gate as T4.2a (write inert → review → apply as a separate decision). **Does not
+    by itself unblock T4.2b/§4.5 AC4/T4.4–T4.7** even once applied — those need
+    T4.20b (the actual Apple verification/status-check logic), which stays blocked
+    in full by the Apple Developer Program regardless of this table's existence.
+    T4.20a is the necessary foundation, not a functional unblock.
   - [ ] T4.20b — backend: App Store Server API verification + status endpoint
   - [ ] T4.20c — iOS: StoreKit 2 purchase flow + Restore Purchases
 
