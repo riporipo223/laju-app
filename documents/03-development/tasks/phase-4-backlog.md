@@ -209,18 +209,10 @@ implemented.
   - Not decided yet: which ranks qualify and what exact cosmetics each gets
     (the draft only says "rank tertentu"). Hooks onto season end (T3.8's
     season results). Depends on T4.20.
-- **T4.5 — Monetization: advanced statistics.** Scope note (2026-09-23,
-  PM):
-  - Computed **on the device from Core Data**, not on the server.
-  - Metrics exactly as drafted in user-flow.md **§2.5** (the prompt that
-    set this said §2.8 — §2.8 is the seasonal reward): weekly/monthly pace
-    trend chart, personal-record history (longest distance, fastest pace,
-    with date and run context), period comparison (this month vs last).
-    Draft's Freemium view: lifetime totals only.
-  - Consequence of on-device: stats only cover runs present in this
-    device's Core Data (a new device/reinstall starts from whatever is
-    stored locally). The Premium gate is the StoreKit local entitlement
-    (§4.23 hybrid) — nothing server-side to check. Depends on T4.20c.
+- **T4.5 — Monetization: advanced statistics.** **AC-complete 2026-09-24
+  — see product-spec.md §4.25 (AC1-AC5).** On-device from Core Data, pace
+  trend chart / PR history / period comparison, StoreKit local
+  entitlement gate. Depends on T4.20c.
 - **T4.6 — Monetization: exclusive badge.** Scope note (2026-09-23, PM):
   - Badge sources, as drafted: the Premium subscription itself,
     achievements, and season rank (user-flow.md §1, §2.4).
@@ -229,16 +221,13 @@ implemented.
     exists in the spec or code. Needs defining before this is scoped.
     Season-rank badges overlap T4.4's season badge — keep one mechanism.
     Depends on T4.20.
-- **T4.7 — Monetization: premium profile.** Premium pricing decided
-  2026-09-23 ($7.99/mo + App Store Connect regional tiers, product-spec.md
-  §5) — applies to whichever of T4.4–T4.7 eventually ship, not scoped to
-  one of them specifically. **v1 packaging (2026-09-23): monthly only, no
-  annual plan, no free trial** — deliberate (product-spec.md §4.23).
-  Scope note (2026-09-23, PM):
-  - **Exactly three things:** profile photo, bio, alternative app icon.
-    Nothing more.
-  - Profile photos need storage and moderation — a real concern, recorded
-    for later, **not** a blocker for this scope.
+- **T4.7 — Monetization: premium profile.** **AC-complete 2026-09-24 —
+  see product-spec.md §4.26 (AC1-AC5).** Exactly three things (photo,
+  bio, alt icon), StoreKit local entitlement gate. Premium pricing
+  decided 2026-09-23 ($7.99/mo + App Store Connect regional tiers,
+  product-spec.md §5, applies to whichever of T4.4-T4.7 ship) — v1
+  packaging monthly-only, no annual, no free trial (product-spec.md
+  §4.23).
 - **T4.4–T4.7 all depend on T4.20** (added 2026-09-23): each is a Premium
   *feature* and had silently assumed a subscription system existed. None
   does yet — see T4.20 below.
@@ -358,47 +347,16 @@ implemented.
   own tracking mechanism decision (Android has no `CLLocationManager`
   equivalent) and its own local persistence choice, not a direct port of
   the iOS implementation.
-- **T4.12 — Redis-backed real-time global leaderboard cache** — ~~Open
-  Question in architecture.md §4, only relevant if precompute freshness
-  (≤15 min) proves insufficient at scale.~~ **CONFIRMED TO BUILD 2026-09-23**
-  (PM decision, architecture.md §4's Open Question resolved by product
-  decision, not measured data — see lean-canvas.md §7 for the added
-  operational cost). Redis sorted set as a read-through cache in front of
-  Postgres, global scope only, Postgres stays source of truth.
-  Scope note (2026-09-23, PM):
-  - **"Real-time" does NOT mean updated on every run.** The cache follows
-    the existing 15-minute precompute — consistent with ADR-0013's "never
-    derive live on read". No per-run instant updates.
-  - Redis provider: an implementation decision for later, not a design
-    blocker.
-  - Worth knowing: with freshness unchanged, the gain is taking read load
-    off Postgres, not fresher rankings — the "real-time" in this task's
-    title no longer describes it, and architecture.md §4's original
-    reason (freshness) isn't the reason any more.
-- **T4.13 — Native iOS platform integrations** (Live Activities, Dynamic
-  Island, HealthKit, WidgetKit) — capabilities newly available now the app
-  is Swift-native, explicitly not v1 scope (tech-spec.md §1,
-  development-plan.md Fase 4, mvp-report.md §8). Pivot introduced
-  capability, not a feature request — do not start until Fase 1–3 have
-  shipped. **Priority order set 2026-09-23** (PM decision, was unordered):
-  1) **Live Activities**, 2) **Dynamic Island**, 3) **WidgetKit**, 4)
-  **HealthKit** — Live Activities/Dynamic Island reinforce the core
-  run-tracking loop directly (the thing users are already doing while
-  running); WidgetKit targets the D7/D30 retention metric (lean-canvas.md
-  §8) by giving the app a presence outside the app itself; HealthKit is
-  competitive parity (every other running app has it) rather than a Laju
-  differentiator, so it's lowest priority. Still one task — this orders
-  the work inside it, doesn't split it into four tasks.
-  Scope note (2026-09-23, PM):
-  - **Live Activity content** = the same three values as the Apple Watch
-    (product-spec.md §4.22): distance, pace, elapsed time.
-  - **HealthKit: write only** — each finished run is recorded to Apple
-    Health; nothing is read from Health in v1. One direction, smaller
-    scope. (Matches user-flow.md §2.10's draft, which also lists
-    *calories* — Laju doesn't compute calories today, so that field isn't
-    covered by this decision.)
-  - The existing gate is unchanged: do not start until Fase 1–3 have
-    shipped (T1.17, Fase 1's gate, is still open).
+- **T4.12 — Redis-backed global leaderboard cache.** **AC-complete
+  2026-09-24 — see product-spec.md §4.27 (AC1-AC3).** Read-through cache,
+  global scope only, still on the 15-minute precompute cadence — not
+  per-run. **⚠️ Shares code with T4.17** (both new ADR-0013 precompute
+  consumers) — do not scope/implement concurrently with T4.17 in separate
+  sessions, see HANDOFF.md.
+- **T4.13 — Native iOS platform integrations.** **AC-complete 2026-09-24
+  — see product-spec.md §4.28 (AC1-AC5).** Priority order: Live
+  Activities → Dynamic Island → WidgetKit → HealthKit (write-only). Gate
+  unchanged: do not start until Fase 1-3 have shipped (T1.17 still open).
 - **T4.14 — Companion smartwatch app.** Added 2026-09-12 as "Apple Watch
   companion app," low priority. **Scope expanded and reprioritized
   2026-09-23** (PM decision): confirmed to build, three platforms, strict

@@ -1224,6 +1224,128 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 **Still deferred (T4.1 extended scope):** ~~ownership transfer, club deletion,~~ member cap.
 (Ownership transfer and club archiving moved into v1 by AC16 on 2026-09-24.)
 
+### 4.25 Monetization: Advanced Statistics (Fase 4, added 2026-09-24 — NOT v1/Must-have)
+
+**Status: AC-complete 2026-09-24** (T4.5). Was a scope note (2026-09-23, PM) with no open product
+question — promoted to full AC per this repo's convention (same treatment as Club War/Apple Watch).
+
+**Decided:**
+- Computed **on-device from Core Data**, not server-side. No new backend endpoint.
+- Metrics (user-flow.md §2.5): weekly/monthly pace trend chart; personal-record history (longest
+  distance, fastest pace — each with date and run context); period comparison (this month vs last).
+- Freemium sees lifetime totals only (existing behavior, unchanged); Premium unlocks the three
+  metrics above.
+- Gate: StoreKit local entitlement (§4.23's hybrid client-check pattern), same as T4.7 — no
+  server round-trip to show/hide this screen.
+
+**Acceptance Criteria:**
+- AC1: A Premium user sees a pace trend chart (weekly and monthly views) computed from local `Run`
+  entities only.
+- AC2: Personal records (longest distance, fastest pace) are computed from local `Run` history,
+  each showing the date and basic context (distance/pace/duration) of the record-setting run.
+- AC3: A period comparison (this month vs. last month) is shown, computed the same way.
+- AC4: A Freemium user sees lifetime totals only — none of AC1-AC3's views are reachable.
+- AC5: A new device / fresh install shows statistics starting from whatever `Run` history exists
+  locally on that device — no attempt to backfill from the server. This is a known, accepted
+  consequence of the on-device decision, not a bug to fix later.
+
+**Depends on:** T4.20c (StoreKit entitlement check must exist to gate this).
+
+**Reference:** user-flow.md §2.5 (metrics draft), product-spec.md §4.23 (Premium gating pattern).
+
+### 4.26 Monetization: Premium Profile (Fase 4, added 2026-09-24 — NOT v1/Must-have)
+
+**Status: AC-complete 2026-09-24** (T4.7). Was a scope note (2026-09-23, PM) with no open product
+question.
+
+**Decided:**
+- Exactly three things, nothing more: profile photo, bio, alternative app icon.
+- Photo storage/moderation is a real concern, explicitly **not a blocker** for this task — recorded
+  for whoever implements it, not solved here.
+- Pricing (already decided, product-spec.md §5): $7.99/mo, monthly only, no annual plan, no free
+  trial (2026-09-23, deliberate v1 packaging decision).
+
+**Acceptance Criteria:**
+- AC1: A Premium user can set a profile photo, visible wherever the profile is shown (profile
+  screen, feed posts once Social Feed/T4.15 exists).
+- AC2: A Premium user can set a free-text bio.
+- AC3: A Premium user can choose an alternative app icon from a fixed set (exact icon set not
+  specified here — a design decision, not a product-spec AC).
+- AC4: A Freemium user sees none of AC1-AC3 as available — Premium-gated the same way as §4.25.
+- AC5: Photo upload has *some* size/format constraint before it ships (exact limits not specified
+  here) — flagged so it isn't shipped unbounded, not because the limit itself is decided.
+
+**Depends on:** T4.20c (StoreKit entitlement check).
+
+**Reference:** user-flow.md (profile draft), product-spec.md §4.23 (Premium gating pattern).
+
+### 4.27 Redis-Backed Global Leaderboard Cache (Fase 4, added 2026-09-24 — NOT v1/Must-have)
+
+**Status: AC-complete 2026-09-24** (T4.12). Was a scope note (2026-09-23, PM) with no open product
+question — resolves architecture.md §4's Open Question by product decision, not measured need.
+
+**Decided:**
+- A Redis sorted set as a read-through cache in front of Postgres, **global scope only** — no
+  change to Local/Club leaderboard precompute patterns.
+- **"Real-time" does not mean per-run updates.** The cache still follows the existing 15-minute
+  precompute interval (ADR-0013: never derive live on read) — the gain is read-load off Postgres,
+  not fresher rankings. The task's inherited name ("real-time") is no longer literally accurate.
+- Redis provider (e.g. Upstash) is an implementation decision, not a design blocker.
+
+**Acceptance Criteria:**
+- AC1: `GET /api/leaderboard?scope=global` reads from the Redis cache when populated, falling back
+  to Postgres when it isn't (cold cache / Redis unavailable) — never a hard failure if Redis is down.
+- AC2: The cache is repopulated on the same 15-minute precompute cadence as `leaderboard_entry`
+  today (T2.18) — not on a separate or faster schedule.
+- AC3: Postgres (`leaderboard_entry`) remains the source of truth; Redis is provably a projection —
+  a cache flush and rebuild from Postgres must reproduce identical rankings.
+
+**Depends on:** none — independent of Club/Season features, touches only the existing Global
+leaderboard read path.
+
+**⚠️ Shared-code caution:** this touches the same precompute/read pattern as T4.17 (Club Global
+Leaderboard, §4.20) — both are new consumers of ADR-0013's "precompute table, never derive live"
+principle. Do not scope or implement T4.12 and T4.17 concurrently in separate sessions without
+coordinating — real collision risk on shared read-path code, same caution already recorded for
+these two in HANDOFF.md.
+
+**Reference:** architecture.md §4 (the Open Question this resolves), ADR-0013.
+
+### 4.28 Native iOS Platform Integrations (Fase 4, added 2026-09-24 — NOT v1/Must-have)
+
+**Status: AC-complete 2026-09-24** (T4.13). Was a scope note (2026-09-23, PM) with no open product
+question. Gate unchanged: do not start until Fase 1-3 have fully shipped (T1.17, Fase 1's gate, is
+still open as of this writing) — a scheduling constraint, not an unresolved product decision.
+
+**Decided (priority order, 2026-09-23):**
+1. **Live Activities** — reinforces the core run-tracking loop directly (glanceable stats while a
+   run is in progress, the thing users are already doing).
+2. **Dynamic Island** — same rationale as Live Activities, same content.
+3. **WidgetKit** — targets the D7/D30 retention metric (lean-canvas.md §8) via a presence outside
+   the app itself.
+4. **HealthKit** — competitive parity (every other running app has it), not a Laju differentiator,
+   lowest priority. **Write-only**: each finished run is recorded to Apple Health; nothing is read
+   from Health in v1.
+
+**Acceptance Criteria:**
+- AC1: A Live Activity shows during an active run: distance, pace, elapsed time (same three values
+  as the Apple Watch companion, §4.22) — updates as the run progresses.
+- AC2: The same Live Activity content is reachable via Dynamic Island on supported devices.
+- AC3: A home-screen widget (WidgetKit) shows at minimum the day's/week's run status — exact widget
+  content not specified beyond "gives the app a presence outside itself" (a design decision).
+- AC4: Each finished, `validated` (or resolved-`approved`) run is written to Apple Health via
+  HealthKit — distance and duration at minimum. Flagged runs are not written until resolved, same
+  status-gating principle as everywhere else in this spec.
+- AC5: No data is ever read from HealthKit in this version — a write-only integration, confirmed by
+  the entitlements/capabilities requested (read permission not requested).
+
+**Depends on:** T1.17 (Fase 1 gate must close first) — otherwise independent of every other Fase 4
+item in this document.
+
+**Reference:** tech-spec.md §1, mvp-report.md §8, lean-canvas.md §8 (D7/D30 metric), user-flow.md
+§2.10 (HealthKit draft — note: that draft also lists *calories*, which Laju doesn't compute today;
+not covered by AC4).
+
 ## 5. Non-Goals (v1) — dan alasannya
 
 | Non-goal | Alasan |
