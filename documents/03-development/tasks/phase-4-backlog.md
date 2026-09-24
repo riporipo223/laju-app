@@ -436,6 +436,60 @@ implemented.
   Private) include a club-only audience that can't exist yet if Social
   Feed ships before Club; likewise T4.1's club feed (§4.24, deferred)
   waits on this.
+  **v1 scoping session held 2026-09-24 (PM), minimal scope decided:**
+  - **Audience: Public only.** Circle/Club-only deferred (Club doesn't
+    exist), Private deferred (no AC, no clear use case yet without a
+    follower/friend graph). Revisit when Club (T4.1) exists.
+  - **Premium card differentiation: deferred entirely**, not even a stubbed
+    branch. Every post looks the same in v1 — matches how T4.2b defers its
+    own Premium check until T4.20 is actually functional.
+  - **Moderation: delete-own-post only.** No report/block/admin review in
+    v1 — tracked as a separate gap, not forced into this task. This is the
+    app's first public UGC surface, so this gap is worth revisiting before
+    a wide release, not indefinitely.
+  - **A run can only be posted once it's `validated`/`approved`** (not
+    `flagged`/`rejected`) — an inline safety call, not a new open product
+    question: posting an unconfirmed or rejected run's stats publicly would
+    contradict the app's own anti-cheat trust model.
+  - **Out of scope, not decided, flagged for later:** viewing another
+    user's full profile from the feed (no such screen/endpoint exists
+    anywhere in this app yet) — tapping a poster's name does nothing in v1.
+  - **Reference:** user-flow.md §2.7 (draft), this note (the actual v1 AC
+    until a fuller product-spec.md section is written).
+  **Implementation started 2026-09-24, same day as scoping — NOT YET APPLIED/VERIFIED live:**
+  - **Data model written**: `social_post` (no audience/premium column, per
+    scope above) + `social_post_like` (composite PK = like-once), a
+    trigger enforcing the "own run, validated/approved only" AC at insert
+    time (`20260924220000_social_feed_schema.sql`). Same two-step gate as
+    T4.2a/T4.20a — inert, reviewed, **not applied to production**, no live
+    evidence yet; whoever applies it must run this file's own VERIFICATION
+    block for real first.
+  - **Backend built**: `POST`/`GET /api/social/posts` (create + paginated
+    public feed with batched like counts), `DELETE /api/social/posts/[id]`
+    (delete-own-post), `POST`/`DELETE /api/social/posts/[id]/like`.
+    `account-deletion.ts` and `rate-limit.ts` were updated for this ahead
+    of the routes themselves. 32 new backend unit tests pass (mocked
+    Supabase, no live DB needed) — **not exercised against the real
+    database**, since the migration isn't applied; no integration test
+    written yet (would need one, same pattern as `club-war.integration.
+    test.ts`, once the migration is live).
+  - **iOS built**: `SocialHomeView` replaces the placeholder with a real
+    feed (like, delete-own-post, infinite scroll, pull-to-refresh);
+    `SocialPostComposerView` is the "Post pencapaian" entry point, added
+    to **Run History** rows (not the instant post-run summary screen,
+    which is local-only and has no server-confirmed status yet — see the
+    composer's own header comment). New `SocialViewModel`/`APIClient+
+    Social.swift`/`SocialDTOs.swift`, 10 new XCTest cases. **Written in an
+    environment with no Xcode/macOS toolchain — none of this has been
+    compiled or run, only pattern-matched against existing code.** Needs a
+    real build + simulator pass before this can be marked verified, same
+    bar every other DoD in this repo uses.
+  - **Net effect**: the whole feature is code-complete but functionally
+    inert end-to-end — the backend will 500 against production (table
+    doesn't exist) until the migration is applied, and the iOS side is
+    unverified until someone builds it on an actual Mac. Not claiming
+    "done" anywhere in tasks/README.md until both of those happen with
+    real evidence.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
 - **T4.18 — Change User Season length from 91 to 60 days, forward-only.**

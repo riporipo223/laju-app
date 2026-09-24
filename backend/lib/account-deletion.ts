@@ -54,6 +54,17 @@ export async function deleteAccount(authUserId: string): Promise<AccountDeletion
     const { error: routeError } = await supabaseAdmin.from("run").update({ gps_route: null }).eq("user_id", user.id);
     if (routeError) throw new Error(`Could not clear GPS routes: ${routeError.message}`);
 
+    // T4.15 (2026-09-24): unlike PointTransaction/subscription, social_post is NOT an append-only ledger
+    // with an audit requirement — it is public user content tied to a real identity (username/avatar), so
+    // it is deleted outright rather than anonymized-in-place, same direction as clearing gps_route above.
+    // Likes this user made on OTHERS' posts are cleared too (their own engagement trace, not the other
+    // post's content). Posts first — social_post_like cascades on social_post deletion (migration), so this
+    // second delete only catches likes on posts this user did NOT author.
+    const { error: postsError } = await supabaseAdmin.from("social_post").delete().eq("user_id", user.id);
+    if (postsError) throw new Error(`Could not delete social posts: ${postsError.message}`);
+    const { error: likesError } = await supabaseAdmin.from("social_post_like").delete().eq("user_id", user.id);
+    if (likesError) throw new Error(`Could not delete social post likes: ${likesError.message}`);
+
     if (user.deleted_at === null) {
       // Every personal field handled explicitly, never "some". `total_points`/`current_level`/`trust_score`
       // are retained on purpose: they are derived from the immutable ledger and clearing them would desync

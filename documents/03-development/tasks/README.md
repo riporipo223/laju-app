@@ -304,7 +304,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
   - [ ] T4.14b — Apple Watch v1: watchOS target + UI
   - [ ] T4.14c — Garmin companion — placeholder, not scoped
   - [ ] T4.14d — Huawei Watch companion — placeholder, not scoped
-- [ ] T4.15 — Social Feed — built BEFORE Club (T4.1), decided 2026-09-23; not scoped in detail (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.15 — Social Feed — built BEFORE Club (T4.1), decided 2026-09-23; v1 scope closed 2026-09-24 (public feed, delete-own-post moderation, validated/approved runs only). **Code-complete but functionally inert 2026-09-24**: migration written not applied (`20260924220000_social_feed_schema.sql`, same T4.2a/T4.20a two-step gate), backend routes + 32 unit tests pass (mocked, no live DB), iOS feed/composer + 10 XCTest cases written but never compiled (no Xcode/macOS toolchain in the session that wrote them) — see phase-4-backlog.md for the full breakdown (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.16 — Comment on social feed posts (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.17 — Club Global Leaderboard, added 2026-09-23, confirmed to build — §4.20 AC1-AC12, Season 1 = no reset (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [ ] T4.17a — precompute tables for both sections

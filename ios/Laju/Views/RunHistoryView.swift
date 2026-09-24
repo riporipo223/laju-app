@@ -10,7 +10,10 @@ import UIKit
 /// `@FetchRequest` keeps this screen live-updating whenever a run is
 /// added/changed, no manual refresh needed. **Restyled 2026-09-14** onto
 /// the real design system (design-notes.md §5) — same data/fetch, dark
-/// card rows with the top-accent-line signature.
+/// card rows with the top-accent-line signature. **T4.15 (2026-09-24):**
+/// `RunHistoryRow` gained a "Post pencapaian" entry point on
+/// validated/approved rows — see `SocialPostComposerView`'s own comment
+/// for why here and not `RunSummaryView`.
 struct RunHistoryView: View {
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Run.startedAt, ascending: false)]
@@ -59,6 +62,14 @@ private struct RunHistoryRow: View {
     /// when a flagged run later resolves — the row must re-render on that attribute change, not only when the
     /// fetched list itself gains/loses a run.
     @ObservedObject var run: Run
+    @State private var showPostSheet = false
+
+    /// T4.15 v1 AC (phase-4-backlog.md): only a validated/approved run can be posted — checked against
+    /// `serverStatus`, the server-confirmed outcome (never the local `estimatedPoints`/offline state, which
+    /// says nothing about anti-cheat resolution).
+    private var isPostable: Bool {
+        run.serverRunId != nil && (run.serverStatus == "validated" || run.serverStatus == "approved")
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -86,6 +97,13 @@ private struct RunHistoryRow: View {
                 if let copy = run.statusCopy {
                     statusView(copy)
                 }
+
+                if isPostable {
+                    Button("Post pencapaian") { showPostSheet = true }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LajuColor.accent)
+                        .padding(.top, 2)
+                }
             }
         }
         .padding(12)
@@ -96,6 +114,11 @@ private struct RunHistoryRow: View {
                 .frame(height: 2)
                 .padding(.horizontal, 16)
                 .padding(.top, 1)
+        }
+        .sheet(isPresented: $showPostSheet) {
+            if let serverRunId = run.serverRunId {
+                SocialPostComposerView(runId: serverRunId, onPosted: {})
+            }
         }
     }
 

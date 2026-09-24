@@ -8,9 +8,12 @@ import SwiftUI
 /// no tab of its own — it is reached from a toolbar button on `LeaderboardView`.
 ///
 /// **5-tab order, decided 2026-09-24: Social, Club, Track, Ranks, You.** Reverses the older "only tabs with
-/// real content are shown" rule — Social (T4.15) and Club (T4.1) have no real content yet, but the tab order
-/// is wanted now rather than only once each feature lands (see `SocialHomeView`/`ClubHomeView`'s own
-/// placeholder-vs-built notes for what's actually there today).
+/// real content are shown" rule — Social (T4.15) and Club (T4.1) had no real content yet when the order was
+/// decided, but the tab order was wanted now rather than only once each feature lands. **Social updated the
+/// same day**: `SocialHomeView` is now a real feed screen wired to `backend/app/api/social/posts/*`, not a
+/// placeholder — see its own header comment for why it still can't succeed against production today (the
+/// migration is written but not applied). `ClubHomeView` remains a placeholder for Club itself (T4.1, not
+/// started) with only its Club War sub-feature (T4.2c) built — see its own note.
 struct RootTabView: View {
     @State private var selection: LajuTab = .track
 
