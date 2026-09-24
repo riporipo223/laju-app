@@ -7,6 +7,10 @@
 -- (same as Task B, 20260923090000_drop_region_and_regional_scopes.sql). Do not run
 -- against production until explicitly reviewed and approved.
 --
+-- AMENDED 2026-09-24, still before any apply (PM decisions): `win_reason` also accepts
+-- 'forfeit_premium_lapse' (§4.19 AC10), and a trigger enforces one pending/active war per club
+-- (§4.19 AC14). Edited in place rather than as a follow-up migration because nothing has run it yet.
+--
 -- LEARNED FROM TASK B: that migration's own "DO NOT RUN" banner went stale after
 -- being applied for real and had to be corrected in a follow-up commit
 -- (a81bc01/ed625c6). If this migration is actually applied, THIS BANNER MUST BE
@@ -93,7 +97,9 @@ create table "club_war" (
   started_at timestamptz, -- set when status -> active (every invited club accepted)
   ended_at timestamptz,   -- set when status -> ended (48h window elapsed or forfeit)
   winner_club_id uuid references "club" (id), -- nullable; set only when status = 'ended'
-  win_reason text check (win_reason in ('participation_rate', 'tie_break', 'forfeit_inactivity')),
+  -- 'forfeit_premium_lapse' added 2026-09-24, before this migration was ever applied (§4.19 AC10):
+  -- the backend (T4.2b) records it when the inviter's owner has lost Premium at the 48h check.
+  win_reason text check (win_reason in ('participation_rate', 'tie_break', 'forfeit_inactivity', 'forfeit_premium_lapse')),
   created_at timestamptz not null default now(),
   constraint club_war_winner_only_when_ended
     check (status = 'ended' or (winner_club_id is null and win_reason is null))
@@ -160,6 +166,36 @@ before insert on "club_war_club"
 for each row
 execute function "club_war_club_enforce_max_three"();
 
+-- §4.19 AC14 (added 2026-09-24, before this migration was ever applied): a club is in at most one
+-- pending-or-active war at a time. The backend checks this first; this trigger is the backstop for
+-- two challenges racing each other. A partial unique index can't express it (the status lives on
+-- `club_war`, not on this table), so it's a trigger, serialized per club with an advisory lock so
+-- two concurrent inserts for the same club can't both pass the check.
+create function "club_war_club_enforce_one_open_war"()
+returns trigger
+language plpgsql
+as $$
+begin
+  perform pg_advisory_xact_lock(hashtext('club_war_open:' || new.club_id::text));
+  if exists (
+    select 1
+    from "club_war_club" cwc
+    join "club_war" cw on cw.id = cwc.club_war_id
+    where cwc.club_id = new.club_id
+      and cwc.club_war_id <> new.club_war_id
+      and cw.status in ('pending', 'active')
+  ) then
+    raise exception 'club % is already in a pending or active war (§4.19 AC14)', new.club_id;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger "club_war_club_one_open_war_trigger"
+before insert on "club_war_club"
+for each row
+execute function "club_war_club_enforce_one_open_war"();
+
 -- ============================================================
 -- club_war_participant
 -- ============================================================
@@ -209,6 +245,8 @@ commit;
 -- ============================================================================
 -- begin;
 --
+-- drop trigger if exists "club_war_club_one_open_war_trigger" on "club_war_club";
+-- drop function if exists "club_war_club_enforce_one_open_war"();
 -- drop trigger if exists "club_war_club_max_three_trigger" on "club_war_club";
 -- drop function if exists "club_war_club_enforce_max_three"();
 -- drop table if exists "club_war_participant";
@@ -242,6 +280,15 @@ commit;
 --   -- then insert 3 club_war_club rows for that id with 3 distinct real club
 --   -- ids, then attempt a 4th -- expect:
 --   -- ERROR: club_war ... already has 3 clubs entered (max per §4.19 AC1)
+--
+-- Expect a club already in a pending/active war to be refused a second one (§4.19 AC14):
+--   -- create war W1 with club X (pending), then insert a club_war_club row for club X into a
+--   -- different war W2 -- expect:
+--   -- ERROR: club ... is already in a pending or active war (§4.19 AC14)
+--
+-- Expect win_reason to accept the Premium-lapse forfeit:
+--   select pg_get_constraintdef(oid) from pg_constraint where conname = 'club_war_win_reason_check';
+--   -- => includes 'forfeit_premium_lapse'
 --
 -- Expect one-club-per-user to genuinely reject a second row for the same user:
 --   insert into "club_member" (user_id, club_id, role) values ('<real-user-id>', '<club-a>', 'member');
