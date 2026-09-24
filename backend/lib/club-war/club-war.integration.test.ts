@@ -1,18 +1,15 @@
 /**
- * [PENDING T4.2a APPLY] — expected to FAIL against the live database until migration
- * 20260923200000_club_war_schema.sql is applied: every table it touches (`club`, `club_member`,
- * `club_war`, `club_war_club`, `club_war_participant`) doesn't exist yet. That failure is the signal
- * this file exists for — once the migration is applied, this goes green without edits.
+ * Migration 20260923200000_club_war_schema.sql (`club`, `club_member`, `club_war`, `club_war_club`,
+ * `club_war_participant`) applied to production 2026-09-24 — this file no longer expects to fail.
  *
- * Skips only when there are no real credentials (the repo-wide integration pattern), never because the
- * schema is missing. Don't add a schema-presence skip: that would hide exactly what this is waiting on.
+ * Skips only when there are no real credentials (the repo-wide integration pattern).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ClubBusyError } from "./repository";
 
 const hasRealCredentials = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-describe.skipIf(!hasRealCredentials)("[PENDING T4.2a APPLY] Club War repository against the real schema", () => {
+describe.skipIf(!hasRealCredentials)("Club War repository against the real schema", () => {
   const tag = `cw-it-${Date.now()}`;
   const created = { users: [] as string[], clubs: [] as string[], wars: [] as string[] };
   let supabaseAdmin: typeof import("@/lib/supabase").supabaseAdmin;

@@ -1,11 +1,25 @@
 -- T4.2a — Club War data model (product-spec.md §4.19, AC1-AC9).
 --
 -- ============================================================================
--- NOT YET APPLIED — AWAITING REVIEW.
+-- APPLIED 2026-09-24 to production. Real evidence (all 5 checks from this
+-- file's own VERIFICATION section below, run for real):
+--   - 5 tables exist: club, club_member, club_war, club_war_club,
+--     club_war_participant (information_schema.tables).
+--   - RLS enabled (relrowsecurity = true) on all 5 (pg_class).
+--   - win_reason CHECK constraint includes 'forfeit_premium_lapse'
+--     (pg_get_constraintdef).
+--   - Max-3-clubs trigger genuinely rejected a 4th club-war-club insert:
+--     "club_war ... already has 3 clubs entered (max per §4.19 AC1)".
+--   - One-open-war trigger genuinely rejected a club already in a
+--     pending/active war: "club ... is already in a pending or active war
+--     (§4.19 AC14)".
+--   - One-club-per-user PK genuinely rejected a second club_member row for
+--     the same real user_id: "duplicate key value violates unique
+--     constraint club_member_pkey".
+-- All constraint-rejection tests ran inside begin/rollback against a real
+-- user id; zero rows left behind (verified: club/club_member/club_war all
+-- count 0 immediately after).
 -- ============================================================================
--- Written for review per this repo's "write first, review, then apply" discipline
--- (same as Task B, 20260923090000_drop_region_and_regional_scopes.sql). Do not run
--- against production until explicitly reviewed and approved.
 --
 -- AMENDED 2026-09-24, still before any apply (PM decisions): `win_reason` also accepts
 -- 'forfeit_premium_lapse' (§4.19 AC10), and a trigger enforces one pending/active war per club
