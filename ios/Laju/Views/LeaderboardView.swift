@@ -47,7 +47,7 @@ struct LeaderboardView: View {
             .padding()
         }
         .background(LajuColor.background.ignoresSafeArea())
-        .navigationTitle("Leaderboard")
+        .navigationTitle("Ranks")
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             // T3.9: only reachable entry point for the season info screen — no tab of its own (RootTabView.swift).
