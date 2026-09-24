@@ -34,7 +34,7 @@ implemented.
   **T4.1 extended scope, belum dijadwalkan**: ~~description, privacy/
   visibility, join flow, leave/transfer/delete, member cap — deferred,
   not decided (user-flow.md §2.6 is still an unreconciled draft).~~
-  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC15**: any tier creates
+  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC21** (AC16-AC21 added 2026-09-24): any tier creates
   clubs, description + public/invite-only in v1, public = direct join,
   invite-only = invite code, no request/approval, leave in v1, internal
   leaderboard from existing season points; ~~admin tools and club feed
@@ -42,10 +42,19 @@ implemented.
   2026-09-23 — T4.8 merged here):** Premium-included, owner/admin of a
   Premium Club only, internal to the club only — minimal viable member
   list + aggregate distance/points, and internal challenges with a target
-  distance and a time window (AC11-AC15). **Still deferred:** ownership transfer, club deletion, member
-  cap. **Still open (§4.24):** can the owner leave; how admins are
+  distance and a time window (AC11-AC15). **Still deferred:** ~~ownership transfer, club deletion,~~ member
+  cap. ~~**Still open (§4.24):** can the owner leave; how admins are
   appointed; club membership on account deletion; where the Club UI
-  lives; invite-code visibility/regeneration. **Ordering (2026-09-23):**
+  lives; invite-code visibility/regeneration.~~ **Closed 2026-09-24
+  (§4.24 AC16-AC21):** owner transfers ownership or deletes the club (sole
+  member) before leaving; owner promotes admins directly; account
+  deletion removes membership and hands ownership to the longest-standing
+  admin, else member, empty club archived; UI = "Club Saya" in the You
+  tab; random regenerable invite codes, no expiry; analytics = totals +
+  active members + top-N; challenges = collective distance/duration
+  target + deadline, no rewards/points. **Still open:** delete vs archive
+  for AC16; analytics period and N; challenge run-counting, concurrency,
+  notifications. **Ordering (2026-09-23):**
   Social Feed (T4.15) is built **before** this task (see T4.15).
 - **T4.1a — Club: extend the `club` table.** Depends on T4.2a's migration
   (which creates the minimal `club` stub). **Scope**: a **separate, new**
@@ -53,10 +62,12 @@ implemented.
   a privacy column (`public` | `invite_only`), and an invite code (unique,
   required only for `invite_only`), with RLS unchanged (already
   deny-all). **Plus (2026-09-23, admin tools):** a new internal-challenge
-  table (club, name, target distance, start/end) with RLS enabled and no
-  grants. Analytics needs no table — aggregated from existing runs.
-  Reviewed before apply. **Reference**: product-spec.md §4.24 AC2, AC5,
-  AC13.
+  table ~~(club, name, target distance, start/end)~~ (club, name, target
+  type `distance` | `duration`, target value, deadline — revised
+  2026-09-24) with RLS enabled and no grants. Analytics needs no table —
+  aggregated from existing runs. **Plus (2026-09-24):** an archived marker
+  on `club` (AC18). Reviewed before apply. **Reference**: product-spec.md
+  §4.24 AC2, AC5, AC13, AC18, AC20.
 - **T4.1b — Club: backend.** Depends on T4.1a. **Scope**: create (any
   tier, creator = owner), join public directly, join invite-only with the
   code, leave, browse/search public clubs, and the internal leaderboard
@@ -66,19 +77,28 @@ implemented.
   distance/points) and create/read internal challenges with progress —
   both gated server-side on "caller is owner/admin AND the club is a
   Premium Club" through T4.20b's check (so, like T4.2b, blocked until
-  T4.20 is implemented), and never readable by non-members. Owner-leave,
+  T4.20 is implemented), and never readable by non-members. ~~Owner-leave,
   admin appointment, account-deletion handling and the admin-tools
   details (aggregate period, counting rule, concurrent challenges,
-  notifications) wait on §4.24's open points. **Reference**:
-  product-spec.md §4.24 AC1-AC9, AC11-AC15.
+  notifications) wait on §4.24's open points.~~ **Plus (2026-09-24):**
+  transfer ownership; owner-only promote/demote admin; delete (sole
+  member) — delete-vs-archive still open; regenerate invite code
+  (owner/admin); analytics adds active members + top-N; challenges use a
+  distance or duration target and a deadline, never touching points; and
+  the account-deletion hook — T2.22's `account-deletion.ts` must remove
+  the member and run owner succession (AC18). Analytics period/N and
+  challenge counting/concurrency/notifications still open. **Reference**:
+  product-spec.md §4.24 AC1-AC9, AC11-AC21.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
   **and (2026-09-23) the admin-tools screens** — analytics and creating/
   viewing internal challenges — shown only to owner/admins of a Premium
   Club; members see challenge progress, nobody outside the club sees
-  anything. Blocked on where the Club UI lives (§4.24 open point). Not
-  wireframed yet (screen-inventory.md §4). **Reference**: product-spec.md
-  §4.24 AC1-AC15.
+  anything. ~~Blocked on where the Club UI lives (§4.24 open point).~~
+  Lives in a **"Club Saya"** section of the **You** tab (AC19, decided
+  2026-09-24); also transfer ownership, promote admin, regenerate invite
+  code. Not wireframed yet (screen-inventory.md §4). **Reference**:
+  product-spec.md §4.24 AC1-AC21.
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
@@ -159,7 +179,8 @@ implemented.
 - **T4.2c — Club War: iOS UI.** Depends on T4.2b. **Scope**: send a
   challenge (Premium Club owner/admin only), accept/decline an incoming
   challenge, view an active war's status/score, view the Club War Record
-  (shares a screen with §4.20's Club Global Leaderboard, not a separate
+  (lives under **"Club Saya"** in the You tab, following §4.24 AC19 —
+  2026-09-24; shares a screen with §4.20's Club Global Leaderboard, not a separate
   screen — no `screen-inventory.md` entry added by this task itself).
   **Reference**: product-spec.md §4.19 AC1-AC13, §4.20.
 - **T4.3 — Matchmaking between clubs.** Depends on T4.1. ~~Still Non-goal,

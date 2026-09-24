@@ -1130,7 +1130,8 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 - AC4: Any user can join a `public` club directly, with no approval step.
 - AC5: An `invite_only` club can be joined only with its invite code; it can't be joined directly.
 - AC6: No join-request / approval flow exists in v1, for either privacy setting.
-- AC7: A member can leave their club. *(Whether the **owner** can leave is open — below.)*
+- AC7: A member can leave their club. ~~*(Whether the **owner** can leave is open — below.)*~~ The
+  owner can't leave directly — see AC16.
 - AC8: Public clubs can be found in-app (browse/search) so they can be joined directly — follows from
   AC4; draft §2.6 describes it as "Browse publik".
 - AC9: A club's internal leaderboard ranks its current members by their current-season points,
@@ -1141,42 +1142,62 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   Club**, and are part of the Premium subscription — never sold separately. The owner and admins of
   a non-Premium club don't get them. Because Premium Club status is checked when used (§4.23 decided
   #10), the tools stop being available if the owner's Premium lapses.
-- AC12 (added 2026-09-23 — minimal viable analytics): the admin view shows the club's member list and
-  the club's aggregate total distance and total points. Nothing more in v1.
-- AC13 (added 2026-09-23 — minimal viable internal challenge): an owner/admin can create an internal
-  challenge with a name, a target distance and a time window (start/end) — the draft's example is
-  "500km bareng bulan ini". Progress is the club members' combined distance inside the window. No
-  rewards, no penalties, no other challenge types in v1.
+- AC12 (added 2026-09-23, **revised 2026-09-24**): ~~the admin view shows the club's member list and
+  the club's aggregate total distance and total points. Nothing more in v1.~~ the admin analytics
+  view shows: the club's aggregate total distance and total points; the number of **active members**
+  (the same "ran" definition and live roster as §4.20 Club Aktif's Participation Rate — reused, not
+  a new metric); and the **top-N contributors**. Nothing more in v1.
+- AC13 (added 2026-09-23, **revised 2026-09-24**): ~~an owner/admin can create an internal challenge
+  with a name, a target distance and a time window (start/end) — the draft's example is "500km
+  bareng bulan ini". Progress is the club members' combined distance inside the window. No rewards,
+  no penalties, no other challenge types in v1.~~ an owner/admin can create an internal challenge
+  with a name, a **collective target — distance or duration** — and a **deadline** (e.g. the draft's
+  "500km bareng bulan ini"). Progress is the members' combined distance or run time up to the
+  deadline. **No automatic reward and no link to the points system** — a challenge never awards or
+  removes points.
 - AC14 (added 2026-09-23): club analytics and internal challenges are visible only to that club's
   members. Nothing about them is public, shown to, or sent to any user outside the club.
 - AC15 (added 2026-09-23): anything that would reach the whole Laju user base is not an admin tool —
   it remains Laju-exclusive (§4.21, ADR-0014).
 
-**NOT decided — flagged, not invented:**
-- **Can the owner leave?** Ownership transfer and club deletion are both deferred (T4.1 extended
-  scope). If the owner can leave, the club is left without an owner — and without a Premium Club
-  owner, so it can never start a Club War again. Options: owner can't leave in v1; or owner leaving
-  deletes/freezes the club; or pull ownership transfer into v1.
-- **How does a member become an admin?** Roles exist (§4.19 lets an owner *or admin* start a Club
-  War), but no way to appoint an admin is decided, and admin tools are deferred. v1 could simply
-  have no admins (owner only).
-- **Account deletion of a member or owner (T2.22).** Nothing removes a deleted account's
-  `club_member` row today. With Club Aktif's live roster (§4.20 AC11), deleted accounts would stay
-  in the denominator. Same question for an owner who deletes their account.
-- **Where the Club UI lives.** The app's tabs are Track / You / Ranks; draft §2.6 assumes a "Tab
-  Circle". A new tab, or inside an existing one?
-- **Who can see and share the invite code, and can it be regenerated?**
+- AC16 (added 2026-09-24, PM decision): the owner can't leave directly. They must first **transfer
+  ownership** to another member, or — if they are the club's only member — **delete the club**.
+- AC17 (added 2026-09-24, PM decision): the owner promotes a member to admin (and back) by a direct
+  action — no approval step.
+- AC18 (added 2026-09-24, PM decision): when an account is deleted (T2.22), its `club_member` row is
+  removed automatically. If it was the owner, ownership passes to the **longest-standing admin**
+  (earliest `joined_at`), or, with no admins, to the **longest-standing member**. A club left with no
+  members is **archived**.
+- AC19 (added 2026-09-24, PM decision): the Club UI is a **"Club Saya"** section inside the **You**
+  tab — not a new tab, not under Ranks.
+- AC20 (added 2026-09-24, PM decision): an invite-only club's code is random alphanumeric, generated
+  by the system; the owner or an admin can regenerate it (the old code stops working); codes don't
+  expire in v1.
+- AC21 (follows from §4.19's Premium Club definition, not a separate decision): an ownership change
+  — by transfer (AC16) or by account deletion (AC18) — changes which user's Premium makes the club a
+  Premium Club. A club whose new owner has no active Premium loses admin tools and can't start a
+  Club War; if it's the inviter in an active war, §4.19 AC10's lapse forfeit applies when checked.
 
-- **Admin tools details not settled by the decision (2026-09-23)** — AC12/AC13 are the stated
-  minimum; these are still open: which **period** the aggregate distance/points cover (all time,
-  current season, a rolling window?); whether "target jarak/durasi" means a distance target inside a
-  time window (how AC13 reads it, following the draft's example) or can also be a pure duration
-  target; which runs count toward a challenge (reusing §4.20's activity threshold would keep it
-  consistent); whether a club can run more than one challenge at once; whether members are notified
-  of a new challenge. The "how does a member become an admin" point above matters more now, since
-  admins get these tools.
+~~**NOT decided — flagged, not invented:**~~ **Resolved 2026-09-24 (PM):**
+- ~~**Can the owner leave?**~~ → AC16 (transfer first, or delete the club if sole member).
+- ~~**How does a member become an admin?**~~ → AC17.
+- ~~**Account deletion of a member or owner (T2.22).**~~ → AC18.
+- ~~**Where the Club UI lives.**~~ → AC19 ("Club Saya" in the You tab).
+- ~~**Who can see and share the invite code, and can it be regenerated?**~~ → AC20.
+- ~~**Admin tools details**~~ → AC12/AC13 revised: analytics = totals + active members + top-N;
+  challenges = collective distance or duration target with a deadline, no reward, no points link.
 
-**Still deferred (T4.1 extended scope):** ownership transfer, club deletion, member cap.
+**Still NOT decided — flagged, not invented (2026-09-24):**
+- **"Delete the club" (AC16) vs "archive" (AC18).** A club that has ever been in a Club War can't
+  be hard-deleted without deleting its war history — `club_war_club` and `club_war_participant`
+  reference `club` (T4.2a), and Club War Record reads them. Should AC16's delete also be an archive?
+- **Analytics details:** which period the totals and top-N cover (all time, current season, current
+  60-day period?), and N.
+- **Challenge details:** which runs count (reusing §4.20's activity threshold would keep it
+  consistent); more than one challenge at once; notifying members.
+
+**Still deferred (T4.1 extended scope):** ~~ownership transfer, club deletion,~~ member cap.
+(Ownership transfer and club deletion moved into v1 by AC16 on 2026-09-24.)
 
 ## 5. Non-Goals (v1) — dan alasannya
 

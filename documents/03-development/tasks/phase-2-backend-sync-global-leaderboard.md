@@ -2536,6 +2536,12 @@ feature actually needs)
   `subscription` rows are not touched at all, exactly as this task's own
   `account-deletion.ts` already treats `PointTransaction`. So this AC adds
   **no** new deletion step for `subscription`; only the warning above.
+- **Added AC, 2026-09-24 (product-spec.md §4.24 AC18) — applies once
+  Club (T4.1) ships; not a regression of what T2.22 shipped:** deleting
+  an account also removes its `club_member` row. If the account owned a
+  club, ownership passes to the longest-standing admin, else the
+  longest-standing member; a club left with no members is archived.
+  Implemented in `account-deletion.ts` as part of T4.1b.
 - Yang TIDAK dikerjakan: a "pause"/"deactivate" distinct from full
   deletion (not required by the Guideline, not requested); any admin-side
   tooling for deletion requests beyond the in-app self-service flow;
