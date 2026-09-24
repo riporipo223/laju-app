@@ -28,6 +28,9 @@ struct ProfileView: View {
             VStack(spacing: 24) {
                 streakSection
                 levelSection
+                #if DEBUG
+                    clubSection
+                #endif
                 settingsSection
                 accountSection
                 recentRunsSection
@@ -177,6 +180,33 @@ struct ProfileView: View {
                 .padding(.top, 1)
         }
     }
+
+    // MARK: - Club
+
+    #if DEBUG
+        /// T4.2c scaffold entry: "Club Saya" in the You tab (product-spec.md §4.24 AC19). DEBUG-only — Club
+        /// (T4.1) isn't built yet, and real Club War use still needs Premium (denied until T4.20, Apple
+        /// Developer Program). T4.2a's schema is applied (2026-09-24) but that alone doesn't unblock this.
+        private var clubSection: some View {
+            NavigationLink {
+                ClubWarView()
+            } label: {
+                HStack {
+                    Text("Club Saya")
+                        .font(LajuFont.heading)
+                        .foregroundStyle(LajuColor.textPrimary)
+                    Spacer()
+                    Text("Club War")
+                        .font(LajuFont.label)
+                        .foregroundStyle(LajuColor.textSecondary)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(LajuColor.textSecondary)
+                }
+                .padding()
+                .background(LajuColor.surface, in: RoundedRectangle(cornerRadius: 20))
+            }
+        }
+    #endif
 
     // MARK: - Settings
 
