@@ -7,17 +7,34 @@ import SwiftUI
 /// audit that found that gap noted all three were unreachable-by-construction. T3.9's `SeasonInfoView` has
 /// no tab of its own — it is reached from a toolbar button on `LeaderboardView`.
 ///
-/// **Only tabs with real content are shown.** `LajuTab` carries the future cases so adding one is a two-line
-/// change (an `enum` case plus its `tabItem` block) rather than a restructure, but a case with no screen
-/// behind it is deliberately not rendered — an empty tab is worse than an absent one.
+/// **5-tab order, decided 2026-09-24: Social, Club, Track, Ranks, You.** Reverses the older "only tabs with
+/// real content are shown" rule — Social (T4.15) and Club (T4.1) have no real content yet, but the tab order
+/// is wanted now rather than only once each feature lands (see `SocialHomeView`/`ClubHomeView`'s own
+/// placeholder-vs-built notes for what's actually there today).
 struct RootTabView: View {
     @State private var selection: LajuTab = .track
 
     var body: some View {
         TabView(selection: $selection) {
+            SocialHomeView()
+                .tabItem { Label(LajuTab.social.title, systemImage: LajuTab.social.symbol) }
+                .tag(LajuTab.social)
+
+            NavigationStack {
+                ClubHomeView()
+            }
+            .tabItem { Label(LajuTab.club.title, systemImage: LajuTab.club.symbol) }
+            .tag(LajuTab.club)
+
             RunTrackingView()
                 .tabItem { Label(LajuTab.track.title, systemImage: LajuTab.track.symbol) }
                 .tag(LajuTab.track)
+
+            NavigationStack {
+                RanksView()
+            }
+            .tabItem { Label(LajuTab.leaderboard.title, systemImage: LajuTab.leaderboard.symbol) }
+            .tag(LajuTab.leaderboard)
 
             // `ProfileView` has a `navigationTitle`, so it needs a stack of its own — `RunTrackingView`
             // brings its own (it hides the bar and uses it only for the History push).
@@ -26,12 +43,6 @@ struct RootTabView: View {
             }
             .tabItem { Label(LajuTab.you.title, systemImage: LajuTab.you.symbol) }
             .tag(LajuTab.you)
-
-            NavigationStack {
-                LeaderboardView()
-            }
-            .tabItem { Label(LajuTab.leaderboard.title, systemImage: LajuTab.leaderboard.symbol) }
-            .tag(LajuTab.leaderboard)
         }
         // `LajuApp` already forces `.preferredColorScheme(.dark)` on the whole window, which covers the tab
         // bar too — an explicit `.toolbarBackground(..., for: .tabBar)` here was tried and removed as
@@ -42,28 +53,30 @@ struct RootTabView: View {
 
 /// Tab identity, kept separate from the view so titles/symbols have one home and future tabs can be added
 /// without touching `RootTabView`'s body shape.
-///
-/// `circle` is intentionally absent rather than present-but-disabled: it lands only if the Fase-4 Circle
-/// feature (T4.1) is promoted into scope, which is not decided. Add the case here and one `tabItem` block
-/// above when it ships. (`leaderboard` arrived with T2.20 — the placeholder called `social` in earlier notes.)
 enum LajuTab: Hashable {
+    case social
+    case club
     case track
-    case you
     case leaderboard
+    case you
 
     var title: String {
         switch self {
+        case .social: "Social"
+        case .club: "Club"
         case .track: "Track"
-        case .you: "You"
         case .leaderboard: "Ranks"
+        case .you: "You"
         }
     }
 
     var symbol: String {
         switch self {
+        case .social: "person.2.wave.2.fill"
+        case .club: "shield.lefthalf.filled"
         case .track: "figure.run"
-        case .you: "person.fill"
         case .leaderboard: "trophy.fill"
+        case .you: "person.fill"
         }
     }
 }
