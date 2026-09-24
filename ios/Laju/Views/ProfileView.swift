@@ -185,7 +185,8 @@ struct ProfileView: View {
 
     #if DEBUG
         /// T4.2c scaffold entry: "Club Saya" in the You tab (product-spec.md §4.24 AC19). DEBUG-only — Club
-        /// (T4.1) isn't built and the Club War backend can't work yet (T4.2a unapplied, Premium denied until T4.20).
+        /// (T4.1) isn't built yet, and real Club War use still needs Premium (denied until T4.20, Apple
+        /// Developer Program). T4.2a's schema is applied (2026-09-24) but that alone doesn't unblock this.
         private var clubSection: some View {
             NavigationLink {
                 ClubWarView()
