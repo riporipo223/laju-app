@@ -29,6 +29,9 @@ export const RATE_LIMIT_RULES = {
   "auth.me": [{ windowSeconds: 60, limit: 60 }],
   "profile.complete": [{ windowSeconds: 3600, limit: 10 }],
   "account.delete": [{ windowSeconds: 3600, limit: 3 }],
+  "clubwar.create": [{ windowSeconds: 3600, limit: 20 }],
+  "clubwar.respond": [{ windowSeconds: 3600, limit: 30 }],
+  "clubwar.get": [{ windowSeconds: 60, limit: 60 }],
 } as const satisfies Record<string, readonly RateLimitWindow[]>;
 
 export type RateLimitRule = keyof typeof RATE_LIMIT_RULES;

@@ -77,9 +77,10 @@ describe("rate limiter — every route is covered", () => {
       return entry === "route.ts" ? [path] : [];
     });
   }
-  const routes = routeFiles(join(__dirname, "../app/api"));
+  // Normalized to "/" so the "app/api/" split below also works on Windows, where join() yields backslashes.
+  const routes = routeFiles(join(__dirname, "../app/api")).map((path) => path.replace(/\\/g, "/"));
   /** Exempt with a stated reason: secret-gated, called by Vercel Cron only, no user and no public caller. */
-  const EXEMPT = ["cron/resolve-flagged-runs/route.ts"];
+  const EXEMPT = ["cron/resolve-flagged-runs/route.ts", "cron/club-wars/route.ts"];
 
   it("finds the expected set of routes (guards against the walk silently matching nothing)", () => {
     expect(routes.length).toBeGreaterThanOrEqual(8);
