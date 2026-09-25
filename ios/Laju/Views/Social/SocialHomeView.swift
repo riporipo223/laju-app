@@ -202,6 +202,10 @@ private struct SocialPostCard: View {
                     avgPaceSecPerKm: 350,
                     finalPointsAwarded: 6,
                     caption: "Lari pagi sebelum kerja!",
+                    title: nil,
+                    description: nil,
+                    mapType: "standard",
+                    gearId: nil,
                     createdAt: Date().addingTimeInterval(-3600),
                     likeCount: 4,
                     likedByCaller: false

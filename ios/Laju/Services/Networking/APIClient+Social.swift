@@ -45,8 +45,31 @@ extension APIClient {
         )
     }
 
-    func createSocialPost(runId: String, caption: String?, jwt: String) async throws -> CreateSocialPostResponse {
-        let body = try RunSubmissionCoding.makeEncoder().encode(CreateSocialPostRequest(runId: runId, caption: caption))
+    /// T4.21: `mapType`/`visibility`/`gearId` are `nil` for the plain Run History posting flow (server
+    /// defaults apply — "standard"/"public"/no gear); Save Activity passes real values for all of them.
+    func createSocialPost(
+        runId: String,
+        caption: String?,
+        title: String? = nil,
+        description: String? = nil,
+        privateNotes: String? = nil,
+        mapType: String? = nil,
+        visibility: String? = nil,
+        gearId: String? = nil,
+        jwt: String
+    ) async throws -> CreateSocialPostResponse {
+        let body = try RunSubmissionCoding.makeEncoder().encode(
+            CreateSocialPostRequest(
+                runId: runId,
+                caption: caption,
+                title: title,
+                description: description,
+                privateNotes: privateNotes,
+                mapType: mapType,
+                visibility: visibility,
+                gearId: gearId
+            )
+        )
         return try await sendSocial(
             path: "api/social/posts",
             method: "POST",
@@ -55,6 +78,17 @@ extension APIClient {
             jwt: jwt,
             expecting: [201]
         )
+    }
+
+    /// T4.21: the caller's own gear list, for Save Activity's prefill and the profile screen.
+    func fetchGear(jwt: String) async throws -> GearListResponse {
+        try await sendSocial(path: "api/gear", method: "GET", body: nil, queryItems: [], jwt: jwt, expecting: [200])
+    }
+
+    /// T4.21: add a shoe — used both from Save Activity's inline "Add Gear" and the profile screen.
+    func createGear(brand: String, model: String?, size: String?, jwt: String) async throws -> Gear {
+        let body = try RunSubmissionCoding.makeEncoder().encode(CreateGearRequest(brand: brand, model: model, size: size))
+        return try await sendSocial(path: "api/gear", method: "POST", body: body, queryItems: [], jwt: jwt, expecting: [201])
     }
 
     /// v1 moderation is delete-own-post only (phase-4-backlog.md T4.15) — the server scopes this to the
