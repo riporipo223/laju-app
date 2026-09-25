@@ -34,19 +34,35 @@ implemented.
   **T4.1 extended scope, belum dijadwalkan**: ~~description, privacy/
   visibility, join flow, leave/transfer/delete, member cap — deferred,
   not decided (user-flow.md §2.6 is still an unreconciled draft).~~
-  **Create Club implemented 2026-09-25 (Premium-gated, everything else in
-  T4.1 still unbuilt — join/leave/browse/member list/admin tools/internal
-  leaderboard/challenges).** Migration `20260925150000_club_extend_and_
-  premium_gate.sql` (adds `description`/`privacy`/`invite_code` to `club`,
-  no new tables — `club`/`club_member` already existed from T4.2a) applied
-  and verified live 2026-09-25, 1/3 checks passed (column structure
-  confirmed; CHECK/UNIQUE constraint tests blocked by session write
-  classifier, same class of block every migration this session hit — not
-  claimed passed). Backend `POST /api/clubs` (`lib/club/premium.ts`'s
-  `isPremiumUser` stub, same shape as `isPremiumClub` — always denies until
-  T4.20 ships, 9/9 tests pass). iOS: `CreateClubView` + `PremiumUpsellView`
-  wired into `ClubHomeView`'s new Create Club button, 4 new tests. BUILD
-  SUCCEEDED, 218/218 iOS tests pass.
+  **Create Club implemented 2026-09-25 (Premium-gated).** Migration
+  `20260925150000_club_extend_and_premium_gate.sql` (adds
+  `description`/`privacy`/`invite_code` to `club`, no new tables —
+  `club`/`club_member` already existed from T4.2a) applied and verified
+  live 2026-09-25, 1/3 checks passed (column structure confirmed;
+  CHECK/UNIQUE constraint tests blocked by session write classifier, same
+  class of block every migration this session hit — not claimed passed).
+  Backend `POST /api/clubs` (`lib/club/premium.ts`'s `isPremiumUser` stub,
+  same shape as `isPremiumClub` — always denies until T4.20 ships, 9/9
+  tests pass). iOS: `CreateClubView` + `PremiumUpsellView` wired into
+  `ClubHomeView`'s new Create Club button.
+  **T4.1b (join/leave/browse/member list) implemented 2026-09-25** — no new
+  migration needed, `club`/`club_member` schema already covers all four:
+  `GET /api/clubs` (browse, cursor-paginated same shape as the social feed,
+  deliberately never returns `invite_code` — leaking it would defeat the
+  invite-only privacy setting), `GET`/`DELETE /api/clubs/[id]/members`
+  (member list — visible to any authenticated caller, not just the club's
+  own members; self-leave only, no `:userId` path param since
+  owner-removes-member is deferred admin tooling), `POST
+  /api/clubs/[id]/join` (public = direct join, invite_only = invite code
+  matched case-insensitively, no expiry). 26 backend tests (TDD — written
+  and confirmed failing before each route existed, per each route's own
+  git history). iOS: `ClubBrowseView`, `ClubMemberListView`,
+  `ClubBrowseViewModel`, `ClubMemberListViewModel`, 7 new tests. Backend
+  354/354 (excl. 3 pre-existing unrelated env-var failures), iOS 231/231,
+  BUILD SUCCEEDED.
+  **Still deferred (admin tools, T4.20b-blocked): analytics, internal
+  challenges, owner-removes-member. Internal leaderboard is separate
+  (T4.17).**
   **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC21** (AC16-AC21 added 2026-09-24): ~~any tier creates
   clubs~~ **REVERSED 2026-09-25 (CHECK 3, PM): creating a club now requires
   an active Premium subscription** — a non-Premium account hitting Create
