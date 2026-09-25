@@ -64,8 +64,17 @@ final class AuthService: ObservableObject {
     /// Google Sign-In through Supabase's generic OAuth flow (PKCE, `ASWebAuthenticationSession`) — deliberately not
     /// Google's own iOS SDK: one code path in the same `client.auth`, so the session lands in exactly the same place as
     /// the Apple one (`authStateChanges` → `session`) and nothing downstream can tell the providers apart.
+    ///
+    /// `prompt=select_account` + an ephemeral `ASWebAuthenticationSession` (no shared cookie jar) so a user with an
+    /// already-authenticated Google session in the system browser storage still gets Google's account chooser,
+    /// instead of silently landing back in whichever account signed in last.
     func signInWithGoogle() async throws {
-        try await client.auth.signInWithOAuth(provider: .google, redirectTo: Self.oauthRedirectURL)
+        try await client.auth.signInWithOAuth(
+            provider: .google,
+            redirectTo: Self.oauthRedirectURL,
+            queryParams: [("prompt", "select_account")],
+            configure: { $0.prefersEphemeralWebBrowserSession = true }
+        )
     }
 
     /// True when the user closed the system sheet themselves (Apple's `.canceled`, or the browser session's
