@@ -104,6 +104,7 @@ final class SyncService: ObservableObject {
             let response = try await apiClient.submitRun(submission, jwt: jwt)
             apply(response, to: run)
             try? context.save()
+            await PendingPostPublisher.publishIfNeeded(for: run, apiClient: apiClient, jwt: jwt)
             return true
         } catch {
             // T2.14 DoD: a *transient* failure (network, 5xx, 401, 409 region-not-set, …) must not drop the

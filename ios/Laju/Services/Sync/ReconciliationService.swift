@@ -90,7 +90,7 @@ final class ReconciliationService {
         while true {
             let cursor = meta.lastReconciledAt
             let response = try await apiClient.fetchRunStatuses(since: cursor, jwt: jwt)
-            if apply(response.runs, in: context) {
+            if await apply(response.runs, in: context, jwt: jwt) {
                 didChangeAnyRun = true
             }
 
@@ -123,8 +123,9 @@ final class ReconciliationService {
 
     /// Returns whether any matched local row's status or points actually changed. A `run_id` with no local
     /// match is ignored, never inserted.
-    private func apply(_ runs: [ReconciledRun], in context: NSManagedObjectContext) -> Bool {
+    private func apply(_ runs: [ReconciledRun], in context: NSManagedObjectContext, jwt: String) async -> Bool {
         var changed = false
+        var toPublish: [Run] = []
         for reconciled in runs {
             let request = Run.fetchRequest()
             request.predicate = NSPredicate(format: "serverRunId == %@", reconciled.runId)
@@ -143,8 +144,15 @@ final class ReconciliationService {
             }
             local.anomalyFlags = try? JSONEncoder().encode(reconciled.anomalyFlags)
             local.resolvedAt = reconciled.resolvedAt
+            toPublish.append(local)
         }
         try? context.save()
+        // T4.21: a flagged run's later resolution to validated/approved is exactly the case
+        // `SyncService`'s own publish call (fired right after the *initial* submit) can't cover —
+        // that initial status might still be "flagged" at that point.
+        for run in toPublish {
+            await PendingPostPublisher.publishIfNeeded(for: run, apiClient: apiClient, jwt: jwt)
+        }
         return changed
     }
 }
