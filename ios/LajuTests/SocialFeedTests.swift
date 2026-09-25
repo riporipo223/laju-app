@@ -30,14 +30,16 @@ final class SocialFeedTests: XCTestCase {
         let base = SocialPost(
             postId: "p", userId: "u", username: nil, displayName: nil, avatarURL: nil, runId: "r",
             distanceMeters: nil, durationSeconds: nil, avgPaceSecPerKm: nil, finalPointsAwarded: nil,
-            caption: nil, createdAt: Date(), likeCount: 0, likedByCaller: false
+            caption: nil, title: nil, description: nil, mapType: "standard", gearId: nil,
+            createdAt: Date(), likeCount: 0, likedByCaller: false
         )
         XCTAssertEqual(base.authorName, "Pelari Laju")
 
         let withUsername = SocialPost(
             postId: "p", userId: "u", username: "budi_run", displayName: nil, avatarURL: nil, runId: "r",
             distanceMeters: nil, durationSeconds: nil, avgPaceSecPerKm: nil, finalPointsAwarded: nil,
-            caption: nil, createdAt: Date(), likeCount: 0, likedByCaller: false
+            caption: nil, title: nil, description: nil, mapType: "standard", gearId: nil,
+            createdAt: Date(), likeCount: 0, likedByCaller: false
         )
         XCTAssertEqual(withUsername.authorName, "budi_run")
     }
@@ -131,7 +133,8 @@ final class SocialFeedTests: XCTestCase {
         let post = SocialPost(
             postId: "p1", userId: "usr-2", username: nil, displayName: nil, avatarURL: nil, runId: "r1",
             distanceMeters: nil, durationSeconds: nil, avgPaceSecPerKm: nil, finalPointsAwarded: nil,
-            caption: nil, createdAt: Date(), likeCount: 2, likedByCaller: false
+            caption: nil, title: nil, description: nil, mapType: "standard", gearId: nil,
+            createdAt: Date(), likeCount: 2, likedByCaller: false
         )
         StubURLProtocol.requestHandler = { _ in (200, Data(#"{"post_id":"p1","liked":true,"like_count":9}"#.utf8)) }
         let model = SocialViewModel(
@@ -150,7 +153,8 @@ final class SocialFeedTests: XCTestCase {
         let post = SocialPost(
             postId: "p1", userId: "usr-2", username: nil, displayName: nil, avatarURL: nil, runId: "r1",
             distanceMeters: nil, durationSeconds: nil, avgPaceSecPerKm: nil, finalPointsAwarded: nil,
-            caption: nil, createdAt: Date(), likeCount: 2, likedByCaller: false
+            caption: nil, title: nil, description: nil, mapType: "standard", gearId: nil,
+            createdAt: Date(), likeCount: 2, likedByCaller: false
         )
         StubURLProtocol.requestHandler = { _ in (500, Data(#"{"error":"db down"}"#.utf8)) }
         let model = SocialViewModel(
@@ -170,7 +174,8 @@ final class SocialFeedTests: XCTestCase {
         let post = SocialPost(
             postId: "p1", userId: "usr-1", username: nil, displayName: nil, avatarURL: nil, runId: "r1",
             distanceMeters: nil, durationSeconds: nil, avgPaceSecPerKm: nil, finalPointsAwarded: nil,
-            caption: nil, createdAt: Date(), likeCount: 0, likedByCaller: false
+            caption: nil, title: nil, description: nil, mapType: "standard", gearId: nil,
+            createdAt: Date(), likeCount: 0, likedByCaller: false
         )
         StubURLProtocol.requestHandler = { _ in (500, Data(#"{"error":"db down"}"#.utf8)) }
         let model = SocialViewModel(
