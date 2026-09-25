@@ -456,40 +456,44 @@ implemented.
     anywhere in this app yet) — tapping a poster's name does nothing in v1.
   - **Reference:** user-flow.md §2.7 (draft), this note (the actual v1 AC
     until a fuller product-spec.md section is written).
-  **Implementation started 2026-09-24, same day as scoping — NOT YET APPLIED/VERIFIED live:**
-  - **Data model written**: `social_post` (no audience/premium column, per
-    scope above) + `social_post_like` (composite PK = like-once), a
-    trigger enforcing the "own run, validated/approved only" AC at insert
-    time (`20260924220000_social_feed_schema.sql`). Same two-step gate as
-    T4.2a/T4.20a — inert, reviewed, **not applied to production**, no live
-    evidence yet; whoever applies it must run this file's own VERIFICATION
-    block for real first.
+  **Implementation started 2026-09-24, VERIFIED LIVE 2026-09-25:**
+  - **Data model applied + verified**: `social_post` (no audience/premium
+    column, per scope above) + `social_post_like` (composite PK =
+    like-once), a trigger enforcing the "own run, validated/approved only"
+    AC at insert time (`20260924220000_social_feed_schema.sql`). Applied to
+    production 2026-09-24. **6/6 verification checks passed 2026-09-25**:
+    tables + RLS confirmed via `information_schema`/`pg_class`; the 4
+    trigger behaviors (flagged/rejected run blocked, cross-user posting
+    blocked, duplicate like rejected, cascade delete on post deletion) each
+    confirmed with real error output — see the migration file's own banner
+    and `backend/scripts/verify-t4.15-social-triggers.sql`.
   - **Backend built**: `POST`/`GET /api/social/posts` (create + paginated
     public feed with batched like counts), `DELETE /api/social/posts/[id]`
     (delete-own-post), `POST`/`DELETE /api/social/posts/[id]/like`.
     `account-deletion.ts` and `rate-limit.ts` were updated for this ahead
-    of the routes themselves. 32 new backend unit tests pass (mocked
-    Supabase, no live DB needed) — **not exercised against the real
-    database**, since the migration isn't applied; no integration test
-    written yet (would need one, same pattern as `club-war.integration.
-    test.ts`, once the migration is live).
-  - **iOS built**: `SocialHomeView` replaces the placeholder with a real
-    feed (like, delete-own-post, infinite scroll, pull-to-refresh);
-    `SocialPostComposerView` is the "Post pencapaian" entry point, added
-    to **Run History** rows (not the instant post-run summary screen,
-    which is local-only and has no server-confirmed status yet — see the
-    composer's own header comment). New `SocialViewModel`/`APIClient+
-    Social.swift`/`SocialDTOs.swift`, 10 new XCTest cases. **Written in an
-    environment with no Xcode/macOS toolchain — none of this has been
-    compiled or run, only pattern-matched against existing code.** Needs a
-    real build + simulator pass before this can be marked verified, same
-    bar every other DoD in this repo uses.
-  - **Net effect**: the whole feature is code-complete but functionally
-    inert end-to-end — the backend will 500 against production (table
-    doesn't exist) until the migration is applied, and the iOS side is
-    unverified until someone builds it on an actual Mac. Not claiming
-    "done" anywhere in tasks/README.md until both of those happen with
-    real evidence.
+    of the routes themselves. 32 backend unit tests pass (mocked Supabase).
+    Production endpoint confirmed live against the real database post-
+    migration: `GET /api/social/posts` now returns 401 (auth-gated) instead
+    of the pre-migration 500 (missing table). No dedicated integration test
+    file yet (same gap `club-war.integration.test.ts` fills for T4.2b) —
+    the live 401 is the only real-DB evidence so far.
+  - **iOS built and verified**: `SocialHomeView` replaces the placeholder
+    with a real feed (like, delete-own-post, infinite scroll,
+    pull-to-refresh); `SocialPostComposerView` is the "Post pencapaian"
+    entry point, added to **Run History** rows (not the instant post-run
+    summary screen, which is local-only and has no server-confirmed status
+    yet — see the composer's own header comment). New `SocialViewModel`/
+    `APIClient+Social.swift`/`SocialDTOs.swift`. **Compiled and tested on a
+    real Xcode toolchain 2026-09-25**: initial build failed (new Social
+    files weren't in the stale `Laju.xcodeproj` target — fixed by
+    regenerating via `xcodegen generate`), initial test run failed
+    (`CreateSocialPostRequest` needed `Decodable` for the test to verify its
+    encoded body — fixed, one-line change). After both fixes: full suite
+    203/203 tests pass, `** TEST SUCCEEDED **`.
+  - **Net effect**: feature is code-complete, migration applied and fully
+    verified (6/6), backend confirmed live (401 not 500), iOS confirmed
+    compiling and passing its full test suite. No outstanding verification
+    gaps for this task.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
 - **T4.18 — Change User Season length from 91 to 60 days, forward-only.**
