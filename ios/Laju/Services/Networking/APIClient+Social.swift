@@ -115,6 +115,43 @@ extension APIClient {
         )
     }
 
+    /// T4.16: a post's comments, oldest-first — `backend/app/api/social/posts/[id]/comments`.
+    func fetchComments(postId: String, jwt: String) async throws -> CommentListResponse {
+        try await sendSocial(
+            path: "api/social/posts/\(postId)/comments",
+            method: "GET",
+            body: nil,
+            queryItems: [],
+            jwt: jwt,
+            expecting: [200]
+        )
+    }
+
+    func createComment(postId: String, content: String, jwt: String) async throws -> SocialComment {
+        let body = try RunSubmissionCoding.makeEncoder().encode(CreateCommentRequest(content: content))
+        return try await sendSocial(
+            path: "api/social/posts/\(postId)/comments",
+            method: "POST",
+            body: body,
+            queryItems: [],
+            jwt: jwt,
+            expecting: [201]
+        )
+    }
+
+    /// v1 moderation is delete-own-comment only (phase-4-backlog.md T4.16) — same shape as
+    /// `deleteSocialPost`: the server scopes this to the caller's own comment and answers 404 either way.
+    func deleteComment(postId: String, commentId: String, jwt: String) async throws -> DeleteCommentResponse {
+        try await sendSocial(
+            path: "api/social/posts/\(postId)/comments/\(commentId)",
+            method: "DELETE",
+            body: nil,
+            queryItems: [],
+            jwt: jwt,
+            expecting: [200]
+        )
+    }
+
     func unlikeSocialPost(postId: String, jwt: String) async throws -> SocialLikeResponse {
         try await sendSocial(
             path: "api/social/posts/\(postId)/like",

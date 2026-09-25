@@ -157,6 +157,54 @@ struct GearListResponse: Decodable, Sendable, Equatable {
     let gear: [Gear]
 }
 
+/// T4.16: `backend/app/api/social/posts/[id]/comments`. Flat — no nested replies (v1 scope,
+/// phase-4-backlog.md T4.16 scoping session 2026-09-25).
+struct SocialComment: Decodable, Sendable, Equatable, Identifiable {
+    let commentId: String
+    let postId: String
+    let userId: String
+    let username: String?
+    let displayName: String?
+    let avatarURL: String?
+    let content: String
+    let createdAt: Date
+
+    var id: String { commentId }
+
+    var authorName: String {
+        displayName ?? username ?? "Pelari Laju"
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case commentId = "comment_id"
+        case postId = "post_id"
+        case userId = "user_id"
+        case username
+        case displayName = "display_name"
+        case avatarURL = "avatar_url"
+        case content
+        case createdAt = "created_at"
+    }
+}
+
+struct CommentListResponse: Decodable, Sendable, Equatable {
+    let comments: [SocialComment]
+}
+
+struct CreateCommentRequest: Codable, Sendable {
+    let content: String
+}
+
+struct DeleteCommentResponse: Decodable, Sendable, Equatable {
+    let commentId: String
+    let deleted: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case commentId = "comment_id"
+        case deleted
+    }
+}
+
 struct DeleteSocialPostResponse: Decodable, Sendable, Equatable {
     let postId: String
     let deleted: Bool
