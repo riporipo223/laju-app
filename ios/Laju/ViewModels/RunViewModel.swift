@@ -235,6 +235,32 @@ final class RunViewModel: ObservableObject {
         activeRun = nil
     }
 
+    /// T4.21: Save Activity's "Save Activity (Publish)" button — captures `activeRun` before `stop()` clears
+    /// it (the `NSManagedObject` reference itself stays valid across that, same context), then writes the
+    /// drafted fields and sets `pendingPostRequested`. The actual `POST /api/social/posts` call happens
+    /// later, once the run is `validated`/`approved` server-side (`PendingPostPublisher`, wired into
+    /// `SyncService`/`ReconciliationService`) — this run may still be `pendingSync` the instant this
+    /// function returns.
+    func finishAndRequestPost(
+        title: String?,
+        description: String?,
+        privateNotes: String?,
+        mapType: String,
+        visibility: String,
+        gearId: String?
+    ) {
+        guard let run = activeRun else { return }
+        stop()
+        run.pendingPostTitle = title
+        run.pendingPostDescription = description
+        run.pendingPostPrivateNotes = privateNotes
+        run.pendingPostMapType = mapType
+        run.pendingPostVisibility = visibility
+        run.pendingPostGearId = gearId
+        run.pendingPostRequested = true
+        try? context.save()
+    }
+
     /// Folds time since the current segment began into `accumulatedActiveDuration` — shared by `pause()`/`stop()`,
     /// a no-op if already paused.
     private func finalizeActiveSegment() {

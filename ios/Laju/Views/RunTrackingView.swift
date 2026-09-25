@@ -20,6 +20,8 @@ struct RunTrackingView: View {
     /// (`.onAppear` can otherwise refire, e.g. after the History push returns).
     @State private var recoveryRun: Run?
     @State private var didCheckForRecovery = false
+    /// T4.21: Finish presents this instead of stopping the run directly — see the Finish button's action.
+    @State private var showingSaveActivity = false
 
     init() {
         // StateObject can't reference `context` before init, so RunViewModel
@@ -86,6 +88,22 @@ private extension RunTrackingView {
             // clears MapKit's legal-attribution label with visible
             // margin instead of crowding it.
             .padding(.bottom, 16)
+        }
+        .sheet(isPresented: $showingSaveActivity) {
+            if let model = viewModel.model {
+                SaveActivityView(
+                    model: model,
+                    onBack: {
+                        // T4.21: undo the Finish tap entirely — resume() is the same well-tested path
+                        // Pause/Resume already uses, nothing here re-derives run state from scratch.
+                        model.resume()
+                        showingSaveActivity = false
+                    },
+                    onPublish: {
+                        showingSaveActivity = false
+                    }
+                )
+            }
         }
         .sheet(item: Binding(
             get: { viewModel.model?.completedRunSummary },
@@ -317,7 +335,11 @@ private extension RunTrackingView {
                     .buttonStyle(.lajuSecondary)
 
                     Button("Finish") {
-                        viewModel.model?.stop()
+                        // T4.21: pause (not stop) — Save Activity's Back button resumes this exact run if
+                        // the user backs out, so nothing here may be destructive yet.
+                        guard let model = viewModel.model, !model.isPaused else { return }
+                        model.pause()
+                        showingSaveActivity = true
                     }
                     .buttonStyle(.lajuDestructive)
                 }

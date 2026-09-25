@@ -15,6 +15,14 @@
         <attribute name="anomalyFlags" optional="YES" attributeType="Binary"/>
         <attribute name="finalPointsAwarded" optional="YES" attributeType="Double" usesScalarValueType="NO"/>
         <attribute name="resolvedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="pendingPostTitle" optional="YES" attributeType="String"/>
+        <attribute name="pendingPostDescription" optional="YES" attributeType="String"/>
+        <attribute name="pendingPostPrivateNotes" optional="YES" attributeType="String"/>
+        <attribute name="pendingPostMapType" optional="YES" attributeType="String"/>
+        <attribute name="pendingPostVisibility" optional="YES" attributeType="String"/>
+        <attribute name="pendingPostGearId" optional="YES" attributeType="String"/>
+        <attribute name="pendingPostRequested" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="pendingPostPublished" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
     </entity>
     <entity name="SyncMeta" representedClassName="SyncMeta" syncable="YES" codeGenerationType="class">
         <attribute name="lastReconciledAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
