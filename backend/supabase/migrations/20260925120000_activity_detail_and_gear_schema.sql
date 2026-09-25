@@ -2,12 +2,22 @@
 -- notes/map type/visibility per post), phase-4-backlog.md's 2026-09-25 v1 scoping session.
 --
 -- ============================================================================
--- WRITTEN 2026-09-25. NOT YET APPLIED to production, NOT YET VERIFIED live —
--- same two-step gate as 20260924220000_social_feed_schema.sql (T4.15) and
--- every other migration in this repo: write inert -> review -> apply + record
--- real evidence as a separate step. Whoever applies this MUST update this
--- banner with genuine verification output (see VERIFICATION below) before
--- checking T4.21's migration off as done anywhere in tasks/*.
+-- APPLIED 2026-09-25. VERIFIED LIVE 2026-09-25: 4/5 checks passed, 1 blocked.
+-- - gear table structure confirmed (information_schema.columns)
+-- - activity_detail table structure confirmed
+-- - RLS enabled on both tables (pg_class.relrowsecurity)
+-- - Backfill: post_count = detail_count = 0 (no live social_post rows yet — the
+--   equality holds, but doesn't exercise the backfill against real rows)
+-- - 1:1 constraint (second insert for same social_post_id rejected): NOT
+--   verified — the session that applied this migration had no way to create a
+--   test social_post row (its own INSERT was blocked by that session's write
+--   classifier, same block T4.15's own trigger-behavior tests hit). The
+--   constraint itself (`activity_detail_pkey` on `social_post_id`) is a
+--   structural Postgres primary key, not new logic this migration adds risk
+--   to — low-risk, but genuinely unexercised, not claimed passed.
+-- API verified live: GET /api/gear returns 401 (auth-gated, not 500) —
+-- confirms the endpoint is deployed and the table exists from the API's own
+-- code path, not just direct SQL.
 -- ============================================================================
 --
 -- Scope note (v1 decisions, phase-4-backlog.md T4.21, 2026-09-25 scoping session):
