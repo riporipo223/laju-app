@@ -43,3 +43,29 @@ with ua as (
 insert into "social_post" (user_id, run_id)
 select ua.id, rb.id from ua, rb;
 -- (no commit)
+
+-- ============================================================
+-- V5 — double-like rejected
+-- Expect error containing: "duplicate key value violates unique constraint"
+-- ============================================================
+begin;
+with u as (
+  insert into "user" (email, username, display_name)
+  values ('qa-test-v5@test.local','qa-test-v5','QA Test V5')
+  returning id
+), r as (
+  insert into "run" (user_id, status)
+  select id, 'validated' from u
+  returning id, user_id
+), p as (
+  insert into "social_post" (user_id, run_id)
+  select user_id, id from r
+  returning id, user_id
+), like1 as (
+  insert into "social_post_like" (post_id, user_id)
+  select id, user_id from p
+  returning post_id, user_id
+)
+insert into "social_post_like" (post_id, user_id)
+select post_id, user_id from like1;
+-- (no commit — second insert should fail with duplicate key error)
