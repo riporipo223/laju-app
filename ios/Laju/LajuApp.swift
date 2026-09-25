@@ -63,6 +63,7 @@ struct LajuApp: App {
             .environmentObject(authService)
             .environmentObject(progressViewModel)
             .environmentObject(accountDeletion)
+            .environmentObject(syncService)
             .environment(\.managedObjectContext, persistenceController.container.viewContext)
             // Dark-native by brand identity, not by system-appearance-following (design-notes.md §0).
             .preferredColorScheme(.dark)

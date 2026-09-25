@@ -233,6 +233,19 @@ final class RunViewModel: ObservableObject {
             elevationLossMeters: elevation.lossMeters
         )
         activeRun = nil
+
+        // The idle tracking screen reads these same @Published properties (RunTrackingView's
+        // liveDuration/liveDistanceMeters) — without resetting them here, Time/Distance/Pace stay
+        // frozen at the just-finished run's final values until the next Start, instead of showing
+        // 0 while idle. completedRunSummary above already captured the final values for
+        // RunSummaryView, so these are safe to zero now.
+        distanceMeters = 0
+        accumulatedActiveDuration = 0
+        pointCount = 0
+        routeCoordinates = []
+        currentCoordinate = nil
+        currentCourseDegrees = nil
+        currentEstimatedPoints = 0
     }
 
     /// T4.21: Save Activity's "Save Activity (Publish)" button — captures `activeRun` before `stop()` clears

@@ -12,6 +12,7 @@ import SwiftUI
 /// colors/materials this screen shipped with initially.
 struct RunTrackingView: View {
     @Environment(\.managedObjectContext) private var context
+    @EnvironmentObject private var syncService: SyncService
     @StateObject private var locationService = LocationTrackingService()
     @StateObject private var viewModel: RunViewModelBox
 
@@ -101,6 +102,10 @@ private extension RunTrackingView {
                     },
                     onPublish: {
                         showingSaveActivity = false
+                        // Otherwise the deferred post only fires on the next scenePhase change
+                        // (LajuApp's own sync trigger) — the user would have to background/reopen
+                        // the app to see it land, instead of it syncing right away.
+                        Task { await syncService.syncPendingRuns() }
                     }
                 )
             }
