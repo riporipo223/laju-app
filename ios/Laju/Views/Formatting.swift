@@ -15,6 +15,11 @@ enum DistanceFormatter {
     }
 }
 
+/// Kept for `PointFormula`/anti-cheat and every DTO/Core Data field that stores pace
+/// (`avgPaceSecPerKm`) — those calculations are untouched (2026-09-25 GPS/speed audit: no evidence
+/// they're inaccurate, and server-side anti-cheat pace thresholds depend on this exact unit). Only
+/// user-facing display was asked to change — see `SpeedFormatter` below, which every UI call site now
+/// uses instead of this formatter's own `.format`.
 enum PaceFormatter {
     /// `avgPaceSecPerKm` as `M:SS /km`. Not meaningful at zero distance
     /// (pace is undefined) — callers should guard that case separately.
@@ -23,6 +28,20 @@ enum PaceFormatter {
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d /km", minutes, seconds)
+    }
+}
+
+/// T4.21+ (GPS/speed audit, 2026-09-25 v1 decision): user-facing display replaces pace (`M:SS /km`)
+/// with speed (`km/h`) everywhere — the underlying stored/computed value stays `avgPaceSecPerKm`
+/// (seconds per km) unchanged; this only converts it for display. `secPerKm == 0` (no distance yet)
+/// returns `0.0 km/h`, not a divide-by-zero — same "not meaningful at zero distance" case
+/// `PaceFormatter` already documents, just a defined value instead of undefined here since 0 km/h at
+/// zero distance reads naturally, where `0:00 /km` would not.
+enum SpeedFormatter {
+    static func format(secPerKm: Double) -> String {
+        guard secPerKm > 0 else { return "0.0 km/h" }
+        let kmh = 3600 / secPerKm
+        return String(format: "%.1f km/h", kmh)
     }
 }
 
