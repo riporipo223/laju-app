@@ -34,6 +34,19 @@ implemented.
   **T4.1 extended scope, belum dijadwalkan**: ~~description, privacy/
   visibility, join flow, leave/transfer/delete, member cap — deferred,
   not decided (user-flow.md §2.6 is still an unreconciled draft).~~
+  **Create Club implemented 2026-09-25 (Premium-gated, everything else in
+  T4.1 still unbuilt — join/leave/browse/member list/admin tools/internal
+  leaderboard/challenges).** Migration `20260925150000_club_extend_and_
+  premium_gate.sql` (adds `description`/`privacy`/`invite_code` to `club`,
+  no new tables — `club`/`club_member` already existed from T4.2a) applied
+  and verified live 2026-09-25, 1/3 checks passed (column structure
+  confirmed; CHECK/UNIQUE constraint tests blocked by session write
+  classifier, same class of block every migration this session hit — not
+  claimed passed). Backend `POST /api/clubs` (`lib/club/premium.ts`'s
+  `isPremiumUser` stub, same shape as `isPremiumClub` — always denies until
+  T4.20 ships, 9/9 tests pass). iOS: `CreateClubView` + `PremiumUpsellView`
+  wired into `ClubHomeView`'s new Create Club button, 4 new tests. BUILD
+  SUCCEEDED, 218/218 iOS tests pass.
   **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC21** (AC16-AC21 added 2026-09-24): ~~any tier creates
   clubs~~ **REVERSED 2026-09-25 (CHECK 3, PM): creating a club now requires
   an active Premium subscription** — a non-Premium account hitting Create
