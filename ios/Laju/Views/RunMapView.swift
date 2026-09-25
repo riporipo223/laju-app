@@ -23,6 +23,11 @@ struct RunMapView: UIViewRepresentable {
     /// original `.standard` look without needing an update.
     var mapType: MKMapType = .standard
 
+    /// GPS/speed audit (2026-09-25): 3D is MapKit camera pitch, not a Mapbox building/terrain model
+    /// (that would be a whole separate SDK integration, out of this task's confirmed scope). `45`
+    /// degrees is MapKit's own typical "tilted" look (Apple Maps' default 3D pitch); `0` is flat/top-down.
+    var pitchDegrees: CLLocationDirection = 0
+
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         // Deliberately NOT showsUserLocation — that starts MapKit's own
@@ -43,6 +48,11 @@ struct RunMapView: UIViewRepresentable {
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
         mapView.mapType = mapType
+        if mapView.camera.pitch != pitchDegrees {
+            let camera = mapView.camera
+            camera.pitch = pitchDegrees
+            mapView.setCamera(camera, animated: true)
+        }
         updateAnnotation(on: mapView, coordinator: context.coordinator)
         updatePolyline(on: mapView, coordinator: context.coordinator)
         centerIfNeeded(on: mapView, coordinator: context.coordinator)

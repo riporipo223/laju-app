@@ -8,16 +8,52 @@ import SwiftUI
 /// `RootTabView`, so a floating overlay duplicating it on the Track screen was a second entry point to the
 /// same destination. History stays an overlay push — it has no tab of its own and Profile only shows the 5
 /// most recent runs, so this remains the only route to the full list.
+/// GPS/speed audit (2026-09-25): Standard → Satellite → 3D (MapKit camera pitch, not a separate map
+/// type — `RunMapView.pitchDegrees`) → back to Standard. A single tap cycles through all three, no menu
+/// needed for 3 options.
+enum MapDisplayMode {
+    case standard
+    case satellite
+    case threeD
+
+    var mapType: MKMapType {
+        switch self {
+        case .standard, .threeD: return .standard
+        case .satellite: return .satellite
+        }
+    }
+
+    var pitchDegrees: CLLocationDirection {
+        self == .threeD ? 45 : 0
+    }
+
+    var next: MapDisplayMode {
+        switch self {
+        case .standard: return .satellite
+        case .satellite: return .threeD
+        case .threeD: return .standard
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .standard: return "map.fill"
+        case .satellite: return "globe.americas.fill"
+        case .threeD: return "view.3d"
+        }
+    }
+}
+
 extension RunTrackingView {
-    /// T4.21: live map type switcher (v1 scope — Standard/Satellite only, phase-4-backlog.md T4.21; same
-    /// two values Save Activity's own Map Type picker offers, kept in sync there via the "standard"/
-    /// "activity_heat" string this maps to/from). A single tap toggles between the two — no menu needed for
-    /// just 2 options.
+    /// T4.21/GPS audit: live map type switcher — Standard/Satellite/3D (phase-4-backlog.md T4.21 v1
+    /// scope extended 2026-09-25). Same "standard"/"activity_heat" strings Save Activity's own Map Type
+    /// picker uses for the first two; 3D has no server-side equivalent (it's purely a live-tracking
+    /// camera effect, not a post attribute).
     var mapTypeButton: some View {
         Button {
-            mapType = mapType == .standard ? .satellite : .standard
+            mapDisplayMode = mapDisplayMode.next
         } label: {
-            Image(systemName: mapType == .standard ? "globe.americas.fill" : "map.fill")
+            Image(systemName: mapDisplayMode.iconName)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(LajuColor.accent)
                 .padding(10)
