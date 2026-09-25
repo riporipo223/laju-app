@@ -34,8 +34,17 @@ implemented.
   **T4.1 extended scope, belum dijadwalkan**: ~~description, privacy/
   visibility, join flow, leave/transfer/delete, member cap — deferred,
   not decided (user-flow.md §2.6 is still an unreconciled draft).~~
-  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC21** (AC16-AC21 added 2026-09-24): any tier creates
-  clubs, description + public/invite-only in v1, public = direct join,
+  **Scoped 2026-09-23 — product-spec.md §4.24 AC1-AC21** (AC16-AC21 added 2026-09-24): ~~any tier creates
+  clubs~~ **REVERSED 2026-09-25 (CHECK 3, PM): creating a club now requires
+  an active Premium subscription** — a non-Premium account hitting Create
+  Club sees the Premium upsell screen instead. This supersedes AC1's "any
+  tier" language; the rest of AC1-AC21 (description, public/invite-only,
+  join/leave, admin tools scope below) is unchanged by this reversal, it
+  only touches who may create in the first place. **Not yet decided as
+  part of this reversal**: what happens to a Premium-created club if the
+  owner's subscription later lapses (keep existing club, block only new
+  creation? or also lose admin-tools access mid-life? — separate call,
+  left open), description + public/invite-only in v1, public = direct join,
   invite-only = invite code, no request/approval, leave in v1, internal
   leaderboard from existing season points; ~~admin tools and club feed
   deferred.~~ club feed deferred. **Admin tools in scope (revised
@@ -54,8 +63,16 @@ implemented.
   active members + top-N; challenges = collective distance/duration
   target + deadline, no rewards/points. **Still open:** delete vs archive
   for AC16; analytics period and N; challenge run-counting, concurrency,
-  notifications. **Ordering (2026-09-23):**
-  Social Feed (T4.15) is built **before** this task (see T4.15).
+  notifications; the Premium-lapse question added 2026-09-25 above.
+  **Ordering (2026-09-23):**
+  Social Feed (T4.15) is built **before** this task (see T4.15). **Blocked
+  on T4.20 as of the 2026-09-25 reversal**: Create Club's Premium check has
+  nothing real to call yet (`isPremiumClub()`-equivalent for a
+  not-yet-created club doesn't exist; T4.20b, the actual Apple verification
+  logic, is blocked on Apple Developer Program enrollment, same blocker as
+  T4.2b) — Create Club can be built gated, but the gate has no way to ever
+  return `true` until T4.20b ships, same dead-end shape as T4.21's Map Type
+  3D decision.
 - **T4.1a — Club: extend the `club` table.** Depends on T4.2a's migration
   (which creates the minimal `club` stub). **Scope**: a **separate, new**
   inert migration — T4.2a's file is not modified — adding `description`,
