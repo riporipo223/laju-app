@@ -69,3 +69,41 @@ with u as (
 insert into "social_post_like" (post_id, user_id)
 select post_id, user_id from like1;
 -- (no commit — second insert should fail with duplicate key error)
+
+-- ============================================================
+-- V6 — cascade delete
+-- Run all statements below as ONE block (same transaction).
+-- Expect: count_before = 1, count_after = 0
+-- ============================================================
+begin;
+-- temp table holds post_id across statements — after DELETE, "social_post"
+-- no longer has the row, so re-deriving post_id FROM social_post post-delete
+-- would silently yield NULL and make count_after false-positive 0.
+create temp table qa_v6_ctx (post_id uuid, user_id uuid) on commit drop;
+
+with u as (
+  insert into "user" (email, username, display_name)
+  values ('qa-test-v6@test.local','qa-test-v6','QA Test V6')
+  returning id
+), r as (
+  insert into "run" (user_id, status)
+  select id, 'validated' from u
+  returning id, user_id
+), p as (
+  insert into "social_post" (user_id, run_id)
+  select user_id, id from r
+  returning id, user_id
+)
+insert into qa_v6_ctx select id, user_id from p;
+
+insert into "social_post_like" (post_id, user_id)
+select post_id, user_id from qa_v6_ctx;
+
+select count(*) as count_before from "social_post_like"
+ where post_id = (select post_id from qa_v6_ctx);
+
+delete from "social_post" where id = (select post_id from qa_v6_ctx);
+
+select count(*) as count_after from "social_post_like"
+ where post_id = (select post_id from qa_v6_ctx);
+-- (no commit)
