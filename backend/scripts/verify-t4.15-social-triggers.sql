@@ -21,3 +21,25 @@ with u as (
 insert into "social_post" (user_id, run_id)
 select user_id, id from r;
 -- (no commit — let editor roll it back, or run: rollback;)
+
+-- ============================================================
+-- V4 — cross-user posting rejected
+-- Expect error containing: "does not belong to user"
+-- ============================================================
+begin;
+with ua as (
+  insert into "user" (email, username, display_name)
+  values ('qa-test-v4a@test.local','qa-test-v4a','QA Test V4A')
+  returning id
+), ub as (
+  insert into "user" (email, username, display_name)
+  values ('qa-test-v4b@test.local','qa-test-v4b','QA Test V4B')
+  returning id
+), rb as (
+  insert into "run" (user_id, status)
+  select id, 'validated' from ub
+  returning id
+)
+insert into "social_post" (user_id, run_id)
+select ua.id, rb.id from ua, rb;
+-- (no commit)
