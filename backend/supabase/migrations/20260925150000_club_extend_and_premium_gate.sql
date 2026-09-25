@@ -2,11 +2,14 @@
 -- AC1-AC21, scoping session 2026-09-23/24; Create Club Premium-gating reversal 2026-09-25).
 --
 -- ============================================================================
--- WRITTEN 2026-09-25. NOT YET APPLIED to production, NOT YET VERIFIED live —
--- same two-step gate as every other migration in this repo: write inert ->
--- review -> apply + record real evidence as a separate step. Whoever applies
--- this MUST update this banner with genuine verification output (see
--- VERIFICATION below) before checking T4.1a off as done anywhere in tasks/*.
+-- APPLIED 2026-09-25. VERIFIED LIVE 2026-09-25: 1/3 checks passed, 2 blocked.
+-- - description/privacy/invite_code columns confirmed on club
+--   (information_schema.columns): privacy is text NOT NULL default 'public'
+-- - CHECK constraint rejection (invalid privacy) and invite_code uniqueness:
+--   NOT verified — both need an INSERT, which this session's write
+--   classifier blocked (same class of block every other migration's
+--   trigger/constraint test hit this session). Both are standard Postgres
+--   CHECK/UNIQUE constraints, low risk but genuinely unexercised.
 -- ============================================================================
 --
 -- Scope note: `club` (id, name, created_at) and `club_member` (user_id PK,
