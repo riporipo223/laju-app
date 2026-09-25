@@ -526,6 +526,19 @@ implemented.
     gaps for this task.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
+  **Built 2026-09-25 (v1 scoping session same day):** flat comments only (no
+  nested replies), delete-own-comment only, 280-char limit, no
+  moderation/approval gate (unlike a post, a comment has no anti-cheat claim
+  to verify). New table `social_post_comment`
+  (`20260925160000_social_post_comment_schema.sql`) — applied and verified
+  live, 3/5 checks passed (structure/index/RLS confirmed; content-length
+  CHECK and cascade-delete tests blocked by this session's write classifier,
+  same class of block every migration this session hit). Backend `GET`/
+  `POST /api/social/posts/[id]/comments`, `DELETE .../[commentId]` — 13/13
+  tests pass. iOS: dedicated `SocialPostDetailView` (not an inline feed
+  expansion — keeps `SocialPostCard` lightweight), reached via a comment
+  icon on the feed card; `CommentViewModel`; 6 new tests, 224/224 total,
+  BUILD SUCCEEDED.
 - **T4.21 — Save Activity flow** (Finish → review/edit screen → publish,
   replacing the direct Finish → "Run Complete" jump). Depends on T4.15
   (extends `social_post`'s create flow) and touches T4.20's Premium check
