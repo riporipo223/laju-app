@@ -71,6 +71,16 @@ create table "activity_detail" (
 
 create index "activity_detail_gear_id_idx" on "activity_detail" (gear_id);
 
+-- Backfill: every `social_post` row that predates this migration (all T4.15-era posts) gets a default
+-- activity_detail row (title/description/private_notes null, map_type 'standard', visibility 'public',
+-- gear_id null) — matching exactly how those posts already behaved (T4.15 v1 was implicitly
+-- public-only). Without this, `GET /api/social/posts`'s visibility filter would need an `!inner` vs
+-- `!left` join distinction depending on post age; with it, every post has exactly one activity_detail
+-- row forever, and the feed query can use a single plain inner join.
+insert into "activity_detail" (social_post_id)
+select id from "social_post"
+on conflict (social_post_id) do nothing;
+
 -- ============================================================
 -- RLS — matches 20260919150457_enable_rls_deny_anon.sql's established policy: RLS enabled, zero grants
 -- to anon/authenticated. All access goes through the Vercel API's service_role key, which bypasses RLS
@@ -107,6 +117,11 @@ commit;
 -- Expect rowsecurity = true for both:
 --   select relname, relrowsecurity from pg_class
 --    where relname in ('gear', 'activity_detail');
+--
+-- Expect the backfill to have given every existing social_post exactly one activity_detail row:
+--   select (select count(*) from "social_post") as post_count,
+--          (select count(*) from "activity_detail") as detail_count;
+--   -- expect post_count = detail_count
 --
 -- Expect a second activity_detail row for the same post to be genuinely refused (inside begin/rollback,
 -- real post id):
