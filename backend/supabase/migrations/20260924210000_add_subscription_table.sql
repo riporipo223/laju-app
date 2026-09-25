@@ -1,11 +1,15 @@
 -- T4.20a — Premium: `subscription` table (product-spec.md §4.23, decided #2, AC6, AC14).
 --
 -- ============================================================================
--- NOT YET APPLIED. Written inert and reviewed before apply, same gate as
--- T4.2a (20260923200000_club_war_schema.sql). Once applied for real, this
--- banner MUST be updated to say so, with evidence (see the VERIFICATION
--- section below, run for real) — do not leave it claiming "not yet applied"
--- once it has been (the lesson from Task B, repeated in T4.2a's own header).
+-- APPLIED 2026-09-25. VERIFIED LIVE 2026-09-25: 2/4 checks passed, 2 blocked.
+-- - table exists, schema-qualified (information_schema.tables): confirmed
+-- - RLS enabled, schema-qualified (pg_class join pg_namespace): confirmed
+-- - CHECK constraint rejection, and the append-only two-row-same-
+--   original_transaction_id pattern: NOT verified — both need a real
+--   user_id and an INSERT, which this session's write classifier blocked
+--   (same class of block T4.15/T4.21's own trigger tests hit). Not claimed
+--   passed. The CHECK constraint itself is a standard Postgres CHECK, low
+--   risk but genuinely unexercised.
 -- ============================================================================
 --
 -- Scope note: this is ONLY the schema (T4.20a). No backend verification logic
