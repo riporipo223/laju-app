@@ -13,6 +13,9 @@ import SwiftUI
 struct SocialHomeView: View {
     @StateObject private var model: SocialViewModel
     private let loadsOnAppear: Bool
+    /// T4.16: the post whose comments are showing — `.sheet(item:)`, not a `NavigationLink`, so the
+    /// existing like/delete buttons inside `SocialPostCard` keep working without a tap-target conflict.
+    @State private var selectedPostForComments: SocialPost?
 
     init(model: SocialViewModel = SocialViewModel(), loadsOnAppear: Bool = true) {
         _model = StateObject(wrappedValue: model)
@@ -37,6 +40,9 @@ struct SocialHomeView: View {
                 }
             }
             .refreshable { await model.load() }
+            .sheet(item: $selectedPostForComments) { post in
+                SocialPostDetailView(post: post)
+            }
         }
     }
 
@@ -55,7 +61,8 @@ struct SocialHomeView: View {
                         post: post,
                         isOwnPost: model.isOwnPost(post),
                         onLikeToggle: { Task { await model.toggleLike(post) } },
-                        onDelete: { Task { await model.deletePost(post) } }
+                        onDelete: { Task { await model.deletePost(post) } },
+                        onOpenComments: { selectedPostForComments = post }
                     )
                     .onAppear {
                         if post.id == model.posts.last?.id {
@@ -97,6 +104,7 @@ private struct SocialPostCard: View {
     let isOwnPost: Bool
     let onLikeToggle: () -> Void
     let onDelete: () -> Void
+    let onOpenComments: () -> Void
 
     @State private var showDeleteConfirmation = false
 
@@ -173,12 +181,20 @@ private struct SocialPostCard: View {
     }
 
     private var likeRow: some View {
-        Button(action: onLikeToggle) {
-            HStack(spacing: 4) {
-                Image(systemName: post.likedByCaller ? "heart.fill" : "heart")
-                    .foregroundStyle(post.likedByCaller ? LajuColor.accent : LajuColor.textSecondary)
-                Text("\(post.likeCount)")
-                    .font(.caption)
+        HStack(spacing: 16) {
+            Button(action: onLikeToggle) {
+                HStack(spacing: 4) {
+                    Image(systemName: post.likedByCaller ? "heart.fill" : "heart")
+                        .foregroundStyle(post.likedByCaller ? LajuColor.accent : LajuColor.textSecondary)
+                    Text("\(post.likeCount)")
+                        .font(.caption)
+                        .foregroundStyle(LajuColor.textSecondary)
+                }
+            }
+            /// T4.16: opens `SocialPostDetailView` — no comment count shown (the feed's own DTO doesn't
+            /// carry one, v1 scope), just an entry point.
+            Button(action: onOpenComments) {
+                Image(systemName: "bubble.right")
                     .foregroundStyle(LajuColor.textSecondary)
             }
         }
