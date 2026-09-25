@@ -24,9 +24,10 @@ struct RunTrackingView: View {
     @State private var didCheckForRecovery = false
     /// T4.21: Finish presents this instead of stopping the run directly — see the Finish button's action.
     @State private var showingSaveActivity = false
-    /// T4.21: live map type — Standard/Satellite only (v1 scope). `mapTypeButton`
-    /// (RunTrackingOverlayButtons.swift, a different file) toggles this, so it can't be `private`.
-    @State var mapType: MKMapType = .standard
+    /// T4.21/GPS audit: live map type — Standard/Satellite/3D (3D = `.standard` mapType + a pitched
+    /// MapKit camera, not a separate map type — see `RunMapView.pitchDegrees`). `mapTypeButton`
+    /// (RunTrackingOverlayButtons.swift, a different file) cycles this, so it can't be `private`.
+    @State var mapDisplayMode: MapDisplayMode = .standard
 
     init() {
         // StateObject can't reference `context` before init, so RunViewModel
@@ -63,7 +64,8 @@ private extension RunTrackingView {
                 currentCoordinate: mapCoordinate,
                 routeCoordinates: viewModel.model?.routeCoordinates ?? [],
                 headingDegrees: viewModel.model?.currentCourseDegrees,
-                mapType: mapType
+                mapType: mapDisplayMode.mapType,
+                pitchDegrees: mapDisplayMode.pitchDegrees
             )
             .ignoresSafeArea()
 
@@ -287,7 +289,7 @@ private extension RunTrackingView {
                 // Distance is THE hero stat (design-notes.md §5) — lime, the only one of the three.
                 statColumn(label: "Distance", value: DistanceFormatter.format(meters: liveDistanceMeters), isHero: true)
                 Divider().frame(height: 40).overlay(LajuColor.hairline)
-                statColumn(label: "Pace", value: livePaceLabel, isHero: false)
+                statColumn(label: "Speed", value: liveSpeedLabel, isHero: false)
             }
             .padding(.vertical, 20)
             .frame(maxWidth: .infinity)
@@ -320,10 +322,10 @@ private extension RunTrackingView {
         viewModel.model?.distanceMeters ?? 0
     }
 
-    private var livePaceLabel: String {
-        guard liveDistanceMeters > 0 else { return "—:— /km" }
+    private var liveSpeedLabel: String {
+        guard liveDistanceMeters > 0 else { return "0.0 km/h" }
         let secPerKm = liveDuration / (liveDistanceMeters / 1000)
-        return PaceFormatter.format(secPerKm: secPerKm)
+        return SpeedFormatter.format(secPerKm: secPerKm)
     }
 
     // MARK: - Action buttons

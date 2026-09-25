@@ -168,7 +168,7 @@ private struct SocialPostCard: View {
             Text(DistanceFormatter.format(meters: post.distanceMeters ?? 0))
             Spacer()
             if let pace = post.avgPaceSecPerKm, (post.distanceMeters ?? 0) > 0 {
-                Text(PaceFormatter.format(secPerKm: pace))
+                Text(SpeedFormatter.format(secPerKm: pace))
                 Spacer()
             }
             if let points = post.finalPointsAwarded {

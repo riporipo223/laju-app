@@ -124,8 +124,8 @@ struct RunSummaryView: View {
             summaryRow("Duration", DurationFormatter.format(seconds: summary.durationSeconds))
             Divider().overlay(LajuColor.hairline)
             summaryRow(
-                "Pace",
-                summary.distanceMeters > 0 ? PaceFormatter.format(secPerKm: summary.avgPaceSecPerKm) : "—"
+                "Speed",
+                summary.distanceMeters > 0 ? SpeedFormatter.format(secPerKm: summary.avgPaceSecPerKm) : "—"
             )
             Divider().overlay(LajuColor.hairline)
             summaryRow("Streak", "\(summary.streakDays) day\(summary.streakDays == 1 ? "" : "s")")
@@ -153,7 +153,7 @@ struct RunSummaryView: View {
                     Text("Km \(split.splitNumber)\(split.isPartial ? " (partial)" : "")")
                         .foregroundStyle(LajuColor.textSecondary)
                     Spacer()
-                    Text(PaceFormatter.format(secPerKm: split.avgPaceSecPerKm))
+                    Text(SpeedFormatter.format(secPerKm: split.avgPaceSecPerKm))
                         .bold()
                         .foregroundStyle(LajuColor.textPrimary)
                 }

@@ -86,7 +86,7 @@ private struct RunHistoryRow: View {
                 HStack {
                     Text(DistanceFormatter.format(meters: run.distanceMeters))
                     Spacer()
-                    Text(paceText)
+                    Text(speedText)
                     Spacer()
                     Text(String(format: "%.1f pts", run.estimatedPoints))
                         .foregroundStyle(LajuColor.accent)
@@ -138,10 +138,10 @@ private struct RunHistoryRow: View {
         .padding(.top, 2)
     }
 
-    private var paceText: String {
+    private var speedText: String {
         guard run.distanceMeters > 0 else { return "—" }
         let distanceKm = run.distanceMeters / 1000
-        return PaceFormatter.format(secPerKm: run.durationSeconds / distanceKm)
+        return SpeedFormatter.format(secPerKm: run.durationSeconds / distanceKm)
     }
 }
 
