@@ -63,7 +63,7 @@ struct SocialPost: Decodable, Sendable, Equatable, Identifiable {
     }
 }
 
-struct CreateSocialPostRequest: Encodable, Sendable {
+struct CreateSocialPostRequest: Codable, Sendable {
     let runId: String
     let caption: String?
 
