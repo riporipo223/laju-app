@@ -3,10 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const requireUserMock = vi.fn();
 const isPremiumUserMock = vi.fn();
 
-// `.from("club_member").select(...).eq(...).maybeSingle()` — the existing-membership lookup.
+// `.from("club_member")` — shared by POST's `.select().eq().maybeSingle()` membership lookup and GET's
+// `.select().in()` batched member-count lookup. One chain (real supabase-js also returns one query
+// builder object per `.from()` call that both patterns build on).
 const membershipChain = {
   select: vi.fn(() => membershipChain),
   eq: vi.fn(() => membershipChain),
+  in: vi.fn(
+    (): Promise<{ data: { club_id: string }[] | null; error: { message: string } | null }> =>
+      Promise.resolve({ data: [], error: null })
+  ),
   maybeSingle: vi.fn(
     (): Promise<{ data: { club_id: string } | null; error: { message: string } | null }> =>
       Promise.resolve({ data: null, error: null })
@@ -35,6 +41,14 @@ const clubInsertMock = vi.fn((_row: unknown) => clubInsertChain);
 // `.from("club_member").insert(...)` — the owner row.
 const memberInsertMock = vi.fn((_row: unknown): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null }));
 
+// `.from("club").select(...).order(...)[.lt(...)].limit(...)` — GET (browse)'s list query.
+const browseChain = {
+  select: vi.fn(() => browseChain),
+  order: vi.fn(() => browseChain),
+  lt: vi.fn(() => browseChain),
+  limit: vi.fn((): Promise<{ data: unknown[] | null; error: { message: string } | null }> => Promise.resolve({ data: [], error: null })),
+};
+
 vi.mock("@/lib/auth", () => ({
   isAuthFailure: (result: unknown) => typeof result === "object" && result !== null && "response" in result,
   requireUser: (...args: unknown[]) => requireUserMock(...args),
@@ -48,13 +62,13 @@ vi.mock("@/lib/supabase", () => ({
   supabaseAdmin: {
     from: (table: string) => {
       if (table === "club_member") return { select: membershipChain.select, insert: memberInsertMock };
-      if (table === "club") return { insert: clubInsertMock };
+      if (table === "club") return { insert: clubInsertMock, select: browseChain.select };
       throw new Error(`unexpected table: ${table}`);
     },
   },
 }));
 
-const { POST } = await import("./route");
+const { GET, POST } = await import("./route");
 
 const completeUser = { id: "usr-1", auth_user_id: "auth-1", deleted_at: null };
 
@@ -64,6 +78,12 @@ function postRequest(body: unknown) {
     headers: { authorization: "Bearer valid-jwt", "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+function getRequest(params?: Record<string, string>) {
+  const url = new URL("https://example.com/api/clubs");
+  for (const [key, value] of Object.entries(params ?? {})) url.searchParams.set(key, value);
+  return new Request(url, { headers: { authorization: "Bearer valid-jwt" } });
 }
 
 describe("POST /api/clubs", () => {
@@ -195,5 +215,56 @@ describe("POST /api/clubs", () => {
     memberInsertMock.mockResolvedValueOnce({ error: { message: "db error" } });
     const res = await POST(postRequest({ name: "Lari Pagi" }));
     expect(res.status).toBe(500);
+  });
+});
+
+describe("GET /api/clubs (browse)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("rejects unauthenticated requests", async () => {
+    requireUserMock.mockResolvedValueOnce({ response: Response.json({}, { status: 401 }) });
+    const res = await GET(getRequest());
+    expect(res.status).toBe(401);
+  });
+
+  it("returns an empty list with has_more false when there are no clubs", async () => {
+    requireUserMock.mockResolvedValueOnce({ user: completeUser });
+    browseChain.limit.mockResolvedValueOnce({ data: [], error: null });
+    const res = await GET(getRequest());
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ clubs: [], has_more: false, next_before: null });
+  });
+
+  it("never returns invite_code, even for invite_only clubs", async () => {
+    requireUserMock.mockResolvedValueOnce({ user: completeUser });
+    browseChain.limit.mockResolvedValueOnce({
+      data: [
+        {
+          id: "club-1",
+          name: "Elite Runners",
+          description: "invite only",
+          privacy: "invite_only",
+          invite_code: "SECRET99",
+          created_at: "2026-09-25T10:00:00Z",
+        },
+      ],
+      error: null,
+    });
+    membershipChain.in.mockResolvedValueOnce({ data: [{ club_id: "club-1" }, { club_id: "club-1" }], error: null });
+
+    const res = await GET(getRequest());
+    const json = await res.json();
+    expect(json.clubs[0]).toEqual({
+      club_id: "club-1",
+      name: "Elite Runners",
+      description: "invite only",
+      privacy: "invite_only",
+      member_count: 2,
+      created_at: "2026-09-25T10:00:00Z",
+    });
+    expect(JSON.stringify(json)).not.toContain("SECRET99");
   });
 });
