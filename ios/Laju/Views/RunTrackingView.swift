@@ -1,6 +1,7 @@
 import Combine
 import CoreData
 import CoreLocation
+import MapKit
 import SwiftUI
 
 /// Run Tracking Screen (Fase 1 UI) — replaces the T0.9 debug skeleton (raw meter readouts, no map by default).
@@ -23,6 +24,9 @@ struct RunTrackingView: View {
     @State private var didCheckForRecovery = false
     /// T4.21: Finish presents this instead of stopping the run directly — see the Finish button's action.
     @State private var showingSaveActivity = false
+    /// T4.21: live map type — Standard/Satellite only (v1 scope). `mapTypeButton`
+    /// (RunTrackingOverlayButtons.swift, a different file) toggles this, so it can't be `private`.
+    @State var mapType: MKMapType = .standard
 
     init() {
         // StateObject can't reference `context` before init, so RunViewModel
@@ -58,7 +62,8 @@ private extension RunTrackingView {
             RunMapView(
                 currentCoordinate: mapCoordinate,
                 routeCoordinates: viewModel.model?.routeCoordinates ?? [],
-                headingDegrees: viewModel.model?.currentCourseDegrees
+                headingDegrees: viewModel.model?.currentCourseDegrees,
+                mapType: mapType
             )
             .ignoresSafeArea()
 
@@ -70,6 +75,7 @@ private extension RunTrackingView {
                 HStack {
                     gpsStatusBanner
                     Spacer()
+                    mapTypeButton
                     historyButton
                 }
                 if let notice = locationPermissionNotice {

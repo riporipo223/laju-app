@@ -1,3 +1,4 @@
+import MapKit
 import SwiftUI
 
 /// T4.21: shown right after Finish (before `RunSummaryView`) — the run is only `pause()`d at this point,
@@ -65,6 +66,11 @@ struct SaveActivityView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    mapPreview
+                        .frame(height: 160)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .listRowInsets(EdgeInsets())
+                        .padding(.top, 8)
                 }
 
                 Section("Visibility") {
@@ -87,6 +93,17 @@ struct SaveActivityView: View {
             }
         }
         .task { await gearModel.load() }
+    }
+
+    /// T4.21: static preview of the just-finished route (`model.routeCoordinates`, still populated — `stop()`
+    /// hasn't run yet at this point, only `pause()` — see the class doc), rendered in whichever Map Type is
+    /// currently selected so the picker's choice is actually visible, not just a label.
+    private var mapPreview: some View {
+        RunMapView(currentCoordinate: nil, routeCoordinates: model.routeCoordinates, mapType: resolvedMapType)
+    }
+
+    private var resolvedMapType: MKMapType {
+        mapType == "activity_heat" ? .satellite : .standard
     }
 
     private func summaryStat(_ label: String, _ value: String) -> some View {

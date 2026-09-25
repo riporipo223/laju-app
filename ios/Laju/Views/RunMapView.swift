@@ -17,6 +17,12 @@ struct RunMapView: UIViewRepresentable {
     /// (T1.9) doesn't need updating.
     var headingDegrees: CLLocationDirection?
 
+    /// T4.21: Map Type (Standard / Activity Heat = Satellite View, phase-4-backlog.md T4.21 v1 scope) —
+    /// live during tracking (`RunTrackingView`'s switcher) and static in Save Activity's preview.
+    /// Defaulted so every pre-existing call site (RunSummaryView, the pre-T4.21 live map) keeps its
+    /// original `.standard` look without needing an update.
+    var mapType: MKMapType = .standard
+
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         // Deliberately NOT showsUserLocation — that starts MapKit's own
@@ -28,12 +34,15 @@ struct RunMapView: UIViewRepresentable {
         mapView.showsUserLocation = false
         mapView.delegate = context.coordinator
         // Dark-rendered map tiles (design-notes.md §1: Laju is dark-native app-wide, not system-following) —
-        // MapKit's own dark style, not just a dark overlay on light tiles.
+        // MapKit's own dark style, not just a dark overlay on light tiles. Only meaningful for `.standard`;
+        // `.satellite` imagery is unaffected by this (no vector tiles to re-theme).
         mapView.overrideUserInterfaceStyle = .dark
+        mapView.mapType = mapType
         return mapView
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        mapView.mapType = mapType
         updateAnnotation(on: mapView, coordinator: context.coordinator)
         updatePolyline(on: mapView, coordinator: context.coordinator)
         centerIfNeeded(on: mapView, coordinator: context.coordinator)
