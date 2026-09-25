@@ -278,9 +278,9 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
 
 ## Fase 4 — Backlog (out of scope for now)
 - [ ] T4.1 — ~~Circle / Clan~~ Club, renamed 2026-09-23 — scoped 2026-09-23 (§4.24 AC1-AC21, incl. Premium admin tools — T4.8 merged in; open points closed 2026-09-24 except delete-vs-archive, analytics period/N, challenge details), built after T4.15 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
-  - [ ] T4.1a — extend `club` (description, privacy, invite code) — separate migration, T4.2a untouched
-  - [ ] T4.1b — backend: create / join / leave / browse / internal leaderboard
-  - [ ] T4.1c — iOS UI — "Club Saya" section in the You tab (decided 2026-09-24)
+  - [x] T4.1a — extend `club` (description, privacy, invite code) — applied + verified live 2026-09-25 (1/3 checks, 2 blocked by session classifier — see phase-4-backlog.md)
+  - [ ] T4.1b — backend: **create only** built 2026-09-25 (Premium-gated, `POST /api/clubs`, 9/9 tests) — join / leave / browse / internal leaderboard still unbuilt
+  - [ ] T4.1c — iOS UI — **Create Club + Premium upsell only** built 2026-09-25, wired into the Club tab (not "Club Saya" in You tab — moved per T4.2c's 2026-09-24 nav change); join/leave/browse/member list UI still unbuilt
 - [ ] T4.2 — Club War — confirmed to build 2026-09-23, mechanism finalized 2026-09-23 (§4.19 AC1-AC15); T4.2a/b/c pulled forward and built 2026-09-24 (`9b40c34`) ahead of the rest of Fase 4 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
   - [x] T4.2a — data model (club, roster, club_war tables) — **APPLIED to production 2026-09-24**, verified: 5 tables exist, RLS enabled on all 5, max-3-clubs trigger, one-open-war trigger, and the one-club-per-user PK all genuinely rejected a real bad insert (begin/rollback, zero rows leaked). See the migration file's own APPLIED banner (`20260923200000_club_war_schema.sql`)
   - [ ] T4.2b — backend API (challenge, precompute, forfeit rules) — code built and tested (364/364 backend incl. integration tests against the real applied schema, `9b40c34`), but **deliberately inert**: `isPremiumClub()` (`backend/lib/club-war/premium.ts`) is a stub that always returns `false` until T4.20 ships — no Club War can actually be created by anyone yet, by design, not a bug
