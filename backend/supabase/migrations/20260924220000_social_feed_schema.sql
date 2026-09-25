@@ -1,12 +1,18 @@
 -- T4.15 — Social Feed data model (phase-4-backlog.md's 2026-09-24 v1 scoping session).
 --
 -- ============================================================================
--- WRITTEN 2026-09-24. NOT YET APPLIED to production, NOT YET VERIFIED live —
--- same two-step gate as 20260923200000_club_war_schema.sql (T4.2a) and
--- 20260924210000_add_subscription_table.sql (T4.20a): write inert -> review ->
--- apply + record real evidence as a separate step. Whoever applies this MUST
--- update this banner with genuine verification output (see VERIFICATION below)
--- before checking T4.15's migration off as done anywhere in tasks/*.
+-- APPLIED 2026-09-24. VERIFIED LIVE 2026-09-25: 6/6 checks passed.
+-- - Tables + RLS confirmed (information_schema + pg_class)
+-- - V3: flagged/rejected run blocked by trigger — P0001 "run ... has status
+--   flagged — only validated/approved runs can be posted (T4.15 v1 AC)"
+-- - V4: cross-user posting blocked by trigger — P0001 "run ... does not
+--   belong to user ... (T4.15 v1: can only post your own run)"
+-- - V5: duplicate like rejected — 23505 duplicate key value violates unique
+--   constraint "social_post_like_pkey"
+-- - V6: cascade delete on post deletion — count_after = 0
+-- See backend/scripts/verify-t4.15-social-triggers.sql for the verification
+-- scripts. Verification performed manually via Supabase SQL Editor against
+-- production.
 -- ============================================================================
 --
 -- Scope note (v1 decisions, phase-4-backlog.md T4.15): Public audience only
