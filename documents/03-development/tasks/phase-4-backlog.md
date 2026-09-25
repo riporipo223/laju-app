@@ -559,17 +559,30 @@ implemented.
     Finish was tapped), returning to `RunTrackingView` as if Finish had
     never happened. This is explicitly to prevent an accidental Finish tap
     from ending a run the user meant to keep going.
-  - **Not yet decided**: exact `social_post` migration (new columns vs.
-    consider a normalized `activity_detail` side-table for
-    title/description/private_notes/map_type/gear_id — a schema call, not
-    a product call, left for implementation); whether `private_notes` is
-    ever returned by `GET /api/social/posts` to anyone but the post's own
-    author (should not be, needs to be an explicit read-path decision, not
-    assumed); exact API surface for gear CRUD (dedicated
-    `/api/gear` routes vs. folded into `/api/profile/complete`).
+  - **Resolved during implementation (2026-09-25)**: `activity_detail`
+    side-table chosen over new `social_post` columns — 1:1, PK =
+    `social_post_id`, keeps `private_notes` out of the row the public feed
+    query reads from. `private_notes` is never selected by `GET /api/social/
+    posts` (confirmed by its own `FEED_SELECT`, which omits it entirely).
+    Gear CRUD is a dedicated `/api/gear` (`POST`/`GET`), not folded into
+    `/api/profile/complete`.
   - **Out of scope for this task**: the friend/follow graph itself, T4.20b
     (Premium verification), 3D Map View, "Friends Only" visibility — all
     named above as explicitly deferred, not silently dropped.
+  - **Implementation status (2026-09-25)**: backend (gear route + social
+    posts route extended), iOS (`SaveActivityView`, `GearViewModel`,
+    `PendingPostPublisher` deferred-publish), and migration
+    (`20260925120000_activity_detail_and_gear_schema.sql`) all built.
+    Backend 49/49 tests pass, iOS 214/214 tests pass (BUILD SUCCEEDED,
+    TEST SUCCEEDED). Migration **applied and verified live 2026-09-25,
+    4/5 checks passed** (table structure ×2, RLS ×2 confirmed; backfill
+    trivially holds with 0 live posts; the 1:1-constraint insert test was
+    blocked by this session's write classifier, same class of block
+    T4.15's own trigger tests hit — not claimed passed, see the
+    migration's own banner). API confirmed live: `GET /api/gear` returns
+    401 (auth-gated), not 500. Full authenticated API round-trip (create
+    gear, post with new fields, confirm feed filtering) not exercised —
+    would need a real user JWT this session doesn't have.
 - **T4.18 — Change User Season length from 91 to 60 days, forward-only.**
   Added 2026-09-23 (PM decision — see product-spec.md §4.20). **DECIDED
   2026-09-23, NOT YET IMPLEMENTED:**
