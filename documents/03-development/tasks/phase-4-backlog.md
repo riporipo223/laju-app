@@ -496,6 +496,63 @@ implemented.
     gaps for this task.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
+- **T4.21 — Save Activity flow** (Finish → review/edit screen → publish,
+  replacing the direct Finish → "Run Complete" jump). Depends on T4.15
+  (extends `social_post`'s create flow) and touches T4.20's Premium check
+  (Map Type gating). Added 2026-09-25, **v1 scope decided 2026-09-25**:
+  - **Trigger**: `RunTrackingView`'s Finish button currently calls
+    `model.stop()` directly, which synchronously sets `completedRunSummary`
+    and presents `RunSummaryView` ("Run Complete") — no intermediate
+    screen, no posting UI (`RunSummaryView` has only a stat grid + Done).
+    v1 changes this: Finish → **Save Activity** screen, before
+    `RunSummaryView`.
+  - **Save Activity fields — Judul, Deskripsi, Private Notes: all
+    optional**, consistent with today's `caption` (already optional on
+    `SocialPostComposerView`). No field is required to publish.
+  - **Gear (shoe)**: new `gear` table (not columns on `user`) — a user can
+    own more than one (the brief's "Add Gear" for a second shoe needs a
+    real one-to-many relation, a single-gear column on `user` can't
+    express that). Columns: `id`, `user_id`, `brand` (fixed list — see
+    below), `model` (free text, e.g. "AirMax 95", "P6000" — no shoe
+    dataset), `size` (free text). Save Activity reads the user's gear list
+    to prefill; empty state lets the user pick/add inline, which also
+    persists to their profile (same table, not a run-scoped copy).
+  - **Brand list (fixed, v1)**: Nike, Adidas, Hoka, Asics, Brooks, New
+    Balance, Saucony, Puma, Mizuno, On, Under Armour, Other. Add more by
+    extending this list later — not a schema change (stored as `text`, not
+    a DB enum, precisely so the list can grow without a migration).
+  - **Map Type — v1: Standard + Activity Heat (Satellite View) only, no 3D
+    option at all.** T4.20's Premium verification is not functional yet
+    (`isPremiumClub()` hardcoded `false`, blocked on Apple Developer
+    Program enrollment same as T4.20b/T4.2b) — shipping a 3D option now
+    would permanently show the upgrade screen to everyone, a dead end, not
+    a real gate. Revisit once T4.20b ships; until then Map Type has no
+    Premium branch to build.
+  - **Visibility — v1: Public / Private only, no "Friends Only".** The app
+    has no friend/follow graph at all (same gap T4.15's migration banner
+    already named when deferring Circle/Club audience) — "Friends Only"
+    has no data to scope against yet. Revisit once a friend/follow system
+    exists. Public/Private need a new column on `social_post` (today's
+    schema has none — T4.15 v1 was Public-only with zero audience column);
+    Private means visible only to the poster (not stored anywhere else,
+    not a moderation state).
+  - **Back button behavior**: tapping Back on Save Activity **cancels the
+    Finish, not just the post** — the run genuinely resumes tracking
+    (`model`'s `isRunning` flips back to `true`, same state as before
+    Finish was tapped), returning to `RunTrackingView` as if Finish had
+    never happened. This is explicitly to prevent an accidental Finish tap
+    from ending a run the user meant to keep going.
+  - **Not yet decided**: exact `social_post` migration (new columns vs.
+    consider a normalized `activity_detail` side-table for
+    title/description/private_notes/map_type/gear_id — a schema call, not
+    a product call, left for implementation); whether `private_notes` is
+    ever returned by `GET /api/social/posts` to anyone but the post's own
+    author (should not be, needs to be an explicit read-path decision, not
+    assumed); exact API surface for gear CRUD (dedicated
+    `/api/gear` routes vs. folded into `/api/profile/complete`).
+  - **Out of scope for this task**: the friend/follow graph itself, T4.20b
+    (Premium verification), 3D Map View, "Friends Only" visibility — all
+    named above as explicitly deferred, not silently dropped.
 - **T4.18 — Change User Season length from 91 to 60 days, forward-only.**
   Added 2026-09-23 (PM decision — see product-spec.md §4.20). **DECIDED
   2026-09-23, NOT YET IMPLEMENTED:**
