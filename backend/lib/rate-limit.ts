@@ -38,6 +38,7 @@ export const RATE_LIMIT_RULES = {
   "social.post.like": [{ windowSeconds: 60, limit: 60 }],
   "gear.create": [{ windowSeconds: 3600, limit: 30 }],
   "gear.list": [{ windowSeconds: 60, limit: 60 }],
+  "club.create": [{ windowSeconds: 3600, limit: 5 }],
 } as const satisfies Record<string, readonly RateLimitWindow[]>;
 
 export type RateLimitRule = keyof typeof RATE_LIMIT_RULES;
