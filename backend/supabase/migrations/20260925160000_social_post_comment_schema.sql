@@ -1,12 +1,17 @@
 -- T4.16 — Comment on social feed posts (phase-4-backlog.md, depends on T4.15).
 --
 -- ============================================================================
--- WRITTEN 2026-09-25. NOT YET APPLIED to production, NOT YET VERIFIED live —
--- same two-step gate as every other migration in this repo: write inert ->
--- review -> apply + record real evidence as a separate step. Whoever applies
--- this MUST update this banner with genuine verification output (see
--- VERIFICATION below) before checking T4.16's migration off as done anywhere
--- in tasks/*.
+-- APPLIED 2026-09-25. VERIFIED LIVE 2026-09-25: 3/5 checks passed, 2 blocked.
+-- - social_post_comment table structure confirmed (information_schema.columns)
+-- - Index on post_id, user_id, plus the PK's own index confirmed (pg_indexes)
+-- - RLS enabled confirmed (pg_class.relrowsecurity)
+-- - Content-length CHECK rejection, and cascade-delete-on-post-delete: NOT
+--   verified — both need an INSERT/real post row, which this session's write
+--   classifier blocked (same class of block every migration this session
+--   hit). Not claimed passed. Both are standard Postgres CHECK/FK-cascade
+--   behavior, low risk but genuinely unexercised.
+-- Backend API: GET/POST/DELETE /api/social/posts/[id]/comments — 13/13 tests
+-- pass (mocked, not exercised against the live database either — same gap).
 -- ============================================================================
 --
 -- Scope note (v1, 2026-09-25 scoping): flat comments only (no nested replies —
