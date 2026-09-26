@@ -84,4 +84,21 @@ extension APIClient {
         }
         return try RunSubmissionCoding.makeDecoder().decode(LeaveClubResponse.self, from: data)
     }
+
+    /// product-spec.md §4.24 AC23: same endpoint as `leaveClub`, a `user_id` body distinguishes it
+    /// server-side — gated only on the caller being owner/admin, never Premium.
+    func kickMember(clubId: String, userId: String, jwt: String) async throws -> KickMemberResponse {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/clubs/\(clubId)/members"))
+        urlRequest.httpMethod = "DELETE"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = try RunSubmissionCoding.makeEncoder().encode(KickMemberRequest(userId: userId))
+
+        let (data, response) = try await session.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIClientError.invalidResponse }
+        guard httpResponse.statusCode == 200 else {
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: String(data: data, encoding: .utf8) ?? "")
+        }
+        return try RunSubmissionCoding.makeDecoder().decode(KickMemberResponse.self, from: data)
+    }
 }

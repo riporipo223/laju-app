@@ -42,11 +42,23 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   });
 }
 
+interface DeleteMemberBody {
+  user_id?: unknown;
+}
+
 /**
- * T4.1b: self-leave only (v1 scope, 2026-09-25) — always the caller's own membership, no `:userId` in
- * the path (owner-removes-member is admin tooling, deferred behind T4.20b same as everything else
- * Premium-gated). 404 whether the caller was never a member of this club or the club id is bogus — same
- * "don't distinguish a non-match from a forbidden one" shape every delete-own-* route here uses.
+ * T4.1b/T4.1c (self-leave, 2026-09-25) + kick-member (product-spec.md §4.24 AC23, added 2026-09-26,
+ * HANDOFF.md "Audit drift 2026-09-26" item 4): no `user_id` in the body is self-leave, unchanged from
+ * the original v1 scope — always the caller's own membership, 404 whether the caller was never a
+ * member of this club or the club id is bogus (same "don't distinguish a non-match from a forbidden
+ * one" shape every delete-own-* route here uses).
+ *
+ * A `user_id` in the body targeting someone else is kick-member — gated ONLY on "caller is owner or
+ * admin of this club," never Premium (AC23 is explicit: kick-member is free for every tier, unlike the
+ * Premium-gated admin tools AC11-AC13; a prior version of this comment wrongly bundled the two, now
+ * corrected). A `user_id` equal to the caller's own is rejected outright, not silently treated as
+ * self-leave — an owner can't leave this way at all (AC16: transfer ownership or archive first), and a
+ * non-owner kicking themselves has the plain self-leave path already, so this shape has no valid use.
  */
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   const auth = await requireUser(request, "club.leave");
@@ -55,19 +67,64 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
 
   const { id } = await context.params;
 
+  let body: DeleteMemberBody = {};
+  try {
+    body = (await request.json()) as DeleteMemberBody;
+  } catch {
+    body = {};
+  }
+  const targetUserId = typeof body.user_id === "string" && body.user_id.length > 0 ? body.user_id : null;
+
+  if (targetUserId === null) {
+    const { data, error } = await supabaseAdmin
+      .from("club_member")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("club_id", id)
+      .select("club_id")
+      .maybeSingle<{ club_id: string }>();
+    if (error) {
+      return NextResponse.json({ error: "Could not leave club" }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ error: "You are not a member of this club" }, { status: 404 });
+    }
+    return NextResponse.json({ club_id: data.club_id, left: true });
+  }
+
+  if (targetUserId === user.id) {
+    return NextResponse.json(
+      { error: "Use the plain leave request (no user_id) to remove yourself" },
+      { status: 400 }
+    );
+  }
+
+  const { data: callerMembership, error: callerLookupError } = await supabaseAdmin
+    .from("club_member")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("club_id", id)
+    .maybeSingle<{ role: string }>();
+  if (callerLookupError) {
+    return NextResponse.json({ error: "Could not check caller's role" }, { status: 500 });
+  }
+  if (!callerMembership || (callerMembership.role !== "owner" && callerMembership.role !== "admin")) {
+    return NextResponse.json({ error: "Only an owner or admin can remove another member" }, { status: 403 });
+  }
+
   const { data, error } = await supabaseAdmin
     .from("club_member")
     .delete()
-    .eq("user_id", user.id)
+    .eq("user_id", targetUserId)
     .eq("club_id", id)
     .select("club_id")
     .maybeSingle<{ club_id: string }>();
   if (error) {
-    return NextResponse.json({ error: "Could not leave club" }, { status: 500 });
+    return NextResponse.json({ error: "Could not remove member" }, { status: 500 });
   }
   if (!data) {
-    return NextResponse.json({ error: "You are not a member of this club" }, { status: 404 });
+    return NextResponse.json({ error: "That user is not a member of this club" }, { status: 404 });
   }
 
-  return NextResponse.json({ club_id: data.club_id, left: true });
+  return NextResponse.json({ club_id: data.club_id, kicked_user_id: targetUserId, kicked: true });
 }

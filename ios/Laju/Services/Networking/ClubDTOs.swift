@@ -123,3 +123,25 @@ struct LeaveClubResponse: Decodable, Sendable, Equatable {
         case left
     }
 }
+
+/// product-spec.md §4.24 AC23: kick-member, free for every tier — same `DELETE .../members` endpoint
+/// `leaveClub` uses, distinguished server-side only by whether this body's `userId` is present.
+struct KickMemberRequest: Encodable, Sendable {
+    let userId: String
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+    }
+}
+
+struct KickMemberResponse: Decodable, Sendable, Equatable {
+    let clubId: String
+    let kickedUserId: String
+    let kicked: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case clubId = "club_id"
+        case kickedUserId = "kicked_user_id"
+        case kicked
+    }
+}

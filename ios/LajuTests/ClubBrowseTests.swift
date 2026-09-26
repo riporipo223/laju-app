@@ -99,4 +99,29 @@ final class ClubBrowseTests: XCTestCase {
         XCTAssertTrue(liveModel.didLeave)
         XCTAssertTrue(liveModel.members.isEmpty)
     }
+
+    func testClubMemberListViewModelCanKickOnlyWhenCallerIsOwnerOrAdmin() throws {
+        let owner = ClubMember(userId: "usr-owner", username: nil, displayName: nil, avatarURL: nil, role: "owner", joinedAt: Date())
+        let target = ClubMember(userId: "usr-2", username: nil, displayName: nil, avatarURL: nil, role: "member", joinedAt: Date())
+        let ownerModel = ClubMemberListViewModel(previewMembers: [owner, target], currentUserId: "usr-owner")
+        XCTAssertTrue(ownerModel.canKick(target))
+        XCTAssertFalse(ownerModel.canKick(owner)) // can't kick self
+
+        let memberModel = ClubMemberListViewModel(previewMembers: [owner, target], currentUserId: "usr-2")
+        XCTAssertFalse(memberModel.canKick(owner)) // a plain member sees no kick option at all
+    }
+
+    func testClubMemberListViewModelKickRemovesTargetRow() async throws {
+        let owner = ClubMember(userId: "usr-owner", username: nil, displayName: nil, avatarURL: nil, role: "owner", joinedAt: Date())
+        let target = ClubMember(userId: "usr-2", username: nil, displayName: nil, avatarURL: nil, role: "member", joinedAt: Date())
+        let model = ClubMemberListViewModel(
+            apiClient: APIClient(session: StubURLProtocol.makeSession()),
+            currentJWT: { "jwt-1" },
+            previewMembers: [owner, target],
+            currentUserId: "usr-owner"
+        )
+        StubURLProtocol.requestHandler = { _ in (200, Data(#"{"club_id":"c1","kicked_user_id":"usr-2","kicked":true}"#.utf8)) }
+        await model.kick(clubId: "c1", member: target)
+        XCTAssertEqual(model.members.map(\.userId), ["usr-owner"])
+    }
 }

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// T4.1b: a club's member list, reached from `ClubBrowseView` (tap a row) — shows a "Leave Club" button
-/// on the caller's own row, since self-leave is the only leave flow in v1 (owner-remove-member is admin
-/// tooling, deferred behind T4.20b).
+/// T4.1b: a club's member list, reached from `ClubBrowseView` (tap a row) — shows a "Leave" button on
+/// the caller's own row, and a kick button on any other row when the caller is owner/admin
+/// (product-spec.md §4.24 AC23, free for every tier — never Premium-gated).
 struct ClubMemberListView: View {
     let clubId: String
     let clubName: String
@@ -37,6 +37,12 @@ struct ClubMemberListView: View {
                         }
                         .foregroundStyle(LajuColor.error)
                         .disabled(model.isLeaving)
+                    } else if model.canKick(member) {
+                        Button("Kick") {
+                            Task { await model.kick(clubId: clubId, member: member) }
+                        }
+                        .foregroundStyle(LajuColor.error)
+                        .disabled(model.isKicking)
                     }
                 }
             }
