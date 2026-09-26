@@ -183,6 +183,20 @@ implemented.
   deferred admin tooling, which was wrong. Freeze behavior (AC24) needs
   the join/challenge-creation/analytics-read endpoints to check the live
   member count against the cap, not just Premium status in isolation.
+  **DONE 2026-09-26 (same session):** Premium gate on create reverted
+  (`d46734f`, 12/12 tests) and kick-member built (`3278e6c`) — extends
+  the existing `DELETE .../members` self-leave endpoint with an optional
+  `user_id` body rather than a new route, gated on caller role only
+  (11/11 tests, TDD: failing test written first for each of not-owner/
+  admin→403, kick-as-owner→200, kick-as-admin→200, kick-self→400,
+  kick-non-member→404). **Not done in this pass, still open:** member cap
+  enforcement (AC22) and freeze behavior (AC24) — separate, larger units,
+  deliberately not attempted alongside this task's other two units per
+  its own scope. **New gap noticed while building kick-member, not
+  fixed:** the endpoint doesn't stop an owner/admin from kicking the
+  club's OWNER (no target-role check) — would leave a Circle ownerless,
+  since AC18's reassignment logic only runs on account deletion, not on
+  a kick. Flagged for the next session, not guessed at here.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
   **and (2026-09-23) the admin-tools screens** — analytics and creating/
@@ -199,6 +213,19 @@ implemented.
   user sees it (2026-09-26); internal type/file names stay `Club`.** Not
   wireframed yet (screen-inventory.md §4). **Reference**: product-spec.md
   §4.24 AC1-AC24.
+  **DONE 2026-09-26 (same session):** display copy renamed Club→Circle in
+  all 8 user-facing locations found by the prior audit (`15dc3b1`) — tab
+  label, Ranks segmented control + empty-state, Create Circle form (nav
+  title/section headers/placeholders/button), Browse Circles, and every
+  error message in `ClubBrowseViewModel`/`CreateClubViewModel`. "Club War"
+  itself deliberately NOT renamed (also decided, but held until its own
+  build hold lifts — product-spec.md §4.19). Full logged-in visual
+  verification wasn't possible (fresh simulator, no real backend account,
+  the `LAJU_DEBUG_ACCESS_TOKEN` bypass needs real Supabase tokens) — a
+  grep sweep across `Laju/Views`/`Laju/ViewModels` confirmed zero stray
+  "Club" strings outside the deliberately-skipped Club War files instead.
+  Kick-member UI added to `ClubMemberListView` (`3278e6c`), visible only
+  when `canKick` — 236/236 iOS tests pass, BUILD SUCCEEDED.
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
