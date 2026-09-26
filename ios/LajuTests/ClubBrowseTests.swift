@@ -60,6 +60,15 @@ final class ClubBrowseTests: XCTestCase {
         XCTAssertNotNil(model.errorMessage)
     }
 
+    func testJoinClubSetsClearErrorMessageWhenCircleIsFull() async throws {
+        let club = ClubSummary(clubId: "c1", name: "Lari Pagi", description: nil, privacy: "public", memberCount: 20, createdAt: Date())
+        StubURLProtocol.requestHandler = { _ in (409, Data(#"{"error":"This Circle is full","code":"circle_full"}"#.utf8)) }
+        let model = ClubBrowseViewModel(apiClient: APIClient(session: StubURLProtocol.makeSession()), currentJWT: { "jwt-1" })
+        let joined = await model.joinClub(club, inviteCode: nil)
+        XCTAssertFalse(joined)
+        XCTAssertEqual(model.errorMessage, "Circle sudah penuh.")
+    }
+
     func testClubMemberListViewModelLoadPopulatesMembers() async throws {
         StubURLProtocol.requestHandler = { _ in
             (

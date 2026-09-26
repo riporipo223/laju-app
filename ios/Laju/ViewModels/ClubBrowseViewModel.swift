@@ -83,6 +83,9 @@ final class ClubBrowseViewModel: ObservableObject {
         if body.lowercased().contains("already in a club") {
             return "Kamu sudah tergabung di circle lain."
         }
+        if body.lowercased().contains("circle_full") {
+            return "Circle sudah penuh."
+        }
         return "Circle belum bisa dimuat. Coba lagi."
     }
 

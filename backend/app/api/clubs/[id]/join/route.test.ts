@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requireUserMock = vi.fn();
+const isPremiumClubMock = vi.fn();
 
 // `.from("club").select(...).eq(...).maybeSingle()` — the club lookup (privacy + invite_code).
 const clubChain = {
@@ -24,16 +25,36 @@ const membershipChain = {
 };
 const memberInsertMock = vi.fn((_row: unknown): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null }));
 
+// `.from("club_member").select("*", { count: "exact", head: true }).eq("club_id", ...)` — the member
+// count for the cap check (product-spec.md §4.24 AC22). A distinct chain from `membershipChain` even
+// though both hang off the same `.from("club_member")` — Supabase's own count-query shape (`.eq()`
+// itself resolves to `{count, error}`, no `.maybeSingle()`) rather than the row-lookup shape.
+const countChain = {
+  eq: vi.fn((): Promise<{ count: number | null; error: { message: string } | null }> => Promise.resolve({ count: 0, error: null })),
+};
+// `select("*", { count: "exact", head: true })` (2 args, options with `count`) routes to `countChain`;
+// `select("club_id")` (1 arg) routes to the existing `membershipChain` — same dispatcher distinguishing
+// by call shape, not a second `.from("club_member")` mock.
+const clubMemberSelectMock = vi.fn((...args: unknown[]) => {
+  const options = args[1] as { count?: string } | undefined;
+  if (options?.count) return countChain;
+  return membershipChain;
+});
+
 vi.mock("@/lib/auth", () => ({
   isAuthFailure: (result: unknown) => typeof result === "object" && result !== null && "response" in result,
   requireUser: (...args: unknown[]) => requireUserMock(...args),
+}));
+
+vi.mock("@/lib/club-war/premium", () => ({
+  isPremiumClub: (...args: unknown[]) => isPremiumClubMock(...args),
 }));
 
 vi.mock("@/lib/supabase", () => ({
   supabaseAdmin: {
     from: (table: string) => {
       if (table === "club") return { select: clubChain.select };
-      if (table === "club_member") return { select: membershipChain.select, insert: memberInsertMock };
+      if (table === "club_member") return { select: clubMemberSelectMock, insert: memberInsertMock };
       throw new Error(`unexpected table: ${table}`);
     },
   },
@@ -55,6 +76,7 @@ function postRequest(body: unknown) {
 describe("POST /api/clubs/[id]/join", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isPremiumClubMock.mockResolvedValue(false);
   });
 
   it("rejects unauthenticated requests", async () => {
@@ -126,5 +148,53 @@ describe("POST /api/clubs/[id]/join", () => {
     memberInsertMock.mockResolvedValueOnce({ error: { message: "db error" } });
     const res = await POST(postRequest({}), { params: params() });
     expect(res.status).toBe(500);
+  });
+
+  describe("member cap (product-spec.md §4.24 AC22)", () => {
+    it("joins a Free Circle below its 20-member cap", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      clubChain.maybeSingle.mockResolvedValueOnce({ data: { id: "club-1", privacy: "public", invite_code: null }, error: null });
+      membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      countChain.eq.mockResolvedValueOnce({ count: 19, error: null });
+      const res = await POST(postRequest({}), { params: params() });
+      expect(res.status).toBe(200);
+      expect(memberInsertMock).toHaveBeenCalled();
+    });
+
+    it("rejects joining a Free Circle exactly at its 20-member cap", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      clubChain.maybeSingle.mockResolvedValueOnce({ data: { id: "club-1", privacy: "public", invite_code: null }, error: null });
+      membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      countChain.eq.mockResolvedValueOnce({ count: 20, error: null });
+      const res = await POST(postRequest({}), { params: params() });
+      expect(res.status).toBe(409);
+      const json = await res.json();
+      expect(json.code).toBe("circle_full");
+      expect(memberInsertMock).not.toHaveBeenCalled();
+    });
+
+    it("still joins a Premium Circle's owner past 20, up to its 100-member cap", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      clubChain.maybeSingle.mockResolvedValueOnce({ data: { id: "club-1", privacy: "public", invite_code: null }, error: null });
+      membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      isPremiumClubMock.mockResolvedValueOnce(true);
+      countChain.eq.mockResolvedValueOnce({ count: 99, error: null });
+      const res = await POST(postRequest({}), { params: params() });
+      expect(res.status).toBe(200);
+      expect(memberInsertMock).toHaveBeenCalled();
+    });
+
+    it("rejects joining a Premium Circle exactly at its 100-member cap", async () => {
+      requireUserMock.mockResolvedValueOnce({ user: completeUser });
+      clubChain.maybeSingle.mockResolvedValueOnce({ data: { id: "club-1", privacy: "public", invite_code: null }, error: null });
+      membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      isPremiumClubMock.mockResolvedValueOnce(true);
+      countChain.eq.mockResolvedValueOnce({ count: 100, error: null });
+      const res = await POST(postRequest({}), { params: params() });
+      expect(res.status).toBe(409);
+      const json = await res.json();
+      expect(json.code).toBe("circle_full");
+      expect(memberInsertMock).not.toHaveBeenCalled();
+    });
   });
 });
