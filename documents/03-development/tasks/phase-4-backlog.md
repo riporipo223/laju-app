@@ -213,14 +213,18 @@ implemented.
   challenge, lock viewing analytics" half turned out to already fall out of each of those routes'
   own `isPremiumClub` gate (checked live, never cached) — no dedicated freeze mechanism needed.
 
-  **Circle Challenge + Analytics, backend built same day (§4.24 AC11-AC15/AC24), iOS UI deliberately
-  NOT started (separate task):**
-  - Schema `20260926170000_club_challenge_and_analytics_schema.sql` (`e729a9e`, NOT YET APPLIED to
-    production): `club_challenge` + `club_membership_history`. The latter is the non-obvious one —
-    exists only so a challenge's collective total can keep counting a departed member's past
-    contribution (AC13) without threading writes into the run-submission/anti-cheat pipeline; full
-    reasoning and the rejected alternative are in the migration's own comment. Foundation wiring
-    (opens/closes a membership stint on create/join/leave/kick) landed in `2e6192e`, 36 tests across
+  **Circle Challenge + Analytics, backend built same day (§4.24 AC11-AC15/AC24), iOS UI built in a
+  follow-up session (below):**
+  - Schema `20260926170000_club_challenge_and_analytics_schema.sql` (`e729a9e`, **APPLIED to
+    production `b6db974`** — RLS enabled + both partial unique indexes genuinely reject duplicates,
+    verified with real queries inside begin/rollback; also repaired migration history for 7 earlier
+    migrations found genuinely live but untracked, each confirmed table-by-table via read-only query
+    before repairing, not assumed): `club_challenge` + `club_membership_history`. The latter is the
+    non-obvious one — exists only so a challenge's collective total can keep counting a departed
+    member's past contribution (AC13) without threading writes into the run-submission/anti-cheat
+    pipeline; full reasoning and the rejected alternative are in the migration's own comment.
+    Foundation wiring (opens/closes a membership stint on create/join/leave/kick) landed in
+    `2e6192e`, 36 tests across
     the 3 existing routes it touches.
   - `POST /api/clubs/[id]/challenge` (`daba8ec`, 10 tests, TDD): create, gated owner/admin + Premium
     Club (`isPremiumClub` reused, same `not_premium_club` shape Club War uses), at most one open
@@ -241,9 +245,17 @@ implemented.
   - `GET /api/clubs/[id]/analytics` (`2fd26f6`, 5 pure-function tests in new `lib/club-analytics.ts` +
     5 route tests, TDD): gated owner/admin + Premium Club. "Active member" reuses §4.20 Club Aktif's
     exact definition (qualifying status + ADR-0009 distance gate), not a new metric. Rolling 30 days,
-    top-5 contributors ranked by distance — **a judgment call, not a documented sort-key decision**
-    (product-spec.md lists distance and points as two separate headline totals without saying which
-    one ranks the top-N list); flagged in the code's own comment for the PM to confirm or correct.
+    top-5 contributors ranked by distance — **confirmed 2026-09-26 by the PM** (product-spec.md's own
+    note), the judgment call flagged above was correct.
+  - **iOS UI, follow-up session:** networking layer (`6c5cf31`, DTOs/`APIClient` for all 3 units) →
+    Unit 1 create-challenge form (`08808be`, 3 tests) → Unit 2 view/ranking/owner-only cancel with a
+    destructive confirmation alert (`97179d7`, 4 tests) → Unit 3 analytics screen, same
+    `PremiumCircleUpsellView` reused across Units 1 and 3, not duplicated (`88d8248`, 2 tests). Both
+    Challenge and Analytics wired into `ClubMemberListView` (the per-Circle detail screen — the
+    generic `ClubHomeView` tab root has no single `clubId` in scope for either). **BUILD SUCCEEDED,
+    246/246 iOS tests pass. Full logged-in simulator walkthrough not done** — no real account exists
+    on a fresh simulator and the debug-token bypass needs real Supabase credentials; stated plainly,
+    not faked, same limitation as the earlier Circle rename task.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
   **and (2026-09-23) the admin-tools screens** — analytics and creating/
