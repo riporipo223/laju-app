@@ -207,11 +207,43 @@ implemented.
   checked live via the existing `isPremiumClub`, reused not
   reimplemented), refusing new joins with 409 `circle_full` at/over the
   cap. 12/12 join-route tests pass (TDD: below-cap join, exactly-at-cap
-  rejection, Premium-past-20, Premium-at-100-rejection). **Freeze
-  behavior (AC24) still not done** — this task only enforces the
-  "refuse new joins" half AC24 also needs; the rest (locking
-  analytics/challenge-creation for an over-cap Circle) is separate,
-  larger work, not attempted here.
+  rejection, Premium-past-20, Premium-at-100-rejection).
+  **AC24 freeze — fully covered as of the Circle Challenge/Analytics work below**, not a separate
+  unit: the "refuse new joins at/over cap" half was this join-route work; the "lock starting a new
+  challenge, lock viewing analytics" half turned out to already fall out of each of those routes'
+  own `isPremiumClub` gate (checked live, never cached) — no dedicated freeze mechanism needed.
+
+  **Circle Challenge + Analytics, backend built same day (§4.24 AC11-AC15/AC24), iOS UI deliberately
+  NOT started (separate task):**
+  - Schema `20260926170000_club_challenge_and_analytics_schema.sql` (`e729a9e`, NOT YET APPLIED to
+    production): `club_challenge` + `club_membership_history`. The latter is the non-obvious one —
+    exists only so a challenge's collective total can keep counting a departed member's past
+    contribution (AC13) without threading writes into the run-submission/anti-cheat pipeline; full
+    reasoning and the rejected alternative are in the migration's own comment. Foundation wiring
+    (opens/closes a membership stint on create/join/leave/kick) landed in `2e6192e`, 36 tests across
+    the 3 existing routes it touches.
+  - `POST /api/clubs/[id]/challenge` (`daba8ec`, 10 tests, TDD): create, gated owner/admin + Premium
+    Club (`isPremiumClub` reused, same `not_premium_club` shape Club War uses), at most one open
+    challenge per Circle (DB partial unique index is the real backstop).
+  - `GET /api/clubs/[id]/challenge` (`35b22e1`, 12 pure-function tests in new `lib/club-challenge.ts`
+    + 5 route tests, TDD): progress + individual ranking. Visible to any current member, NOT
+    Premium-gated (AC24 only locks starting a new one, not reading an existing one). Every tricky
+    AC13 scenario has its own test: a departed member's contribution still counts in the collective
+    total but drops from the ranking; a run before joining or after leaving doesn't count; reaching
+    the target early sets `target_reached` but does not close the challenge before its deadline.
+  - `DELETE /api/clubs/[id]/challenge/cancel` (`1147487`, 6 tests, TDD): owner only (not admin — AC13's
+    own wording). Freezes the ranking as `cancelled`, never deletes the row. **Push notification to
+    every participant is NOT built** — checked this session: grepped `backend/` and `ios/` for any
+    APNs/PushKit/device-token/remote-push registration and found zero; only local, client-scheduled
+    notifications exist (`ios/Laju/ViewModels/NotificationScheduling.swift`, T1.16 streak reminders),
+    which cannot be triggered from the server. Building real APNs delivery is a separate, much larger
+    infrastructure task — blocked, documented in the route's own comment, not guessed at or faked.
+  - `GET /api/clubs/[id]/analytics` (`2fd26f6`, 5 pure-function tests in new `lib/club-analytics.ts` +
+    5 route tests, TDD): gated owner/admin + Premium Club. "Active member" reuses §4.20 Club Aktif's
+    exact definition (qualifying status + ADR-0009 distance gate), not a new metric. Rolling 30 days,
+    top-5 contributors ranked by distance — **a judgment call, not a documented sort-key decision**
+    (product-spec.md lists distance and points as two separate headline totals without saying which
+    one ranks the top-N list); flagged in the code's own comment for the PM to confirm or correct.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
   **and (2026-09-23) the admin-tools screens** — analytics and creating/
