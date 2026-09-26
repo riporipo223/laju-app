@@ -59,6 +59,13 @@ interface DeleteMemberBody {
  * corrected). A `user_id` equal to the caller's own is rejected outright, not silently treated as
  * self-leave — an owner can't leave this way at all (AC16: transfer ownership or archive first), and a
  * non-owner kicking themselves has the plain self-leave path already, so this shape has no valid use.
+ *
+ * The target's own role is also checked before deleting: kicking a target whose role is `owner` is
+ * rejected the same way — an owner can only leave via AC16's transfer/archive path, never by someone
+ * else kicking them. (Fixed 2026-09-26: an earlier version of this endpoint had no such check, so an
+ * admin could kick the club's owner, leaving the Circle with no owner at all — a real data-corruption
+ * gap the prior audit session found and flagged rather than guessed a fix for; see
+ * phase-4-backlog.md T4.1b for the full note.)
  */
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   const auth = await requireUser(request, "club.leave");
@@ -110,6 +117,22 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   }
   if (!callerMembership || (callerMembership.role !== "owner" && callerMembership.role !== "admin")) {
     return NextResponse.json({ error: "Only an owner or admin can remove another member" }, { status: 403 });
+  }
+
+  const { data: targetMembership, error: targetLookupError } = await supabaseAdmin
+    .from("club_member")
+    .select("role")
+    .eq("user_id", targetUserId)
+    .eq("club_id", id)
+    .maybeSingle<{ role: string }>();
+  if (targetLookupError) {
+    return NextResponse.json({ error: "Could not check target's role" }, { status: 500 });
+  }
+  if (targetMembership?.role === "owner") {
+    return NextResponse.json(
+      { error: "The owner can't be kicked — transfer ownership or archive the Circle first (AC16)" },
+      { status: 400 }
+    );
   }
 
   const { data, error } = await supabaseAdmin

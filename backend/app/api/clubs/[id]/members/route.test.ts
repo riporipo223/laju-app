@@ -171,6 +171,16 @@ describe("DELETE /api/clubs/[id]/members (kick-member, product-spec.md §4.24 AC
     expect(res.status).toBe(200);
   });
 
+  it("rejects kicking the club owner — AC16's transfer/archive path is the only way an owner leaves", async () => {
+    requireUserMock.mockResolvedValueOnce({ user: completeUser });
+    listChain.maybeSingle
+      .mockResolvedValueOnce({ data: { role: "admin" }, error: null }) // caller's own role
+      .mockResolvedValueOnce({ data: { role: "owner" }, error: null }); // target's role
+    const res = await DELETE(deleteRequest({ user_id: "usr-owner" }), { params: params() });
+    expect(res.status).toBe(400);
+    expect(deleteChain.delete).not.toHaveBeenCalled();
+  });
+
   it("rejects kicking yourself — not free, per AC16's separate leave/transfer path", async () => {
     requireUserMock.mockResolvedValueOnce({ user: completeUser });
     const res = await DELETE(deleteRequest({ user_id: "usr-1" }), { params: params() });
