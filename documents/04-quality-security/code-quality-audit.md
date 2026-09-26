@@ -219,11 +219,25 @@ Mitigated today, not closed: production has `CRON_SECRET` set, so the hole only 
 
 Found during a PM product-review session (2026-09-26), reported by real usage: the pace value shown live on the Run Tracking screen (screen 5, element #2 in wireframe-spec.md) "kadang melompat, kadang tidak sesuai dengan kecepatan aslinya" (sometimes jumps, sometimes doesn't match actual speed).
 
-Checked against tech-spec.md and every phase-N task file: **the whole-run average pace used for the point formula (`avg_pace_sec_per_km`, tech-spec.md §2.1/§2.2) is well-specified and stable** (one ratio of two robust totals, computed once at Stop — not affected by this finding). But **the live/instant pace shown during an active run has no documented calculation method anywhere** — no window size, no smoothing rule, unlike `avg_pace_sec_per_km`'s explicit spec. This is very likely the root cause of the reported jumpiness: without a defined rule, the implementation most plausibly computes pace from the last one or two GPS samples directly, which is exactly the kind of raw point-to-point signal the T0.9/T0.8 GPS-noise-filtering work (tech-spec.md §2.1b) already had to guard `distanceMeters` against.
+Checked against tech-spec.md and every phase-N task file: **the whole-run average pace used for the point formula (`avg_pace_sec_per_km`, tech-spec.md §2.1/§2.2) is well-specified and stable** (one ratio of two robust totals, computed once at Stop — not affected by this finding). But **the live/instant pace shown during an active run has no documented calculation method anywhere** — no window size, no smoothing rule, unlike `avg_pace_sec_per_km`'s explicit spec.
+
+**Root cause confirmed by code audit, 2026-09-26 (corrects this entry's original speculation below).**
+`RunTrackingView.swift`'s `liveSpeedLabel` (formerly `livePaceLabel`) computes
+`liveActiveDuration() / (distanceMeters / 1000)` on every UI tick — the **same whole-run cumulative
+average** `avg_pace_sec_per_km` uses at Stop, not a last-N-samples calculation as originally
+guessed. The jumpiness comes from a different mechanism: early in a run the denominator (elapsed
+active duration) is small, so each newly-accepted GPS movement chunk (10-20m steps past the
+stationary-anchor filter, `RunViewModel.swift:295-336`) swings the cumulative average sharply;
+later in the run, the same-size chunk is diluted by a much larger denominator and barely moves it
+— matching the reported "jumps early, settles later" pattern better than a raw-instant-velocity
+read would. ~~This is very likely the root cause of the reported jumpiness: without a defined
+rule, the implementation most plausibly computes pace from the last one or two GPS samples
+directly, which is exactly the kind of raw point-to-point signal the T0.9/T0.8 GPS-noise-filtering
+work (tech-spec.md §2.1b) already had to guard `distanceMeters` against.~~
 
 Not a data-correctness bug — `avg_pace_sec_per_km` and `final_points` are computed independently of this live value and are unaffected (confirmed: they derive from total distance/duration, never from the live display). This is a UX-quality gap, and it is now also a **hard prerequisite for product-spec.md §4.29** (the new real-time anti-cheat warning) — building a 5-consecutive-detections-in-2-minutes trigger on top of an unsmoothed, jittery live pace signal would produce false warnings and undermine trust in that feature immediately.
 
-**Suggested direction (not a fix — needs real-device tuning, not decided here):** compute live pace from a rolling window (a fixed recent time span or a fixed number of recent accepted GPS points) rather than the last one or two points directly — the exact window size needs on-device testing, not a guess.
+**Suggested direction (not a fix — needs real-device tuning, not decided here):** compute live pace from a rolling window (a fixed recent time span or a fixed number of recent accepted GPS points, recomputed independently each tick) rather than the whole-run cumulative average — the exact window size needs on-device testing, not a guess.
 
 Fix: define and implement a smoothing/windowing rule for the live pace calculation; add a regression test fixing a window size; re-verify on a real device during an actual run (not just simulator-fed coordinates).
 
