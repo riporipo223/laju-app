@@ -166,11 +166,14 @@ only, zero production code touched, per its own task instructions). Numbered aga
    :27,45,62,66` (nav title, "Browse Clubs"/"Club Saya"/"Club War" buttons), `ClubBrowseView.swift:28`
    (nav title), `CreateClubView.swift:29` (nav title), `ClubMemberListView.swift` (doc-comment only,
    mentions a "Leave Club" button whose actual label needs checking against whatever the button text
-   literally is when this gets built). **Open question for the PM, not assumed:** `ClubWarView.swift`
+   literally is when this gets built). ~~**Open question for the PM, not assumed:** `ClubWarView.swift`
    also says "Club War" (`:37` nav title, `:53` card title) and `ClubWarPreviewData.swift:25` says
    "Club Kamu" — product-spec.md §4.24's rename note covers the base Club feature explicitly but
    §4.19 (Club War) has no equivalent rename note either direction. Does "Club War" become "Circle
-   War" too, or does War intentionally keep the old name? Not guessed here.
+   War" too, or does War intentionally keep the old name? Not guessed here.~~ **Answered 2026-09-26
+   (PM): "Circle War," consistent with the base rename** — see product-spec.md §4.19's own note.
+   `ClubWarView.swift`/`ClubWarPreviewData.swift`'s strings need updating whenever Circle War's
+   build hold is lifted; not urgent on its own since the feature stays inert either way.
 7. **CQ-11 root cause — confirmed present, but the doc's own speculated mechanism is wrong.**
    Live pace (now displayed as live speed after this session's separate km/h change — same
    underlying value) is computed in `RunTrackingView.swift`'s `liveSpeedLabel` (was `livePaceLabel`)

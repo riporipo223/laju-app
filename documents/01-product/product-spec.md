@@ -446,20 +446,30 @@ yang baru selesai.
 - AC2: Nilai yang ditampilkan (tanggal, jarak, pace, poin) sama persis
   dengan yang tersimpan di Core Data untuk tiap run.
 
-### 4.19 Club War (Fase 4, added 2026-09-23, **mekanisme finalized 2026-09-23** — NOT v1/Must-have)
+### 4.19 Club War (Fase 4, added 2026-09-23, **mekanisme finalized 2026-09-23, display name
+changed to "Circle War" 2026-09-26** — NOT v1/Must-have)
 
 **Status: confirmed to build, mechanism finalized** (PM decision, 2026-09-23) — reversed from
 "nice to have v2+"/Non-goal (§5). This section exists so the feature has a real spec instead of
 only a backlog stub (T4.2), per this repo's convention that Fase-4 items get full detail once
 genuinely decided, not before.
 
-> **Build put ON HOLD 2026-09-26 (PM decision, product review session) — not cancelled.** The
-> mechanism below remains the design of record; only the timeline changed. Rationale: base Club
-> (§4.24) is being made free for every tier (matching Strava's own free-club model, for growth/
-> adoption reasons) and the heavier, precompute-driven Club War layer is deferred to a later
-> release rather than gating v1 Club adoption on it. No deadline set for revisiting. T4.2's already
-> -built, already-inert code (`isPremiumClub()` stub always `false`, see tasks/phase-4-backlog.md)
-> is unaffected by this — it stays inert until this hold is lifted, same mechanism as before.
+> **Build put ON HOLD 2026-09-26 (PM decision, product review session) — not cancelled, still no
+> deadline set for revisiting.** The mechanism below remains the design of record; only the
+> timeline changed. Rationale: base Club (§4.24) is being made free for every tier (matching
+> Strava's own free-club model, for growth/adoption reasons) and the heavier, precompute-driven
+> Club War layer is deferred to a later release rather than gating v1 Club adoption on it. T4.2's
+> already-built, already-inert code (`isPremiumClub()` stub always `false`, see
+> tasks/phase-4-backlog.md) is unaffected by this — it stays inert until this hold is lifted, same
+> mechanism as before.
+>
+> **Display name changes to "Circle War," confirmed 2026-09-26** — consistent with §4.24's Club→
+> Circle rename (presentation layer only; internal `club_war`/API/Swift naming stays as-is, same
+> split as the base Club/Circle rename). This was flagged as an open question by the 2026-09-26
+> code audit (`ClubWarView.swift`, `ClubWarPreviewData.swift` still say "Club War"/"Club Kamu")
+> and is now answered — those strings need updating whenever this hold is lifted and Circle War
+> work resumes. Not urgent on its own (the feature is inert either way), but should ride the same
+> pass as the base Circle rename work, not be forgotten as a separate one.
 
 > **Mechanism finalized 2026-09-23** — the base decisions below (max 3 clubs, self-serve) were
 > already locked; the 5 previously-open mechanics questions (scoring, duration, start flow,

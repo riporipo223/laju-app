@@ -215,6 +215,14 @@ implemented.
   v1 Circle adoption on it). T4.2a's already-applied schema and T4.2b's
   already-inert `isPremiumClub()` stub are unaffected — they stay exactly
   as they are (built, inert) until this hold is lifted.
+  **Display name confirmed 2026-09-26: "Circle War"** (was an open
+  question raised by that day's code audit, now answered) — consistent
+  with the base Club→Circle rename (presentation layer only, internal
+  `club_war`/API/Swift naming unchanged). `ClubWarView.swift`/
+  `ClubWarPreviewData.swift`'s "Club War"/"Club Kamu" strings need
+  updating **whenever this hold is lifted** — not urgent on its own,
+  fold it into T4.2c's iOS UI work rather than doing it as a separate
+  pass.
 - **T4.2a — Club War: data model.** Depends on T4.2 (mechanism decided),
   T4.1 (Club must exist — currently neither does; `user.club_id` is only
   a reserved nullable column with no FK, `database-api-spec.md` §1 /
