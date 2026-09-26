@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// T4.1: the Create Club form, reached from `ClubHomeView`'s "Create Club" button. Premium-gated
-/// server-side (`lib/club/premium.ts`) — a 403 `not_premium` swaps this form for `PremiumUpsellView`
-/// instead of a generic error, since that is this task's expected, permanent state right now.
+/// T4.1: the Create Club form, reached from `ClubHomeView`'s "Create Club" button. Free for every
+/// tier (product-spec.md §4.24 AC1) — a 2026-09-25 version of this screen Premium-gated it via a
+/// `PremiumUpsellView`; that view and the gate it responded to are both gone, reverted 2026-09-26
+/// (HANDOFF.md "Audit drift 2026-09-26" item 2).
 struct CreateClubView: View {
     let onCreated: () -> Void
 
@@ -19,13 +20,7 @@ struct CreateClubView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if model.isPremiumRequired {
-                    ScrollView { PremiumUpsellView().padding() }
-                } else {
-                    form
-                }
-            }
+            form
             .navigationTitle("Create Club")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
