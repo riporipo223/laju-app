@@ -1,7 +1,10 @@
 import { type GPSPoint, speedKmh } from "../gps-geometry";
 import type { AntiCheatResult } from "./pace-cap";
 
-const SPEED_CAP_KMH = 25; // tech-spec.md §2.4
+// tech-spec.md §2.4. Exported so T4.22's severe-speed-violation check (severe-speed-violation.ts)
+// reuses this exact binding — product-spec.md §4.29's explicit instruction, not a second literal
+// that could silently drift from this one.
+export const SPEED_CAP_KMH = 25;
 const SUSTAINED_SAMPLES = 3; // ">3 consecutive samples" — at least 4 consecutive over-cap segments
 
 /**

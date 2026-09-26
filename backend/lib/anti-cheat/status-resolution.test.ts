@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { GPSPoint } from "../gps-geometry";
+import { SEVERE_SPEED_VIOLATION_FLAG } from "./severe-speed-violation";
 import {
   FLAG_LOW_MAX_PCT,
   FLAG_THRESHOLD_PCT,
@@ -13,6 +14,24 @@ import {
 function loadFixture(name: string): GPSPoint[] {
   const path = join(__dirname, "..", "..", "fixtures", "gps-routes", `${name}.json`);
   return JSON.parse(readFileSync(path, "utf-8")).gps_route;
+}
+
+const METERS_PER_DEGREE_LAT = 111_320;
+
+/** Same synthetic-route builder as severe-speed-violation.test.ts — duplicated, not imported,
+ * matching this file's own established convention of a self-contained per-test-file helper
+ * (`loadFixture` above is itself duplicated across every anti-cheat test file in this directory). */
+function buildRoute(speedsKmh: number[], intervalSeconds: number, startTimestamp = new Date("2026-09-27T06:00:00Z")): GPSPoint[] {
+  const points: GPSPoint[] = [{ lat: 0, lng: 0, timestamp: startTimestamp.toISOString(), elevation: 0 }];
+  let lat = 0;
+  let time = startTimestamp.getTime();
+  for (const speedKmh of speedsKmh) {
+    const distanceMeters = (speedKmh / 3.6) * intervalSeconds;
+    lat += distanceMeters / METERS_PER_DEGREE_LAT;
+    time += intervalSeconds * 1000;
+    points.push({ lat, lng: 0, timestamp: new Date(time).toISOString(), elevation: 0 });
+  }
+  return points;
 }
 
 describe("resolveStatusFromExcludedPct — tech-spec.md §2.4.1 threshold boundaries", () => {
@@ -97,5 +116,37 @@ describe("resolveRunStatus — wiring all four checks together against T2.6b's r
     const result = resolveRunStatus(singlePoint);
     expect(result.status).toBe("validated");
     expect(result.excludedPct).toBe(0);
+  });
+});
+
+describe("resolveRunStatus — T4.22 severe speed violation override (product-spec.md §4.29 AC4)", () => {
+  it("forces rejected + the severe flag when 5 consecutive speed-jump detections land within 2 minutes", () => {
+    const route = buildRoute([30, 30, 30, 30, 30], 10);
+    const result = resolveRunStatus(route);
+    expect(result.status).toBe("rejected");
+    expect(result.anomalyFlags).toContain(SEVERE_SPEED_VIOLATION_FLAG);
+  });
+
+  it("does NOT add the severe flag when violations aren't consecutive enough to trigger it", () => {
+    // Only 4 consecutive over-cap segments — below the severe check's own 5-in-a-row threshold.
+    // (This route's excluded_pct still resolves to `rejected` on its own via the ORDINARY
+    // gps-speed-jump sustained->3 rule — a coincidence of this particular synthetic route, not
+    // evidence the severe check fired. The severe flag's absence is the actual assertion here.)
+    const route = buildRoute([30, 30, 30, 30], 10);
+    const result = resolveRunStatus(route);
+    expect(result.anomalyFlags).not.toContain(SEVERE_SPEED_VIOLATION_FLAG);
+  });
+
+  it("overrides even when excluded_pct alone would only reach flagged, not rejected — the two rules are independent", () => {
+    // 5 consecutive violations (10 segments total) is 50% excluded_pct territory on its own from
+    // gps-speed-jump's sustained-run rule too, so build a LONGER clean tail to dilute excluded_pct
+    // well under REJECT_THRESHOLD_PCT (50%) while still tripping the severe check on the short violation burst.
+    const violationBurst = [30, 30, 30, 30, 30];
+    const cleanTail = Array(40).fill(10); // 40 clean segments at an easy 10 km/h
+    const route = buildRoute([...violationBurst, ...cleanTail], 10);
+    const result = resolveRunStatus(route);
+    expect(result.excludedPct).toBeLessThan(REJECT_THRESHOLD_PCT);
+    expect(result.status).toBe("rejected"); // forced by the severe check, not by excluded_pct
+    expect(result.anomalyFlags).toContain(SEVERE_SPEED_VIOLATION_FLAG);
   });
 });

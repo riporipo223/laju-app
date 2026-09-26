@@ -60,4 +60,25 @@ describe("computeTrustMultiplier — tech-spec.md §2.4 formula, one DoD item pe
       10
     );
   });
+
+  it("T4.22 (product-spec.md §4.29 AC4): one severe speed violation decays MORE than one HIGH flag", () => {
+    const highOnly = computeTrustMultiplier({ highFlagCount: 1, lowDecayFlagCount: 0, cleanRunCount: 0 });
+    const severeOnly = computeTrustMultiplier({
+      highFlagCount: 0,
+      lowDecayFlagCount: 0,
+      cleanRunCount: 0,
+      severeSpeedViolationCount: 1,
+    });
+    expect(severeOnly).toBeLessThan(highOnly);
+  });
+
+  it("severeSpeedViolationCount defaults to 0 when omitted — every pre-existing call site unaffected", () => {
+    expect(computeTrustMultiplier({ highFlagCount: 0, lowDecayFlagCount: 0, cleanRunCount: 0 })).toBe(1.0);
+  });
+
+  it("one severe speed violation yields 0.80 — starting value, 2x HIGH_FLAG_DECAY, needs real calibration", () => {
+    expect(
+      computeTrustMultiplier({ highFlagCount: 0, lowDecayFlagCount: 0, cleanRunCount: 0, severeSpeedViolationCount: 1 })
+    ).toBeCloseTo(0.8, 10);
+  });
 });

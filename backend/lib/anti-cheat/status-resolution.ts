@@ -10,6 +10,7 @@ import { checkElevationAnomaly } from "./elevation-anomaly";
 import { checkGpsSpeedJump } from "./gps-speed-jump";
 import type { GPSPoint } from "../gps-geometry";
 import { checkPaceCap } from "./pace-cap";
+import { checkSevereSpeedViolation, SEVERE_SPEED_VIOLATION_FLAG } from "./severe-speed-violation";
 
 // tech-spec.md §2.4.1 — configuration, not hardcoded inline in resolveRunStatus below.
 export const FLAG_THRESHOLD_PCT = 10;
@@ -78,6 +79,20 @@ export function resolveRunStatus(route: GPSPoint[]): RunResolution {
   // No segments at all (route.length <= 1) — nothing to exclude, cannot divide by zero, always validated.
   const excludedPct = totalSegments === 0 ? 0 : (excluded.size / totalSegments) * 100;
   const { status, flagConfidence } = resolveStatusFromExcludedPct(excludedPct);
+
+  // T4.22 (product-spec.md §4.29 AC4): independent of excluded_pct — can force `rejected` even on a
+  // run that pct-wise would only be `validated` or `flagged`. Checked last, after the ordinary
+  // decision, specifically so it can OVERRIDE that decision rather than merely contribute to it.
+  const severe = checkSevereSpeedViolation(route);
+  if (severe.triggered) {
+    return {
+      status: "rejected",
+      flagConfidence: null,
+      excludedSegmentIndices: [...excluded].sort((a, b) => a - b),
+      anomalyFlags: [...anomalyFlags, SEVERE_SPEED_VIOLATION_FLAG],
+      excludedPct,
+    };
+  }
 
   return {
     status,
