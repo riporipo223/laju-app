@@ -340,7 +340,7 @@ real CI evidence (PR [#1](https://github.com/riporipo223/laju-app/pull/1),
     T4.20a is the necessary foundation, not a functional unblock.
   - [ ] T4.20b — backend: App Store Server API verification + status endpoint
   - [ ] T4.20c — iOS: StoreKit 2 purchase flow + Restore Purchases
-- [ ] T4.22 — Real-time anti-cheat warning (Track), added 2026-09-26 — §4.29 AC1-AC5. **Blocked on CQ-11 (code-quality-audit.md) being fixed first** (lihat [phase-4-backlog.md](./phase-4-backlog.md))
+- [ ] T4.22 — Real-time anti-cheat warning (Track), added 2026-09-26 — §4.29 AC1-AC5. **No longer blocked — CQ-11 fixed 2026-09-26 (`b1ded91`, code-quality-audit.md), live speed now uses a 30s rolling window.** Not yet started (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.23 — Trigger Start via Triple Back-Tap (Track), added 2026-09-26 — §4.30 AC1-AC3 (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.24 — Achievement System (mechanism only), added 2026-09-26 — §4.31 AC1-AC5. Content list not yet delivered by PM (lihat [phase-4-backlog.md](./phase-4-backlog.md))
 - [ ] T4.25 — Kartu NFC: Auth Link & Physical Reward, added 2026-09-26 — §4.32 AC1-AC6 (lihat [phase-4-backlog.md](./phase-4-backlog.md))

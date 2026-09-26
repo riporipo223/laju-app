@@ -940,9 +940,12 @@ T4.22-T4.27 — T4.19 stays reserved (avoids confusion with product-spec §4.19,
 stays retired (moved to Fase 1). Task numbers and product-spec section numbers are separate
 numbering spaces, per this repo's existing convention (e.g. task T4.20 vs. section §4.20).
 
-- **T4.22 — Real-time anti-cheat warning (Track).** Depends on **CQ-11
+- **T4.22 — Real-time anti-cheat warning (Track).** Depended on **CQ-11
   (code-quality-audit.md) being fixed first** — a hard prerequisite, not a nice-to-have: building
-  this on an unsmoothed live pace signal produces false warnings immediately. Also depends on T2.8
+  this on an unsmoothed live pace signal produces false warnings immediately. **CQ-11 fixed
+  2026-09-26 (`b1ded91`) — no longer blocked.** Live speed now comes from a 30s rolling window
+  (`RollingSpeedCalculator`), not the whole-run cumulative average; window size is a starting value,
+  needs on-device tuning. This task can now be scoped/started. Also depends on T2.8
   (speed-jump check, reused, not reimplemented) and the existing trust-score model. **Scope**: a
   live warning at 5 consecutive speed-jump detections within a rolling 2-minute window (resets on a
   clean sample); below that, no change to the existing `excluded_pct` pipeline; at/above it, if the

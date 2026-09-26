@@ -215,7 +215,7 @@ Mitigated today, not closed: production has `CRON_SECRET` set, so the hole only 
 
 ## 4b. iOS — live running metrics (added 2026-09-26)
 
-### CQ-11 — Live/instant pace shown during tracking has no defined calculation method — **Warning** (open, not fixed)
+### CQ-11 — Live/instant pace shown during tracking has no defined calculation method — **RESOLVED 2026-09-26** (`b1ded91`)
 
 Found during a PM product-review session (2026-09-26), reported by real usage: the pace value shown live on the Run Tracking screen (screen 5, element #2 in wireframe-spec.md) "kadang melompat, kadang tidak sesuai dengan kecepatan aslinya" (sometimes jumps, sometimes doesn't match actual speed).
 
@@ -239,7 +239,30 @@ Not a data-correctness bug — `avg_pace_sec_per_km` and `final_points` are comp
 
 **Suggested direction (not a fix — needs real-device tuning, not decided here):** compute live pace from a rolling window (a fixed recent time span or a fixed number of recent accepted GPS points, recomputed independently each tick) rather than the whole-run cumulative average — the exact window size needs on-device testing, not a guess.
 
-Fix: define and implement a smoothing/windowing rule for the live pace calculation; add a regression test fixing a window size; re-verify on a real device during an actual run (not just simulator-fed coordinates).
+**Fixed 2026-09-26 (`b1ded91`):** replaced the whole-run cumulative average with a rolling window
+over the last 30 seconds of confirmed GPS movement (`RollingSpeedCalculator.rollingPaceSecPerKm`),
+recomputed fresh every UI tick (`RunTrackingView`'s existing `TimelineView` re-render, no new
+timer). The window excludes its own oldest sample's distance from the sum (that distance was
+covered before the sample's own timestamp, outside the window's span) — an early implementation
+that included it was caught by this fix's own tests before being corrected. Returns `nil` — shown
+as a neutral placeholder, not a fallback to the buggy cumulative formula — when there's under 2
+samples or under 5 seconds of window span, so the run's first few seconds don't show a wild number
+either. **30 seconds is a starting value, not final** — same status as `STREAK_BONUS_PER_DAY`/the
+pace-bracket table (tech-spec.md §2.2/§2.3), needs on-device tuning with real run data.
+
+`avg_pace_sec_per_km` and the point formula are completely untouched, as designed — this fix only
+changes the live on-screen display during tracking, confirmed by the fix itself never referencing
+either.
+
+**Evidence:** 4 new tests in `RollingSpeedCalculatorTests.swift`, TDD (failing first) — reproduces
+the exact reported jump with synthetic GPS-derived samples (old cumulative formula's first reading
+lands at ~3x true pace; the anchor-settling dead time before the first confirmed movement is
+mis-divided into the pace), then proves the rolling window's variance is far lower on the same
+input, staying within 60 sec/km of true pace throughout. BUILD SUCCEEDED, 250/250 iOS tests pass.
+**Real-device/simulator visual verification NOT done** — no real account exists on a fresh
+simulator to reach the Run Tracking screen at all (same disclosed limitation hit during recent
+Circle tasks); stated plainly rather than claimed. Re-verify on a real device during an actual run
+before tuning the window size.
 
 ---
 
@@ -252,7 +275,7 @@ Fix: define and implement a smoothing/windowing rule for the live pace calculati
 | CQ-3 | Concurrency | `@unchecked Sendable` on `StreakReminderScheduler` covers an unconstrained protocol; test spies hold mutable state | **Warning** |
 | CQ-7 | Performance | Full-route decode/re-encode per flush is O(n²) main-thread work; ~200KB synchronous writes late in a 24km run | **Warning** |
 | CQ-10 | Security (backend) | `resolve-flagged-runs` cron accepts `Bearer undefined` if `CRON_SECRET` is unset; mitigated in prod, not fixed (added 2026-09-24) | **Warning** |
-| CQ-11 | iOS metrics | Live/instant pace during tracking has no defined windowing/smoothing rule, unlike the stable `avg_pace_sec_per_km`; likely root cause of reported jumpiness; blocks product-spec.md §4.29 (added 2026-09-26) | **Warning** |
+| CQ-11 | iOS metrics | Live speed now uses a 30s rolling window (`RollingSpeedCalculator`), not the whole-run cumulative average that caused the reported jumpiness; unblocks T4.22 (product-spec.md §4.29) | **RESOLVED** |
 | CQ-4 | Concurrency | `PersistenceController`'s `nonisolated(unsafe)` is correctly reasoned and sound | **Note** |
 | CQ-5 | Persistence | No background contexts exist, so no cross-context race exists; `automaticallyMergesChangesFromParent` is inert until Fase 2 | **Note** |
 | CQ-6 | Persistence | Seven `try? context.save()` sites discard errors; diagnostic gap, not a correctness one | **Note** |
@@ -260,8 +283,8 @@ Fix: define and implement a smoothing/windowing rule for the live pace calculati
 | CQ-9 | SwiftUI | Two `LocationTrackingService` instances can coexist; harmless now, does not extend | **Note** |
 | — | Build | **Swift 6 language mode, complete strict concurrency, warnings-as-errors — builds clean** | **Verified sound** |
 
-**Zero open Blockers** (CQ-2 resolved 2026-09-22), ~~three~~ ~~four~~ five Warnings (CQ-10 added
-2026-09-24, CQ-11 added 2026-09-26), five Notes.
+**Zero open Blockers** (CQ-2 resolved 2026-09-22), ~~three~~ ~~four~~ ~~five~~ four Warnings (CQ-10
+added 2026-09-24, CQ-11 added 2026-09-26 and resolved the same day), five Notes.
 
 No code was changed as part of the original audit; CQ-2 was fixed in a later session (2026-09-22, see its status block above) with real CI evidence. The rest are safely deferrable, and CQ-1 is best done together with the toolchain question below.
 
