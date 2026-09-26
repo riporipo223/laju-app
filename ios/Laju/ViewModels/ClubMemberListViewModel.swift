@@ -38,6 +38,13 @@ final class ClubMemberListViewModel: ObservableObject {
         return members.first { $0.userId == currentUserId }?.role
     }
 
+    /// Whether the caller can see the Circle Analytics entry point at all (product-spec.md §4.24
+    /// AC12/AC14: owner/admin only, never shown to a plain member). The server re-checks this
+    /// independently — this is purely to avoid showing a link that would just 403.
+    var canViewAnalytics: Bool {
+        currentUserRole == "owner" || currentUserRole == "admin"
+    }
+
     /// Owner/admin only, and never on the caller's own row — self-leave is the separate, already-free
     /// path for that (server-side rejects a kick targeting yourself the same way, this is just so the
     /// button doesn't appear at all for a case that would 400).

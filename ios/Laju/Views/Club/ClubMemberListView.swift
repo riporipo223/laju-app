@@ -12,6 +12,16 @@ struct ClubMemberListView: View {
 
     var body: some View {
         List {
+            Section {
+                NavigationLink("Challenge") {
+                    ChallengeView(clubId: clubId)
+                }
+                if model.canViewAnalytics {
+                    NavigationLink("Circle Analytics") {
+                        ClubAnalyticsView(clubId: clubId)
+                    }
+                }
+            }
             if let errorMessage = model.errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
