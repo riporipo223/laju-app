@@ -1218,7 +1218,11 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   view shows: the club's aggregate total distance and total points; the number of **active members**
   (the same "ran" definition and live roster as §4.20 Club Aktif's Participation Rate — reused, not
   a new metric); and the **top-N contributors**. Nothing more in v1. **Settled 2026-09-24 (PM):** all
-  three figures cover a **rolling 30-day window**, and N = **5** (top-5 contributors).
+  three figures cover a **rolling 30-day window**, and N = **5** (top-5 contributors). **Settled
+  2026-09-26 (PM, flagged as a judgment call by the implementing session — confirmed, not
+  invented):** top-N is ranked by **distance, not points** — consistent with Challenge (AC13)
+  never linking to the points system either; distance is this app's primary contribution metric
+  across Circle features.
 - AC13 (added 2026-09-23, **revised 2026-09-24, mechanics fully detailed 2026-09-26**): ~~an
   owner/admin can create an internal challenge with a name, a target distance and a time window
   (start/end) — the draft's example is "500km bareng bulan ini". Progress is the club members'
