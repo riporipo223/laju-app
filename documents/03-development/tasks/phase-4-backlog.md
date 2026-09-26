@@ -103,15 +103,19 @@ implemented.
   return `true` until T4.20b ships, same dead-end shape as T4.21's Map Type
   3D decision.
   **UPDATE 2026-09-26 (PM decision, product review session) — REVERSES the 2026-09-25
-  Premium-gate above. Real code revert needed, not just a doc fix:**
+  Premium-gate above:**
   - **Display name changes to "Circle" everywhere the user sees it** (screen titles, tab label,
     button/notification copy). Database tables/columns, API paths, and Swift type/file names stay
     `club`/`Club` — presentation-layer rename only. See product-spec.md §4.24's header note for the
     full rationale (matches Strava's own free-club model; avoids a costly live production rename).
-  - **`POST /api/clubs`'s Premium gate must be removed** — creating a Circle is free for every tier
-    again (product-spec.md §4.24 AC1, which was never actually changed in the doc — only the
-    2026-09-25 code drifted from it). This unblocks Create Circle from the T4.20 dead-end noted
-    above, since it no longer needs any Premium check to function at all.
+    **Still open as of 2026-09-26's audit — not yet done, 8 locations identified (HANDOFF.md
+    "Audit drift 2026-09-26" item 6), Circle War's own naming resolved separately (§4.19).**
+  - ~~**`POST /api/clubs`'s Premium gate must be removed**~~ **DONE 2026-09-26** — real revert
+    shipped same day (`d46734f` backend, `6923e05` iOS): gate removed via TDD (failing test added
+    first proving free-tier creation was rejected, then the gate deleted), orphaned
+    `PremiumUpsellView.swift` deleted rather than left as dead code, 12/12 backend create tests +
+    234/234 iOS tests pass. Creating a Circle is free for every tier again, unblocked from the
+    T4.20 dead-end noted above — no Premium check needed to function at all.
   - **Member cap added: Free Circle max 20, Premium Circle (owner's live Premium status) max 100**
     (product-spec.md §4.24 AC22). A Circle over cap is never force-shrunk (see freeze rule below).
   - **Kick-member, transfer-ownership, edit info, regenerate invite code, and promote-admin are
