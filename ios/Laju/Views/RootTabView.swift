@@ -66,7 +66,7 @@ enum LajuTab: Hashable {
     var title: String {
         switch self {
         case .social: "Social"
-        case .club: "Club"
+        case .club: "Circle"
         case .track: "Track"
         case .leaderboard: "Ranks"
         case .you: "You"

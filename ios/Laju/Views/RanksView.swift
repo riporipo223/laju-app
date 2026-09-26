@@ -16,7 +16,7 @@ struct RanksView: View {
         var title: String {
             switch self {
             case .users: "Pengguna"
-            case .club: "Club"
+            case .club: "Circle"
             case .clubWar: "Club War"
             }
         }
@@ -41,8 +41,8 @@ struct RanksView: View {
             case .club:
                 ComingSoonView(
                     systemImage: "shield.lefthalf.filled",
-                    title: "Club Leaderboard belum ada",
-                    message: "Club (T4.1) dan leaderboard-nya belum dibangun. Lari, poin, dan level tetap "
+                    title: "Circle Leaderboard belum ada",
+                    message: "Circle (T4.1) dan leaderboard-nya belum dibangun. Lari, poin, dan level tetap "
                         + "berjalan seperti biasa."
                 )
                 .navigationTitle("Ranks")

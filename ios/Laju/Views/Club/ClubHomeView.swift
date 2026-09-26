@@ -1,16 +1,18 @@
 import SwiftUI
 
-/// Club tab root (2026-09-24 nav restructure, Bagian A item 4 + B item 6). Moved from `ProfileView`'s old
-/// DEBUG-only `clubSection` scaffold — this is now a real tab, not a hidden debug link, so the `#if DEBUG`
-/// gate is dropped: `ClubWarView`'s own error mapping already handles the ungated case gracefully
-/// (`not_premium_club` → "Club War butuh Club Premium — belum tersedia."), and the backend
-/// (`backend/app/api/club-wars/route.ts`, T4.2b) is real, deployed code, not a stub — it deliberately denies
-/// every caller with 403 `not_premium_club` until T4.20 (Premium) ships, by its own doc comment.
+/// Circle tab root (2026-09-24 nav restructure, Bagian A item 4 + B item 6; display copy renamed
+/// Club→Circle 2026-09-26, product-spec.md §4.24's header note — internal type/file names unchanged).
+/// Moved from `ProfileView`'s old DEBUG-only `clubSection` scaffold — this is now a real tab, not a
+/// hidden debug link, so the `#if DEBUG` gate is dropped: `ClubWarView`'s own error mapping already
+/// handles the ungated case gracefully (`not_premium_club` → "Club War butuh Club Premium — belum
+/// tersedia."), and the backend (`backend/app/api/club-wars/route.ts`, T4.2b) is real, deployed code,
+/// not a stub — it deliberately denies every caller with 403 `not_premium_club` until T4.20 (Premium)
+/// ships, by its own doc comment. "Club War" itself stays unrenamed here too (also decided to become
+/// "Circle War" per product-spec.md §4.19, but deliberately deferred until its build hold is lifted).
 ///
-/// Club itself (T4.1 — create/join/leave/browse, member list): **Create Club + browse/join/leave/member
-/// list all built** (T4.1a/b, 2026-09-25). Create Club is Premium-gated (`lib/club/premium.ts`);
-/// browse/join/leave/member list need no Premium check. Admin tools (analytics, internal challenges)
-/// remain deferred, blocked on T4.20b.
+/// Circle itself (T4.1 — create/join/leave/browse, member list): **create + browse/join/leave/member
+/// list all built**, free for every tier (Premium gate on create reverted 2026-09-26). Admin tools
+/// (analytics, internal challenges) remain deferred, blocked on T4.20b.
 struct ClubHomeView: View {
     @State private var showingCreateClub = false
 
@@ -24,7 +26,7 @@ struct ClubHomeView: View {
             .padding()
         }
         .background(LajuColor.background.ignoresSafeArea())
-        .navigationTitle("Club")
+        .navigationTitle("Circle")
         .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: $showingCreateClub) {
             CreateClubView(onCreated: {})
@@ -32,7 +34,7 @@ struct ClubHomeView: View {
     }
 
     private var createClubButton: some View {
-        Button("Create Club") { showingCreateClub = true }
+        Button("Create Circle") { showingCreateClub = true }
             .buttonStyle(.lajuPrimary)
             .frame(maxWidth: .infinity)
     }
@@ -42,7 +44,7 @@ struct ClubHomeView: View {
             ClubBrowseView()
         } label: {
             HStack {
-                Text("Browse Clubs")
+                Text("Browse Circles")
                     .font(LajuFont.body)
                     .foregroundStyle(LajuColor.textPrimary)
                 Spacer()
@@ -59,7 +61,7 @@ struct ClubHomeView: View {
             ClubWarView()
         } label: {
             HStack {
-                Text("Club Saya")
+                Text("Circle Saya")
                     .font(LajuFont.heading)
                     .foregroundStyle(LajuColor.textPrimary)
                 Spacer()

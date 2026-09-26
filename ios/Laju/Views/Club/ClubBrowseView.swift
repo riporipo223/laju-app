@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// T4.1b: browse clubs to join — reached from `ClubHomeView`'s "Browse Clubs" button. Tapping a row
+/// T4.1b: browse Circles to join — reached from `ClubHomeView`'s "Browse Circles" button. Tapping a row
 /// pushes `ClubMemberListView`; the Join button is separate (doesn't need a member list first).
 struct ClubBrowseView: View {
     @StateObject private var model = ClubBrowseViewModel()
@@ -25,7 +25,7 @@ struct ClubBrowseView: View {
                 ProgressView()
             }
         }
-        .navigationTitle("Browse Clubs")
+        .navigationTitle("Browse Circles")
         .task { await model.load() }
         .refreshable { await model.load() }
     }

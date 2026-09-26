@@ -78,12 +78,12 @@ final class ClubBrowseViewModel: ObservableObject {
             return "Tidak ada koneksi. Coba lagi saat online."
         }
         guard case let APIClientError.server(_, body) = error else {
-            return "Club belum bisa dimuat. Coba lagi."
+            return "Circle belum bisa dimuat. Coba lagi."
         }
         if body.lowercased().contains("already in a club") {
-            return "Kamu sudah tergabung di club lain."
+            return "Kamu sudah tergabung di circle lain."
         }
-        return "Club belum bisa dimuat. Coba lagi."
+        return "Circle belum bisa dimuat. Coba lagi."
     }
 
     #if DEBUG

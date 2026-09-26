@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// T4.1: the Create Club form, reached from `ClubHomeView`'s "Create Club" button. Free for every
+/// T4.1: the Create Circle form, reached from `ClubHomeView`'s "Create Circle" button. Free for every
 /// tier (product-spec.md §4.24 AC1) — a 2026-09-25 version of this screen Premium-gated it via a
 /// `PremiumUpsellView`; that view and the gate it responded to are both gone, reverted 2026-09-26
 /// (HANDOFF.md "Audit drift 2026-09-26" item 2).
@@ -21,7 +21,7 @@ struct CreateClubView: View {
     var body: some View {
         NavigationStack {
             form
-            .navigationTitle("Create Club")
+            .navigationTitle("Create Circle")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Batal") { dismiss() }
@@ -38,11 +38,11 @@ struct CreateClubView: View {
 
     private var form: some View {
         Form {
-            Section("Nama Club") {
-                TextField("Nama club...", text: $name)
+            Section("Nama Circle") {
+                TextField("Nama circle...", text: $name)
             }
             Section("Deskripsi (opsional)") {
-                TextField("Ceritain club kamu...", text: $description, axis: .vertical)
+                TextField("Ceritain circle kamu...", text: $description, axis: .vertical)
                     .lineLimit(3...6)
             }
             Section("Privacy") {
@@ -58,7 +58,7 @@ struct CreateClubView: View {
                     .font(.footnote)
                     .foregroundStyle(LajuColor.error)
             }
-            Button(model.isCreating ? "Membuat..." : "Buat Club") { create() }
+            Button(model.isCreating ? "Membuat..." : "Buat Circle") { create() }
                 .disabled(model.isCreating || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
     }

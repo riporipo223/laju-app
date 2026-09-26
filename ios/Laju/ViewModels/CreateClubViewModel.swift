@@ -33,11 +33,11 @@ final class CreateClubViewModel: ObservableObject {
             let jwt = try await currentJWT()
             createdClub = try await apiClient.createClub(name: name, description: description, privacy: privacy, jwt: jwt)
         } catch let APIClientError.server(_, body) where body.lowercased().contains("already in a club") {
-            errorMessage = "Kamu sudah tergabung di club lain."
+            errorMessage = "Kamu sudah tergabung di circle lain."
         } catch is URLError {
             errorMessage = "Tidak ada koneksi. Coba lagi saat online."
         } catch {
-            errorMessage = "Gagal bikin club. Coba lagi."
+            errorMessage = "Gagal bikin circle. Coba lagi."
         }
     }
 
