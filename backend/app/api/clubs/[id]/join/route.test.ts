@@ -25,6 +25,11 @@ const membershipChain = {
 };
 const memberInsertMock = vi.fn((_row: unknown): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null }));
 
+// `.from("club_membership_history").insert(...)` — opens the joiner's own membership stint.
+const membershipHistoryInsertMock = vi.fn(
+  (_row: unknown): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null })
+);
+
 // `.from("club_member").select("*", { count: "exact", head: true }).eq("club_id", ...)` — the member
 // count for the cap check (product-spec.md §4.24 AC22). A distinct chain from `membershipChain` even
 // though both hang off the same `.from("club_member")` — Supabase's own count-query shape (`.eq()`
@@ -55,6 +60,7 @@ vi.mock("@/lib/supabase", () => ({
     from: (table: string) => {
       if (table === "club") return { select: clubChain.select };
       if (table === "club_member") return { select: clubMemberSelectMock, insert: memberInsertMock };
+      if (table === "club_membership_history") return { insert: membershipHistoryInsertMock };
       throw new Error(`unexpected table: ${table}`);
     },
   },
@@ -112,6 +118,13 @@ describe("POST /api/clubs/[id]/join", () => {
     expect(json).toEqual({ club_id: "club-1", joined: true });
     const insertedRow = memberInsertMock.mock.calls.at(-1)?.[0] as { user_id: string; club_id: string; role: string };
     expect(insertedRow).toEqual({ user_id: "usr-1", club_id: "club-1", role: "member" });
+
+    const insertedHistory = membershipHistoryInsertMock.mock.calls.at(-1)?.[0] as {
+      club_id: string;
+      user_id: string;
+    };
+    expect(insertedHistory.club_id).toBe("club-1");
+    expect(insertedHistory.user_id).toBe("usr-1");
   });
 
   it("returns 403 when joining an invite_only club with no invite code", async () => {

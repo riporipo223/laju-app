@@ -26,6 +26,15 @@ const deleteChain = {
   ),
 };
 
+// `.from("club_membership_history").update({left_at}).eq(...).eq(...).is("left_at", null)` — closes
+// the departing user's currently-open stint (self-leave or kick-member, same close mechanism either
+// way).
+const historyUpdateChain = {
+  update: vi.fn(() => historyUpdateChain),
+  eq: vi.fn(() => historyUpdateChain),
+  is: vi.fn((): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null })),
+};
+
 vi.mock("@/lib/auth", () => ({
   isAuthFailure: (result: unknown) => typeof result === "object" && result !== null && "response" in result,
   requireUser: (...args: unknown[]) => requireUserMock(...args),
@@ -35,6 +44,7 @@ vi.mock("@/lib/supabase", () => ({
   supabaseAdmin: {
     from: (table: string) => {
       if (table === "club_member") return { select: listChain.select, delete: deleteChain.delete };
+      if (table === "club_membership_history") return { update: historyUpdateChain.update };
       throw new Error(`unexpected table: ${table}`);
     },
   },
@@ -128,6 +138,8 @@ describe("DELETE /api/clubs/[id]/members (self-leave)", () => {
     expect(json).toEqual({ club_id: "club-1", left: true });
     expect(deleteChain.eq).toHaveBeenCalledWith("user_id", "usr-1");
     expect(deleteChain.eq).toHaveBeenCalledWith("club_id", "club-1");
+    expect(historyUpdateChain.eq).toHaveBeenCalledWith("user_id", "usr-1");
+    expect(historyUpdateChain.eq).toHaveBeenCalledWith("club_id", "club-1");
   });
 
   it("returns 404 when the caller isn't a member of that club", async () => {
@@ -161,6 +173,8 @@ describe("DELETE /api/clubs/[id]/members (kick-member, product-spec.md §4.24 AC
     expect(json).toEqual({ club_id: "club-1", kicked_user_id: "usr-2", kicked: true });
     expect(deleteChain.eq).toHaveBeenCalledWith("user_id", "usr-2");
     expect(deleteChain.eq).toHaveBeenCalledWith("club_id", "club-1");
+    expect(historyUpdateChain.eq).toHaveBeenCalledWith("user_id", "usr-2");
+    expect(historyUpdateChain.eq).toHaveBeenCalledWith("club_id", "club-1");
   });
 
   it("kicks a regular member when the caller is admin, not just owner", async () => {

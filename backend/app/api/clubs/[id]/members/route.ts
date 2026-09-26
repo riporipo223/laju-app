@@ -10,6 +10,22 @@ interface MemberRow {
 }
 
 /**
+ * Closes a departing user's currently-open membership stint — shared by self-leave and kick-member,
+ * the only two ways a `club_member` row is ever removed. Not checked for an error, same posture the
+ * membership-history writes in `POST /api/clubs`/`POST /api/clubs/[id]/join` take: a failure here
+ * would leave Circle Challenge's collective-total requirement quietly wrong for this one stint
+ * rather than blocking the leave/kick itself over a side-effect table.
+ */
+async function closeMembershipStint(clubId: string, userId: string): Promise<void> {
+  await supabaseAdmin
+    .from("club_membership_history")
+    .update({ left_at: new Date().toISOString() })
+    .eq("club_id", clubId)
+    .eq("user_id", userId)
+    .is("left_at", null);
+}
+
+/**
  * T4.1b (phase-4-backlog.md, v1 scoping session 2026-09-25): a club's member list, joined-oldest-first
  * (owner first, since they joined at club creation). Visible to any authenticated caller, not just the
  * club's own members — same posture the public feed uses, no membership check before reading.
@@ -96,6 +112,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     if (!data) {
       return NextResponse.json({ error: "You are not a member of this club" }, { status: 404 });
     }
+    await closeMembershipStint(data.club_id, user.id);
     return NextResponse.json({ club_id: data.club_id, left: true });
   }
 
@@ -149,5 +166,6 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     return NextResponse.json({ error: "That user is not a member of this club" }, { status: 404 });
   }
 
+  await closeMembershipStint(data.club_id, targetUserId);
   return NextResponse.json({ club_id: data.club_id, kicked_user_id: targetUserId, kicked: true });
 }

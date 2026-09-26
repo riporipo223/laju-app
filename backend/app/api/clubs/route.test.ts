@@ -40,6 +40,12 @@ const clubInsertMock = vi.fn((_row: unknown) => clubInsertChain);
 // `.from("club_member").insert(...)` — the owner row.
 const memberInsertMock = vi.fn((_row: unknown): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null }));
 
+// `.from("club_membership_history").insert(...)` — opens the owner's own membership stint (T4.1's
+// Circle Challenge collective-total requirement, see the schema migration's own comment).
+const membershipHistoryInsertMock = vi.fn(
+  (_row: unknown): Promise<{ error: { message: string } | null }> => Promise.resolve({ error: null })
+);
+
 // `.from("club").select(...).order(...)[.lt(...)].limit(...)` — GET (browse)'s list query.
 const browseChain = {
   select: vi.fn(() => browseChain),
@@ -58,6 +64,7 @@ vi.mock("@/lib/supabase", () => ({
     from: (table: string) => {
       if (table === "club_member") return { select: membershipChain.select, insert: memberInsertMock };
       if (table === "club") return { insert: clubInsertMock, select: browseChain.select };
+      if (table === "club_membership_history") return { insert: membershipHistoryInsertMock };
       throw new Error(`unexpected table: ${table}`);
     },
   },
@@ -172,6 +179,16 @@ describe("POST /api/clubs", () => {
 
     const insertedMember = memberInsertMock.mock.calls.at(-1)?.[0] as { user_id: string; club_id: string; role: string };
     expect(insertedMember).toEqual({ user_id: "usr-1", club_id: "club-1", role: "owner" });
+
+    const insertedHistory = membershipHistoryInsertMock.mock.calls.at(-1)?.[0] as {
+      club_id: string;
+      user_id: string;
+      joined_at: unknown;
+      left_at: unknown;
+    };
+    expect(insertedHistory.club_id).toBe("club-1");
+    expect(insertedHistory.user_id).toBe("usr-1");
+    expect(insertedHistory.left_at).toBeUndefined();
   });
 
   it("generates an 8-character invite_code for an invite_only club", async () => {

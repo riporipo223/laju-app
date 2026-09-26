@@ -94,5 +94,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ error: "Could not join club" }, { status: 500 });
   }
 
+  // Opens this member's own membership stint — see `POST /api/clubs`'s identical write for why
+  // (Circle Challenge's collective total needs it, schema migration has the full reasoning). Not
+  // itself checked for an error, same posture as that other call site.
+  await supabaseAdmin
+    .from("club_membership_history")
+    .insert({ club_id: club.id, user_id: user.id, joined_at: new Date().toISOString() });
+
   return NextResponse.json({ club_id: club.id, joined: true });
 }

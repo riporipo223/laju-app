@@ -111,6 +111,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Club created but membership could not be saved" }, { status: 500 });
   }
 
+  // Opens the owner's own membership stint — Circle Challenge's collective total (T4.1's
+  // club_challenge feature) needs this to keep counting a departed owner's past contribution; see
+  // the schema migration's own comment for the full reasoning. Not itself checked for an error: a
+  // failure here would leave this specific requirement quietly wrong for this one club rather than
+  // blocking club creation over a side-effect table, the same posture `periodicFlush`-style
+  // secondary writes take elsewhere in this codebase.
+  await supabaseAdmin
+    .from("club_membership_history")
+    .insert({ club_id: club.id, user_id: user.id, joined_at: club.created_at });
+
   return NextResponse.json(
     {
       club_id: club.id,
