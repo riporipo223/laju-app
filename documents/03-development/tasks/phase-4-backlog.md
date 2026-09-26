@@ -954,6 +954,28 @@ numbering spaces, per this repo's existing convention (e.g. task T4.20 vs. secti
   pass, same status as the pace-multiplier constants in tech-spec.md §2.3). Client-side warning is
   advisory only; the server independently re-derives the outcome from `gps_route` on sync (ADR-0008
   — never trust a client-only decision). **Reference**: product-spec.md §4.29 AC1-AC5.
+  **DONE 2026-09-27:** backend (`49698cd`) — `lib/anti-cheat/severe-speed-violation.ts`, a new
+  independent check reusing `gps-speed-jump.ts`'s own `SPEED_CAP_KMH=25` (exported for this, not
+  redefined). `resolveRunStatus` forces `rejected` when it triggers, regardless of what
+  `excluded_pct` alone would say — confirmed by a test building a route where `excluded_pct` stays
+  well under `REJECT_THRESHOLD_PCT` but the severe check still forces rejection. `SEVERE_SPEED_VIOLATION_DECAY`
+  chosen as `0.2` (2x `HIGH_FLAG_DECAY`'s `0.1`) — a starting value, needs real calibration, same as
+  every other constant in this family. No separate "was the user paused" check — a real pause's
+  timestamp gap almost certainly pushes the streak past the 2-minute window on its own; documented
+  in the check's own comment as the reasoning, not invented as a second unneeded threshold.
+  21 new backend tests (TDD, failing first): 6 for the detector itself, 3 for the status override
+  (including the independence-from-excluded_pct case above), 3 for the trust-score decay wiring
+  (plus 9 covering the 3 new tests' own edge cases). 422 backend tests total pass (3 pre-existing
+  failures, unrelated).
+  iOS (`fde7662`) — `SevereSpeedViolationDetector.swift`, same 25 km/h threshold and 5-in-2-minutes
+  shape, feeding a neutral advisory warning banner in `RunTrackingView` ("Pace tidak wajar
+  terdeteksi, periksa aktivitas Anda"). Documented explicitly as a THIRD check, distinct from
+  `LocationTrackingService`'s 12 m/s raw-fix rejection filter and the stationary-anchor jitter floor
+  (tech-spec.md §2.1b) — those reject GPS noise before a point is ever seen; this asks a different
+  question of already-accepted points. 6 new iOS tests (TDD, failing first). BUILD SUCCEEDED,
+  256/256 iOS tests pass. Real-device/simulator visual verification not done — same disclosed
+  limitation as every recent task needing a signed-in account (fresh simulator has none, the debug
+  bypass needs real Supabase credentials).
 - **T4.23 — Trigger Start via Triple Back-Tap (Track).** Independent of T4.22. **Scope**: expose a
   "Mulai Lari" App Intent/Shortcut that iOS Back Tap (Settings → Accessibility → Touch → Back Tap)
   can be bound to, plus an in-app tutorial pointing the user there — Laju cannot bind it
