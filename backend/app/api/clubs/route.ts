@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { isAuthFailure, requireUser } from "@/lib/auth";
-import { isPremiumUser } from "@/lib/club/premium";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const MAX_NAME_LENGTH = 60;
@@ -28,10 +27,11 @@ interface CreateClubBody {
 }
 
 /**
- * T4.1 (phase-4-backlog.md §4.24 AC1-AC21, reversed 2026-09-25 — see the migration's own scope note):
- * creating a club requires Premium. Until T4.20 ships, `isPremiumUser` always denies
- * (`lib/club/premium.ts`), so this answers 403 `not_premium` for every caller — by design, same shape
- * as `POST /api/club-wars` and its `isPremiumClub` stub.
+ * T4.1 (phase-4-backlog.md §4.24 AC1-AC21): creating a club is free for every tier — Premium gates
+ * only starting a Club War (`POST /api/club-wars`'s `isPremiumClub` stub), never club creation. A
+ * 2026-09-25 version of this route gated creation on `isPremiumUser`; reverted 2026-09-26 per the PM
+ * product-review session (product-spec.md §4.24 AC1, always on record since 2026-09-23) — audit
+ * trail: HANDOFF.md "Audit drift 2026-09-26" item 2.
  *
  * One-club-per-user is enforced at the DB level by `club_member.user_id`'s primary key (T4.2a) — the
  * membership lookup below is only for a clean error message before the insert, not the actual
@@ -67,11 +67,6 @@ export async function POST(request: Request) {
   const resolvedPrivacy = privacy ?? "public";
   if (!VALID_PRIVACY.includes(resolvedPrivacy as (typeof VALID_PRIVACY)[number])) {
     return NextResponse.json({ error: `privacy must be one of: ${VALID_PRIVACY.join(", ")}` }, { status: 400 });
-  }
-
-  const premium = await isPremiumUser(user.id);
-  if (!premium) {
-    return NextResponse.json({ error: "Creating a club requires Premium", code: "not_premium" }, { status: 403 });
   }
 
   const { data: existingMembership, error: membershipLookupError } = await supabaseAdmin

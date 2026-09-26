@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requireUserMock = vi.fn();
-const isPremiumUserMock = vi.fn();
 
 // `.from("club_member")` — shared by POST's `.select().eq().maybeSingle()` membership lookup and GET's
 // `.select().in()` batched member-count lookup. One chain (real supabase-js also returns one query
@@ -54,10 +53,6 @@ vi.mock("@/lib/auth", () => ({
   requireUser: (...args: unknown[]) => requireUserMock(...args),
 }));
 
-vi.mock("@/lib/club/premium", () => ({
-  isPremiumUser: (...args: unknown[]) => isPremiumUserMock(...args),
-}));
-
 vi.mock("@/lib/supabase", () => ({
   supabaseAdmin: {
     from: (table: string) => {
@@ -89,7 +84,6 @@ function getRequest(params?: Record<string, string>) {
 describe("POST /api/clubs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    isPremiumUserMock.mockResolvedValue(false);
   });
 
   it("rejects unauthenticated requests", async () => {
@@ -117,29 +111,35 @@ describe("POST /api/clubs", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 403 not_premium when the caller isn't Premium — checked before any DB write", async () => {
+  it("creates a club when the caller is NOT Premium — free for every tier, product-spec.md §4.24 AC1", async () => {
     requireUserMock.mockResolvedValueOnce({ user: completeUser });
-    isPremiumUserMock.mockResolvedValueOnce(false);
+    membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    clubInsertChain.single.mockResolvedValueOnce({
+      data: {
+        id: "club-free",
+        name: "Lari Pagi",
+        description: null,
+        privacy: "public",
+        invite_code: null,
+        created_at: "2026-09-26T10:00:00Z",
+      },
+      error: null,
+    });
     const res = await POST(postRequest({ name: "Lari Pagi" }));
-    expect(res.status).toBe(403);
-    const json = await res.json();
-    expect(json.code).toBe("not_premium");
-    expect(membershipChain.select).not.toHaveBeenCalled();
-    expect(clubInsertMock).not.toHaveBeenCalled();
+    expect(res.status).toBe(201);
+    expect(clubInsertMock).toHaveBeenCalled();
   });
 
   it("returns 409 when the caller is already in a club", async () => {
     requireUserMock.mockResolvedValueOnce({ user: completeUser });
-    isPremiumUserMock.mockResolvedValueOnce(true);
     membershipChain.maybeSingle.mockResolvedValueOnce({ data: { club_id: "club-existing" }, error: null });
     const res = await POST(postRequest({ name: "Lari Pagi" }));
     expect(res.status).toBe(409);
     expect(clubInsertMock).not.toHaveBeenCalled();
   });
 
-  it("creates a public club with no invite_code when Premium and not already a member", async () => {
+  it("creates a public club with no invite_code when not already a member", async () => {
     requireUserMock.mockResolvedValueOnce({ user: completeUser });
-    isPremiumUserMock.mockResolvedValueOnce(true);
     membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
     clubInsertChain.single.mockResolvedValueOnce({
       data: {
@@ -176,7 +176,6 @@ describe("POST /api/clubs", () => {
 
   it("generates an 8-character invite_code for an invite_only club", async () => {
     requireUserMock.mockResolvedValueOnce({ user: completeUser });
-    isPremiumUserMock.mockResolvedValueOnce(true);
     membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
     clubInsertChain.single.mockResolvedValueOnce({
       data: {
@@ -199,7 +198,6 @@ describe("POST /api/clubs", () => {
 
   it("returns 500 when club_member insert fails after the club was created", async () => {
     requireUserMock.mockResolvedValueOnce({ user: completeUser });
-    isPremiumUserMock.mockResolvedValueOnce(true);
     membershipChain.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
     clubInsertChain.single.mockResolvedValueOnce({
       data: {
