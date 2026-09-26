@@ -39,6 +39,14 @@ final class RunViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var flushTimerCancellable: AnyCancellable?
 
+    /// CQ-11 fix: confirmed-movement increments only (the same ones that feed `distanceMeters`),
+    /// kept for `RollingSpeedCalculator` — completely separate from `distanceMeters`/`avg_pace_sec_per_km`,
+    /// which are untouched by this fix and stay the authoritative totals for points/history.
+    /// Trimmed generously (2x the calculator's own window) on every append so this never grows
+    /// unbounded across a multi-hour run — the calculator itself re-filters to the exact window at
+    /// read time, this is just a memory bound.
+    private var recentMovementSamples: [RollingSpeedCalculator.MovementSample] = []
+
     /// T1.2b: `durationSeconds` excludes paused time — completed segments (`accumulatedActiveDuration`) plus
     /// time since the current one began (`currentSegmentStartedAt`), set at Start/Resume, cleared at Pause/Stop.
     private var accumulatedActiveDuration: TimeInterval = 0
@@ -124,6 +132,7 @@ final class RunViewModel: ObservableObject {
         routeBuffer.clear()
         pointCount = seed.route.count
         distanceMeters = seed.distanceMeters
+        recentMovementSamples = []
         let coordinates = seed.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lng) }
         routeCoordinates = coordinates
         currentCoordinate = coordinates.last
@@ -246,6 +255,7 @@ final class RunViewModel: ObservableObject {
         currentCoordinate = nil
         currentCourseDegrees = nil
         currentEstimatedPoints = 0
+        recentMovementSamples = []
     }
 
     /// T4.21: Save Activity's "Save Activity (Publish)" button — captures `activeRun` before `stop()` clears
@@ -324,8 +334,10 @@ final class RunViewModel: ObservableObject {
 
         // Beyond the radius and accurate enough — real movement. Count from the last confirmed-movement
         // point, then this point becomes the new anchor.
-        distanceMeters += location.distance(from: lastLocation ?? anchor)
+        let confirmedIncrementMeters = location.distance(from: lastLocation ?? anchor)
+        distanceMeters += confirmedIncrementMeters
         run.distanceMeters = distanceMeters
+        recordMovementSample(confirmedIncrementMeters, at: location.timestamp)
         stationaryAnchor = location
         lastLocation = location
         let activeDuration = liveActiveDuration()
@@ -333,6 +345,21 @@ final class RunViewModel: ObservableObject {
         announceKmBoundaryIfCrossed(totalActiveDuration: activeDuration)
 
         appendPoint(location, to: run)
+    }
+
+    /// CQ-11 fix: feeds `RollingSpeedCalculator` — see `recentMovementSamples`'s own doc for why this
+    /// is separate from `distanceMeters`.
+    private func recordMovementSample(_ distanceMeters: Double, at timestamp: Date) {
+        recentMovementSamples.append(RollingSpeedCalculator.MovementSample(timestamp: timestamp, distanceMeters: distanceMeters))
+        let staleBefore = Date().addingTimeInterval(-RollingSpeedCalculator.defaultWindowSeconds * 2)
+        recentMovementSamples.removeAll { $0.timestamp < staleBefore }
+    }
+
+    /// CQ-11 fix: the Run Tracking screen's live speed stat, recomputed fresh on every call (its
+    /// `TimelineView` already re-renders every second) — `nil` means "not enough recent data," the
+    /// view shows a neutral placeholder rather than a stale or wild number.
+    func liveRollingPaceSecPerKm() -> Double? {
+        RollingSpeedCalculator.rollingPaceSecPerKm(samples: recentMovementSamples, now: Date())
     }
 
     /// T1.2b: recomputes the live estimate. Only called from `handle(_:)`, which itself early-returns while

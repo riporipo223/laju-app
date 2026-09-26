@@ -322,9 +322,12 @@ private extension RunTrackingView {
         viewModel.model?.distanceMeters ?? 0
     }
 
+    /// CQ-11 fix (code-quality-audit.md): rolling window, not the whole-run cumulative average this
+    /// used to compute inline here — see `RollingSpeedCalculator`/`RunViewModel.liveRollingPaceSecPerKm()`
+    /// for the mechanism and reasoning. `nil` (not enough recent data yet, e.g. the run's first few
+    /// seconds) shows the same neutral "0.0 km/h" a zero-distance run already showed, not a wild number.
     private var liveSpeedLabel: String {
-        guard liveDistanceMeters > 0 else { return "0.0 km/h" }
-        let secPerKm = liveDuration / (liveDistanceMeters / 1000)
+        guard let secPerKm = viewModel.model?.liveRollingPaceSecPerKm() else { return "0.0 km/h" }
         return SpeedFormatter.format(secPerKm: secPerKm)
     }
 
