@@ -1,9 +1,29 @@
 -- T4.1's Circle Challenge + Analytics data model (product-spec.md §4.24 AC11-AC15, AC24).
 --
 -- ============================================================================
--- NOT YET APPLIED. Same discipline as every migration in this repo: do not
--- mark any task done anywhere until the VERIFICATION queries at the bottom
--- have been run for real and their output pasted back into this banner.
+-- APPLIED 2026-09-26 to production (`supabase db push`). Real evidence, all
+-- 3 checks from this file's own VERIFICATION section below, run for real:
+--   - both tables exist with RLS enabled (relrowsecurity = t): club_challenge,
+--     club_membership_history (pg_class).
+--   - club_challenge_one_open_per_club_idx genuinely rejected a second open
+--     challenge for the same club: "duplicate key value violates unique
+--     constraint club_challenge_one_open_per_club_idx".
+--   - club_membership_history_open_stint_idx genuinely rejected a second open
+--     stint for the same (club_id, user_id): "duplicate key value violates
+--     unique constraint club_membership_history_open_stint_idx".
+-- All three ran inside begin/rollback against temporary QA rows; confirmed
+-- zero rows left behind afterward (club/club_challenge/club_membership_history
+-- all count 0 immediately after).
+--
+-- Also repaired this session: 7 earlier migrations (20260923090000 through
+-- 20260925160000) showed empty "remote" in `supabase migration list` despite
+-- being genuinely live in production (confirmed by direct read-only query
+-- against information_schema for every table/column each one creates, before
+-- touching migration history) — their own commit history applied them
+-- out-of-band, never through this CLI. `supabase migration repair --status
+-- applied` synced the tracking table to match reality; this was the
+-- prerequisite that let `db push` target only this migration instead of
+-- re-attempting all 8.
 -- ============================================================================
 --
 -- Scope note: this is schema only — no backend route reads or writes these
