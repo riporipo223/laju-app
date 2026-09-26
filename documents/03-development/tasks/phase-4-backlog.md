@@ -197,6 +197,21 @@ implemented.
   club's OWNER (no target-role check) — would leave a Circle ownerless,
   since AC18's reassignment logic only runs on account deletion, not on
   a kick. Flagged for the next session, not guessed at here.
+  **FIXED 2026-09-26 (next session):** the owner-kick gap above is closed
+  (`b1f857e`) — the target's role is looked up before deleting; a target
+  whose role is `owner` is rejected 400 (owner can only leave via AC16's
+  transfer/archive path). TDD: 1 new failing test proving the gap, then
+  the guard. 12/12 members-route tests pass. **Member cap (AC22) also
+  done same session** (`ca1d9f2`) — `POST /api/clubs/[id]/join` now
+  counts current members and compares against 20 (Free) / 100 (Premium,
+  checked live via the existing `isPremiumClub`, reused not
+  reimplemented), refusing new joins with 409 `circle_full` at/over the
+  cap. 12/12 join-route tests pass (TDD: below-cap join, exactly-at-cap
+  rejection, Premium-past-20, Premium-at-100-rejection). **Freeze
+  behavior (AC24) still not done** — this task only enforces the
+  "refuse new joins" half AC24 also needs; the rest (locking
+  analytics/challenge-creation for an over-cap Circle) is separate,
+  larger work, not attempted here.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
   **and (2026-09-23) the admin-tools screens** — analytics and creating/
