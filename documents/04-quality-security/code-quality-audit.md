@@ -213,6 +213,22 @@ Mitigated today, not closed: production has `CRON_SECRET` set, so the hole only 
 
 ---
 
+## 4b. iOS — live running metrics (added 2026-09-26)
+
+### CQ-11 — Live/instant pace shown during tracking has no defined calculation method — **Warning** (open, not fixed)
+
+Found during a PM product-review session (2026-09-26), reported by real usage: the pace value shown live on the Run Tracking screen (screen 5, element #2 in wireframe-spec.md) "kadang melompat, kadang tidak sesuai dengan kecepatan aslinya" (sometimes jumps, sometimes doesn't match actual speed).
+
+Checked against tech-spec.md and every phase-N task file: **the whole-run average pace used for the point formula (`avg_pace_sec_per_km`, tech-spec.md §2.1/§2.2) is well-specified and stable** (one ratio of two robust totals, computed once at Stop — not affected by this finding). But **the live/instant pace shown during an active run has no documented calculation method anywhere** — no window size, no smoothing rule, unlike `avg_pace_sec_per_km`'s explicit spec. This is very likely the root cause of the reported jumpiness: without a defined rule, the implementation most plausibly computes pace from the last one or two GPS samples directly, which is exactly the kind of raw point-to-point signal the T0.9/T0.8 GPS-noise-filtering work (tech-spec.md §2.1b) already had to guard `distanceMeters` against.
+
+Not a data-correctness bug — `avg_pace_sec_per_km` and `final_points` are computed independently of this live value and are unaffected (confirmed: they derive from total distance/duration, never from the live display). This is a UX-quality gap, and it is now also a **hard prerequisite for product-spec.md §4.29** (the new real-time anti-cheat warning) — building a 5-consecutive-detections-in-2-minutes trigger on top of an unsmoothed, jittery live pace signal would produce false warnings and undermine trust in that feature immediately.
+
+**Suggested direction (not a fix — needs real-device tuning, not decided here):** compute live pace from a rolling window (a fixed recent time span or a fixed number of recent accepted GPS points) rather than the last one or two points directly — the exact window size needs on-device testing, not a guess.
+
+Fix: define and implement a smoothing/windowing rule for the live pace calculation; add a regression test fixing a window size; re-verify on a real device during an actual run (not just simulator-fed coordinates).
+
+---
+
 ## 5. Findings summary
 
 | ID | Area | Finding | Severity |
@@ -222,6 +238,7 @@ Mitigated today, not closed: production has `CRON_SECRET` set, so the hole only 
 | CQ-3 | Concurrency | `@unchecked Sendable` on `StreakReminderScheduler` covers an unconstrained protocol; test spies hold mutable state | **Warning** |
 | CQ-7 | Performance | Full-route decode/re-encode per flush is O(n²) main-thread work; ~200KB synchronous writes late in a 24km run | **Warning** |
 | CQ-10 | Security (backend) | `resolve-flagged-runs` cron accepts `Bearer undefined` if `CRON_SECRET` is unset; mitigated in prod, not fixed (added 2026-09-24) | **Warning** |
+| CQ-11 | iOS metrics | Live/instant pace during tracking has no defined windowing/smoothing rule, unlike the stable `avg_pace_sec_per_km`; likely root cause of reported jumpiness; blocks product-spec.md §4.29 (added 2026-09-26) | **Warning** |
 | CQ-4 | Concurrency | `PersistenceController`'s `nonisolated(unsafe)` is correctly reasoned and sound | **Note** |
 | CQ-5 | Persistence | No background contexts exist, so no cross-context race exists; `automaticallyMergesChangesFromParent` is inert until Fase 2 | **Note** |
 | CQ-6 | Persistence | Seven `try? context.save()` sites discard errors; diagnostic gap, not a correctness one | **Note** |
@@ -229,7 +246,8 @@ Mitigated today, not closed: production has `CRON_SECRET` set, so the hole only 
 | CQ-9 | SwiftUI | Two `LocationTrackingService` instances can coexist; harmless now, does not extend | **Note** |
 | — | Build | **Swift 6 language mode, complete strict concurrency, warnings-as-errors — builds clean** | **Verified sound** |
 
-**Zero open Blockers** (CQ-2 resolved 2026-09-22), ~~three~~ four Warnings (CQ-10 added 2026-09-24), five Notes.
+**Zero open Blockers** (CQ-2 resolved 2026-09-22), ~~three~~ ~~four~~ five Warnings (CQ-10 added
+2026-09-24, CQ-11 added 2026-09-26), five Notes.
 
 No code was changed as part of the original audit; CQ-2 was fixed in a later session (2026-09-22, see its status block above) with real CI evidence. The rest are safely deferrable, and CQ-1 is best done together with the toolchain question below.
 
