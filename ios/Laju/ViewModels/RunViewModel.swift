@@ -11,6 +11,10 @@ final class RunViewModel: ObservableObject {
     @Published private(set) var isPaused = false
     @Published private(set) var pointCount = 0
     @Published private(set) var distanceMeters: Double = 0
+    /// T4.22 (product-spec.md §4.29): advisory only (ADR-0008) — drives `RunTrackingView`'s warning
+    /// banner. Never affects points/penalties itself; the server independently re-derives the real
+    /// outcome from `gps_route` on sync.
+    @Published private(set) var showsSpeedViolationWarning = false
 
     /// T1.8: live map state — fed from the same point-append path as `gpsRoute` (`appendPoint(_:to:)`), not a
     /// new `CLLocationManager` subscription. Drives a custom annotation, never `showsUserLocation` (B7-8).
@@ -46,6 +50,10 @@ final class RunViewModel: ObservableObject {
     /// unbounded across a multi-hour run — the calculator itself re-filters to the exact window at
     /// read time, this is just a memory bound.
     private var recentMovementSamples: [RollingSpeedCalculator.MovementSample] = []
+
+    /// T4.22: fed alongside `recentMovementSamples` in the same confirmed-movement branch of
+    /// `handle(_:)` — same source data, different question asked of it.
+    private let severeSpeedViolationDetector = SevereSpeedViolationDetector()
 
     /// T1.2b: `durationSeconds` excludes paused time — completed segments (`accumulatedActiveDuration`) plus
     /// time since the current one began (`currentSegmentStartedAt`), set at Start/Resume, cleared at Pause/Stop.
@@ -133,6 +141,8 @@ final class RunViewModel: ObservableObject {
         pointCount = seed.route.count
         distanceMeters = seed.distanceMeters
         recentMovementSamples = []
+        severeSpeedViolationDetector.reset()
+        showsSpeedViolationWarning = false
         let coordinates = seed.route.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lng) }
         routeCoordinates = coordinates
         currentCoordinate = coordinates.last
@@ -256,6 +266,8 @@ final class RunViewModel: ObservableObject {
         currentCourseDegrees = nil
         currentEstimatedPoints = 0
         recentMovementSamples = []
+        severeSpeedViolationDetector.reset()
+        showsSpeedViolationWarning = false
     }
 
     /// T4.21: Save Activity's "Save Activity (Publish)" button — captures `activeRun` before `stop()` clears
@@ -334,10 +346,12 @@ final class RunViewModel: ObservableObject {
 
         // Beyond the radius and accurate enough — real movement. Count from the last confirmed-movement
         // point, then this point becomes the new anchor.
-        let confirmedIncrementMeters = location.distance(from: lastLocation ?? anchor)
+        let previousPoint = lastLocation ?? anchor
+        let confirmedIncrementMeters = location.distance(from: previousPoint)
         distanceMeters += confirmedIncrementMeters
         run.distanceMeters = distanceMeters
         recordMovementSample(confirmedIncrementMeters, at: location.timestamp)
+        recordSevereSpeedSample(confirmedIncrementMeters, from: previousPoint.timestamp, to: location.timestamp)
         stationaryAnchor = location
         lastLocation = location
         let activeDuration = liveActiveDuration()
@@ -353,6 +367,16 @@ final class RunViewModel: ObservableObject {
         recentMovementSamples.append(RollingSpeedCalculator.MovementSample(timestamp: timestamp, distanceMeters: distanceMeters))
         let staleBefore = Date().addingTimeInterval(-RollingSpeedCalculator.defaultWindowSeconds * 2)
         recentMovementSamples.removeAll { $0.timestamp < staleBefore }
+    }
+
+    /// T4.22: feeds `SevereSpeedViolationDetector` with this point's own instantaneous speed —
+    /// converted to km/h to share the exact threshold the backend's severe check uses.
+    private func recordSevereSpeedSample(_ distanceMeters: Double, from previousTimestamp: Date, to timestamp: Date) {
+        let elapsedSeconds = timestamp.timeIntervalSince(previousTimestamp)
+        guard elapsedSeconds > 0 else { return }
+        let speedKmh = (distanceMeters / elapsedSeconds) * 3.6
+        severeSpeedViolationDetector.record(speedKmh: speedKmh, at: timestamp)
+        showsSpeedViolationWarning = severeSpeedViolationDetector.isTriggered
     }
 
     /// CQ-11 fix: the Run Tracking screen's live speed stat, recomputed fresh on every call (its

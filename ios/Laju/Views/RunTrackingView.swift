@@ -84,6 +84,10 @@ private extension RunTrackingView {
                     LocationPermissionBanner(notice: notice)
                         .padding(.top, 8)
                 }
+                if viewModel.model?.showsSpeedViolationWarning == true {
+                    speedViolationWarningBanner
+                        .padding(.top, 8)
+                }
                 Spacer()
                 VStack(spacing: 16) {
                     statsCard
@@ -273,6 +277,20 @@ private extension RunTrackingView {
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(gpsStatus.color, in: Capsule())
+    }
+
+    /// T4.22 (product-spec.md §4.29 AC1/AC5): advisory only — the run keeps tracking normally, this
+    /// is purely informational. Copy is deliberately neutral, not accusatory (AC5's own wording),
+    /// since the client-side detection can false-positive (e.g. a genuinely fast downhill segment)
+    /// and the server has the real, final say on sync (ADR-0008).
+    private var speedViolationWarningBanner: some View {
+        Label("Pace tidak wajar terdeteksi, periksa aktivitas Anda", systemImage: "exclamationmark.triangle.fill")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(LajuColor.textPrimary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(LajuColor.surface, in: Capsule())
     }
 
     // MARK: - Stats card
