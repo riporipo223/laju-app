@@ -102,6 +102,34 @@ implemented.
   T4.2b) — Create Club can be built gated, but the gate has no way to ever
   return `true` until T4.20b ships, same dead-end shape as T4.21's Map Type
   3D decision.
+  **UPDATE 2026-09-26 (PM decision, product review session) — REVERSES the 2026-09-25
+  Premium-gate above. Real code revert needed, not just a doc fix:**
+  - **Display name changes to "Circle" everywhere the user sees it** (screen titles, tab label,
+    button/notification copy). Database tables/columns, API paths, and Swift type/file names stay
+    `club`/`Club` — presentation-layer rename only. See product-spec.md §4.24's header note for the
+    full rationale (matches Strava's own free-club model; avoids a costly live production rename).
+  - **`POST /api/clubs`'s Premium gate must be removed** — creating a Circle is free for every tier
+    again (product-spec.md §4.24 AC1, which was never actually changed in the doc — only the
+    2026-09-25 code drifted from it). This unblocks Create Circle from the T4.20 dead-end noted
+    above, since it no longer needs any Premium check to function at all.
+  - **Member cap added: Free Circle max 20, Premium Circle (owner's live Premium status) max 100**
+    (product-spec.md §4.24 AC22). A Circle over cap is never force-shrunk (see freeze rule below).
+  - **Kick-member, transfer-ownership, edit info, regenerate invite code, and promote-admin are
+    explicitly confirmed FREE for every tier** (product-spec.md §4.24 AC23) — this corrects the
+    "Still deferred (admin tools, T4.20b-blocked): ... owner-removes-member" line above, which had
+    wrongly bundled kick-member with the Premium-gated admin tools. Only **analytics and internal
+    challenges** stay Premium-gated (owner/admin of a Premium Club) — kick-member is not an admin
+    tool in this sense and must not wait on T4.20.
+  - **Freeze, not delete, on Premium lapse** (product-spec.md §4.24 AC24): an owner losing Premium
+    never removes members, deletes the Circle, or erases challenge/analytics history. It locks:
+    starting a new challenge, viewing analytics, and (if currently over the Free cap) accepting new
+    members — until Premium is active again or membership drops back under cap.
+  - **Challenge mechanics fully detailed** (product-spec.md §4.24 AC13): automatic participation (no
+    join step, runs from Track count directly), collective total only ever increases (never
+    retroactively reduced if a contributor leaves), individual ranking drops a departed member but
+    their personal data is untouched, reaching the target early does not end the challenge before
+    its deadline, and owner-cancel now sends a **real push notification** to participants with the
+    ranking frozen as final — a narrow, deliberate exception to "no push" elsewhere in challenges.
 - **T4.1a — Club: extend the `club` table.** Depends on T4.2a's migration
   (which creates the minimal `club` stub). **Scope**: a **separate, new**
   inert migration — T4.2a's file is not modified — adding `description`,
@@ -137,18 +165,36 @@ implemented.
   challenge counting/concurrency/notifications still open.~~ **Settled
   2026-09-24:** analytics over a rolling 30 days, top-5; challenges count
   `validated`/`approved`/`flagged` runs over the distance gate, max one
-  active challenge per club (enforce it), no push notifications. **Reference**:
-  product-spec.md §4.24 AC1-AC9, AC11-AC21.
+  active challenge per club (enforce it). ~~no push notifications~~
+  **REVISED 2026-09-26: push notifications now required for the specific
+  case of owner-cancellation** (§4.24 AC13's full mechanics) — every other
+  challenge event stays in-app only. **Reference**:
+  product-spec.md §4.24 AC1-AC9, AC11-AC24.
+  **UPDATE 2026-09-26:** the Premium gate on create-club (T4.1's own
+  2026-09-25 note) must be removed here too — `POST /api/clubs` should
+  require no Premium check at all. Member cap (20 Free / 100 Premium,
+  AC22) needs enforcing at join-time (both direct-join and invite-code
+  paths). Kick-member needs its own endpoint, gated on "caller is
+  owner/admin," never on Premium (AC23) — this was previously listed as
+  deferred admin tooling, which was wrong. Freeze behavior (AC24) needs
+  the join/challenge-creation/analytics-read endpoints to check the live
+  member count against the cap, not just Premium status in isolation.
 - **T4.1c — Club: iOS UI.** Depends on T4.1b. **Scope**: create, browse,
   join (direct or code), leave, club page with the internal leaderboard,
   **and (2026-09-23) the admin-tools screens** — analytics and creating/
   viewing internal challenges — shown only to owner/admins of a Premium
   Club; members see challenge progress, nobody outside the club sees
   anything. ~~Blocked on where the Club UI lives (§4.24 open point).~~
-  Lives in a **"Club Saya"** section of the **You** tab (AC19, decided
-  2026-09-24); also transfer ownership, promote admin, regenerate invite
-  code. Not wireframed yet (screen-inventory.md §4). **Reference**:
-  product-spec.md §4.24 AC1-AC21.
+  ~~Lives in a **"Club Saya"** section of the **You** tab (AC19, decided
+  2026-09-24)~~ — **stale: AC19 was reversed the same day (2026-09-24)** to
+  its own tab in the 5-tab navbar (Social, Club, Track, Ranks, You) — see
+  product-spec.md §4.24 AC19's own note. This task file was never updated
+  to match; corrected here 2026-09-26. Also: transfer ownership, promote
+  admin, regenerate invite code, kick-member (AC23, free for every tier —
+  not an admin-tools screen). **Display copy says "Circle" everywhere the
+  user sees it (2026-09-26); internal type/file names stay `Club`.** Not
+  wireframed yet (screen-inventory.md §4). **Reference**: product-spec.md
+  §4.24 AC1-AC24.
 - **T4.2 — Club War.** Depends on T4.1. **CONFIRMED TO BUILD 2026-09-23**
   (was "nice to have v2+") — see product-spec.md §4.19 for the base decision
   (max 3 clubs/war, self-serve by Premium Club owner/admin, ADR-0014's
@@ -162,6 +208,13 @@ implemented.
   never started. Fully unblocked for schema scoping now. Sub-task
   breakdown: T4.2a (data model), T4.2b (backend API), T4.2c (iOS UI) —
   see their own entries below.
+  **BUILD PUT ON HOLD 2026-09-26 (PM decision, product review session) —
+  NOT cancelled, no deadline set.** See product-spec.md §4.19's header
+  note for the full rationale (base Circle/T4.1 made free for growth; the
+  heavier Club War layer deferred to a later release rather than gating
+  v1 Circle adoption on it). T4.2a's already-applied schema and T4.2b's
+  already-inert `isPremiumClub()` stub are unaffected — they stay exactly
+  as they are (built, inert) until this hold is lifted.
 - **T4.2a — Club War: data model.** Depends on T4.2 (mechanism decided),
   T4.1 (Club must exist — currently neither does; `user.club_id` is only
   a reserved nullable column with no FK, `database-api-spec.md` §1 /
@@ -259,22 +312,43 @@ implemented.
 - **T4.5 — Monetization: advanced statistics.** **AC-complete 2026-09-24
   — see product-spec.md §4.25 (AC1-AC5).** On-device from Core Data, pace
   trend chart / PR history / period comparison, StoreKit local
-  entitlement gate. Depends on T4.20c.
-- **T4.6 — Monetization: exclusive badge.** Scope note (2026-09-23, PM):
-  - Badge sources, as drafted: the Premium subscription itself,
-    achievements, and season rank (user-flow.md §1, §2.4).
-  - Shown on profile and on feed posts (draft §1).
-  - **Gap:** "achievement" isn't defined anywhere — no achievement system
-    exists in the spec or code. Needs defining before this is scoped.
-    Season-rank badges overlap T4.4's season badge — keep one mechanism.
-    Depends on T4.20.
+  entitlement gate. Depends on T4.20c. **Confirmed 2026-09-26 (PM):** kept
+  as-is despite being a weaker Premium hook than the rest of the bundle
+  (Laju cannot match Strava's HR/power-based analytics — no sensor data
+  exists, see T4.14). Personal Record explicitly kept separate from the
+  Achievement system (T4.24-new below) — not merged.
+- **T4.6 — Monetization: exclusive badge.** ~~Scope note (2026-09-23, PM):~~
+  **Mechanism scoped 2026-09-26 (PM), content still pending — see
+  product-spec.md §4.31 (Achievement System).**
+  - ~~Badge sources, as drafted: the Premium subscription itself,
+    achievements, and season rank (user-flow.md §1, §2.4).~~
+  - ~~**Gap:** "achievement" isn't defined anywhere — no achievement system
+    exists in the spec or code. Needs defining before this is scoped.~~
+    **Resolved 2026-09-26:** Achievement = a fixed threshold tier, earned
+    free by every tier, **showcase** (visible on profile/feed) is
+    Premium-only — two distinct concepts, Personal Record (T4.5) is not
+    one of them. Season-rank tie-in: a Season top-10 finish is one
+    achievement source among several (see the new NFC Card task below).
+    **The actual achievement list (names/thresholds/categories) is
+    explicitly NOT decided here — the PM is compiling it separately and
+    will bring it back for its own scoping pass. Do not invent content.**
+  - Shown on profile and on feed posts (draft §1) — confirmed, now
+    server-gated (§4.31 AC4), since it's visible to other users.
+  - Depends on T4.20 (showcase gate) — earning itself does not.
 - **T4.7 — Monetization: premium profile.** **AC-complete 2026-09-24 —
-  see product-spec.md §4.26 (AC1-AC5).** Exactly three things (photo,
-  bio, alt icon), StoreKit local entitlement gate. Premium pricing
-  decided 2026-09-23 ($7.99/mo + App Store Connect regional tiers,
-  product-spec.md §5, applies to whichever of T4.4-T4.7 ship) — v1
-  packaging monthly-only, no annual, no free trial (product-spec.md
-  §4.23).
+  see product-spec.md §4.26 (AC1-AC5).** ~~Exactly three things (photo,
+  bio, alt icon)~~ **REVISED 2026-09-26 (PM): photo and bio are now free
+  for every tier — only alt icon remains Premium-only.** Rationale:
+  identity basics shouldn't be paywalled (Discord precedent: avatar/About
+  Me are free, only the flair on top is paid), plus a concrete functional
+  reason — Social Feed (T4.15, live) shows post authors' photos, and a
+  Freemium user with no photo would render broken in a feed meant to
+  drive growth across the whole user base. StoreKit local entitlement
+  gate (unchanged, now applies only to the alt-icon check). Premium
+  pricing **revised 2026-09-26: $1.99/mo** (was $7.99/mo, decided
+  2026-09-23) + App Store Connect regional tiers, product-spec.md §5,
+  applies to whichever of T4.4-T4.7 ship — v1 packaging monthly-only, no
+  annual, no free trial (product-spec.md §4.23, unchanged).
 - **T4.4–T4.7 all depend on T4.20** (added 2026-09-23): each is a Premium
   *feature* and had silently assumed a subscription system existed. None
   does yet — see T4.20 below.
@@ -285,9 +359,10 @@ implemented.
   session. (Club admin tools deferred from T4.1 land here, not twice.)~~
   **MERGED into T4.1, 2026-09-23 (PM).** No separate B2B product and no
   web dashboard: club admin tools (analytics, internal challenges) are now
-  part of T4.1, a Premium feature included in the $7.99 subscription, for
-  owners/admins of a Premium Club, internal to the club only
-  (product-spec.md §4.24 AC11-AC15). Task number T4.8 retired, not reused.
+  part of T4.1, a Premium feature included in the subscription (**$1.99**,
+  revised 2026-09-26, was $7.99), for owners/admins of a Premium Club,
+  internal to the club only (product-spec.md §4.24 AC11-AC15). Task
+  number T4.8 retired, not reused.
 - **T4.9 — ~~B2B dashboard: event organizer~~ ~~EO managed service~~ Laju Branded Events.**
   **Concept replaced 2026-09-23 — second reframe, kept at T4.9 (same feature slot, not renumbered),
   same reasoning as product-spec.md §4.21 keeping its own section number.** The prior "EO managed
@@ -347,7 +422,14 @@ implemented.
   Fase 4). **Reference**: product-spec.md §4.21 AC1-AC2, AC4, AC6-AC8.
 - **T4.17 — Club Global Leaderboard.** Depends on T4.1 (Club must exist)
   and, for its Section 2, T4.2 (Club War must exist — Section 2 has
-  nothing to rank without match data). **CONFIRMED TO BUILD 2026-09-23**
+  nothing to rank without match data, and T4.2 is now on hold, see above
+  — Section 2 is transitively on hold too). **Open question raised
+  2026-09-26, NOT resolved — see product-spec.md §4.20's header note**:
+  whether Section 1 (club-vs-club Aktif ranking) is still worth building
+  now that T4.1's own internal Circle leaderboard (§4.24 AC9) turned out
+  to be a cheap, precompute-free read — unlike this task's heavier
+  per-club precompute (T4.17a/b). Do not build against this task until
+  that's explicitly answered by the PM. **CONFIRMED TO BUILD 2026-09-23**
   — see product-spec.md §4.20 for the two-section spec (Club Aktif /
   Club War Record). Both sections' 60-day reset cadence is **resolved by
   T4.18 below: applies starting Season 2, not from now** — Season 1
@@ -540,6 +622,13 @@ implemented.
     verified (6/6), backend confirmed live (401 not 500), iOS confirmed
     compiling and passing its full test suite. No outstanding verification
     gaps for this task.
+  - **Extended 2026-09-26 (PM, product review session) — see
+    product-spec.md §4.33, new task T4.27 below:** Feed/Friends segments,
+    one-way follow + mutual-follow-as-Friends-filter, search-by-username,
+    an achievement-unlock post type (§4.31), and a caption field on both
+    post types (not a standalone free-text post — that was considered and
+    rejected for moderation-risk and mission-drift reasons). This is new
+    scope on top of the already-live v1 above, not a revision of it.
 - **T4.16 — Comment on social feed posts.** Depends on T4.15 (Social Feed
   itself) existing first — cannot be scheduled independently of it.
   **Built 2026-09-25 (v1 scoping session same day):** flat comments only (no
@@ -688,7 +777,8 @@ implemented.
   league gating, T4.4-T4.7. Built **before** those, per PM. Numbered
   T4.20, not T4.19, to avoid confusion with product-spec §4.19 (Club War).
   Hybrid: StoreKit 2 on device for UI, backend as source of truth.
-  Monthly-only $7.99, no annual, no trial. App Store Server Notifications
+  Monthly-only **$1.99** (revised 2026-09-26, was $7.99 — product-spec.md
+  §4.23 decision #7 has the full rationale), no annual, no trial. App Store Server Notifications
   are target design but **blocked** by the Apple Developer Program
   (HANDOFF.md §4) — not built now. **Verified 2026-09-23: the block is
   wider than notifications** — T4.20b (all App Store Server API calls)
@@ -744,6 +834,70 @@ implemented.
   Connect is paid-only). Whether local `.storekit` testing in Xcode works
   without it is still unverified. **Reference**: product-spec.md §4.23
   AC1-AC3, AC7-AC8, AC12.
+
+## New from 2026-09-26 product review session
+
+Five new tasks, all scoped in the same session (see product-spec.md §4.29-§4.33). Numbered
+T4.22-T4.27 — T4.19 stays reserved (avoids confusion with product-spec §4.19, Club War) and T4.10
+stays retired (moved to Fase 1). Task numbers and product-spec section numbers are separate
+numbering spaces, per this repo's existing convention (e.g. task T4.20 vs. section §4.20).
+
+- **T4.22 — Real-time anti-cheat warning (Track).** Depends on **CQ-11
+  (code-quality-audit.md) being fixed first** — a hard prerequisite, not a nice-to-have: building
+  this on an unsmoothed live pace signal produces false warnings immediately. Also depends on T2.8
+  (speed-jump check, reused, not reimplemented) and the existing trust-score model. **Scope**: a
+  live warning at 5 consecutive speed-jump detections within a rolling 2-minute window (resets on a
+  clean sample); below that, no change to the existing `excluded_pct` pipeline; at/above it, if the
+  user doesn't stop/pause, the run is marked at Finish with 0 points and a trust-score penalty
+  heavier than the standard HIGH-flag deduction (exact magnitude not decided — its own calibration
+  pass, same status as the pace-multiplier constants in tech-spec.md §2.3). Client-side warning is
+  advisory only; the server independently re-derives the outcome from `gps_route` on sync (ADR-0008
+  — never trust a client-only decision). **Reference**: product-spec.md §4.29 AC1-AC5.
+- **T4.23 — Trigger Start via Triple Back-Tap (Track).** Independent of T4.22. **Scope**: expose a
+  "Mulai Lari" App Intent/Shortcut that iOS Back Tap (Settings → Accessibility → Touch → Back Tap)
+  can be bound to, plus an in-app tutorial pointing the user there — Laju cannot bind it
+  automatically or read whether it's currently bound, so there is no real on/off toggle inside
+  Laju's own Settings. Triple tap specifically (not double), chosen for a lower accidental-trigger
+  rate. **DoD must include a real-device false-trigger test during actual running motion** (phone
+  in pocket/armband), not just standing still. **Reference**: product-spec.md §4.30 AC1-AC3.
+- **T4.24 — Achievement System (mechanism only).** Depends on T4.20 (showcase gate needs Premium
+  infra) for AC3-AC4 only; earning (AC1-AC2) does not depend on T4.20. **Scope**: a fixed-tier
+  achievement model (e.g. "30K" — crossing 30km unlocks that tier regardless of how far past 30 the
+  qualifying run/total was) distinct from Personal Record (T4.5, unchanged, not merged); earning is
+  free for every tier; showcasing an earned achievement on profile/Social Feed posts is
+  Premium-only and server-verified (never a client-only claim, since other users see it). **The
+  achievement content list (names, thresholds, categories) is explicitly out of scope for this
+  task — the PM is compiling it separately and will bring it back for its own scoping pass. Do not
+  invent achievement content while implementing this.** **Reference**: product-spec.md §4.31
+  AC1-AC5.
+- **T4.25 — Kartu NFC: Auth Link & Physical Reward.** Depends on T4.1 (account model), T4.24
+  (achievement tie-in for the Season top-10 reward), and T4.20 (App Store rules require any Premium
+  unlock to go through IAP — the card must never itself grant Premium). **Scope**: a card sold
+  separately (merchandise, not bundled with any subscription); links only to an already-
+  authenticated Apple/Google session, never bootstraps a new account; two-factor when used to sign
+  in (card UID + PIN, PIN hashed server-side, rate-limited against brute force); user can deactivate
+  a lost/stolen card from within the app via normal Apple/Google sign-in, without needing the card's
+  own PIN; Season top-10 physical-card reward is opt-in claim (user submits shipping details
+  themselves, Laju does not pre-collect addresses) plus extra manual anti-cheat re-verification
+  before fulfillment, given a real tangible prize is at stake. **Not scoped here — flagged, not
+  invented:** exact card manufacturing/vendor process; legal mechanism for any future offline-event
+  raffle (undian — distinct from this task's skill-based rank reward, which is not raffle-regulated
+  in Indonesia); event check-in integration beyond the concept in product-spec.md §4.32. **Reference**:
+  product-spec.md §4.32 AC1-AC6.
+- **T4.26 — Social Feed: Feed/Friends Segments & Follow.** Depends on T4.15 (Social Feed v1,
+  already live) and T4.24 (achievement-unlock post type). **Scope**: one-way follow relationship
+  (a single `follow` table, not a friend-request/accept flow); "Friends" segment is a computed
+  filter over the same table (mutual follow), not a second data model; two segments in the Social
+  tab ("Feed" = existing public behavior, "Friends" = mutual-follow only), kept separate so content
+  doesn't mix; search-by-username entry point as a search icon in the Social tab's top navigation
+  (not the You tab, not its own tab), reachable from both segments; Follow/Unfollow button lives on
+  the post card in the feed itself (a full user-profile screen remains out of scope — same gap
+  T4.15 v1 already flagged); achievement-unlock post type alongside the existing run-activity post
+  type; an optional caption field on both post types. **A standalone free-text (Twitter-style) post
+  type was considered and explicitly rejected** — every post stays anchored to a real
+  activity/achievement, both to contain moderation risk (Laju's first public UGC surface — T4.15's
+  own scoping already flagged moderation-beyond-delete-own-post as a gap to revisit) and to avoid
+  mission drift toward a general social network. **Reference**: product-spec.md §4.33 AC1-AC6.
 
 ---
 
