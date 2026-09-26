@@ -448,9 +448,18 @@ yang baru selesai.
 
 ### 4.19 Club War (Fase 4, added 2026-09-23, **mekanisme finalized 2026-09-23** — NOT v1/Must-have)
 
-**Status: confirmed to build** (PM decision, 2026-09-23) — reversed from "nice to have v2+"/Non-goal
-(§5). This section exists so the feature has a real spec instead of only a backlog stub (T4.2), per
-this repo's convention that Fase-4 items get full detail once genuinely decided, not before.
+**Status: confirmed to build, mechanism finalized** (PM decision, 2026-09-23) — reversed from
+"nice to have v2+"/Non-goal (§5). This section exists so the feature has a real spec instead of
+only a backlog stub (T4.2), per this repo's convention that Fase-4 items get full detail once
+genuinely decided, not before.
+
+> **Build put ON HOLD 2026-09-26 (PM decision, product review session) — not cancelled.** The
+> mechanism below remains the design of record; only the timeline changed. Rationale: base Club
+> (§4.24) is being made free for every tier (matching Strava's own free-club model, for growth/
+> adoption reasons) and the heavier, precompute-driven Club War layer is deferred to a later
+> release rather than gating v1 Club adoption on it. No deadline set for revisiting. T4.2's already
+> -built, already-inert code (`isPremiumClub()` stub always `false`, see tasks/phase-4-backlog.md)
+> is unaffected by this — it stays inert until this hold is lifted, same mechanism as before.
 
 > **Mechanism finalized 2026-09-23** — the base decisions below (max 3 clubs, self-serve) were
 > already locked; the 5 previously-open mechanics questions (scoring, duration, start flow,
@@ -636,6 +645,15 @@ T4.18+ breakdown for what's blocked on these still-open points.~~
 **Status: confirmed to build** (PM decision, 2026-09-23). Two independent sections, same
 "precompute, never derive live on read" pattern as the existing Global leaderboard (ADR-0013) — two
 separate precompute jobs, no combined score between them.
+
+> **Open question raised 2026-09-26, NOT resolved — flagged, not invented:** §4.24 AC9 (Club's own
+> internal leaderboard) was clarified in the same review session to be a cheap, precompute-free
+> read (member IDs filtered from data the Global leaderboard already computes). This section's
+> club-vs-club ranking is a different, heavier thing (comparing clubs against each other, its own
+> precompute tables per T4.17a/b in tasks/phase-4-backlog.md) and was never re-confirmed in that
+> session — whether it should still be built as scoped here, deferred alongside Club War (§4.19),
+> or cancelled outright (as Local Leaderboard was, §4.6) is an open PM decision, not settled by
+> this note. Do not build against this section until that's explicitly answered.
 
 - **Section 1 — "Club Aktif"**: ranked by **Participation Rate** (% of a club's members who ran in
   the period). **Activity threshold — what "ran" means (PM decision, 2026-09-23):** a member counts
@@ -992,9 +1010,16 @@ the code is only a color name. Three already-decided things depend on it: the Pr
    (Phase 2 rules and AC10), since it changes Club War's own state machine. **Scope settled
    2026-09-23:** applies to the **inviting club only** (the only club that needs Premium); a lapse
    while the challenge is still pending dissolves it instead (§4.19 AC12).
-7. **v1 packaging: monthly only, $7.99** (regional prices via App Store Connect tiers, decided
-   earlier, §5 Monetisasi row). **No annual plan and no free trial in v1 — a deliberate scope limit,
-   not an oversight.** Don't reopen without the PM.
+7. **v1 packaging: monthly only, $1.99** (regional prices via App Store Connect tiers). **Revised
+   2026-09-26 (PM decision, product review session) — reversed from the earlier $7.99.** Rationale:
+   with Club creation made free for every tier (§4.24) and Club War on hold (§4.19), the Premium
+   bundle's remaining content (full-league leaderboard view, Advanced Stats, Alt App Icon,
+   achievement showcase, Circle analytics/challenge) is intentionally light — priced to match, not
+   to match Strava's own $9.99-11.99/mo tier which sits behind much deeper (and Laju-inapplicable,
+   no HR/power data) analytics. Apple's App Store Small Business Program (15% commission, not the
+   30% standard rate) applies at this revenue scale regardless of price point, so the commission
+   split is not a factor in monthly-vs-annual. **No annual plan and no free trial in v1 remains
+   unchanged — still a deliberate scope limit, not an oversight.** Don't reopen without the PM.
 8. **Task number T4.20.**
 9. **"Lapsed" = expired after Apple's grace period, not the first failed payment** (PM, 2026-09-23).
    Apple's subscription statuses (App Store Server API docs, verified 2026-09-23): `1` active, `2`
@@ -1042,8 +1067,8 @@ Program (Apple's membership comparison: App Store Connect ✗ for free accounts)
 **in full**, and so is every server-side Premium check that depends on it — see HANDOFF.md §4.
 
 **Acceptance Criteria:**
-- AC1: The store offers exactly one product: a monthly auto-renewable subscription at the $7.99
-  reference price, regionalized by App Store Connect price tiers. No annual plan, no free trial or
+- AC1: The store offers exactly one product: a monthly auto-renewable subscription at the $1.99
+  reference price (revised 2026-09-26, was $7.99), regionalized by App Store Connect price tiers. No annual plan, no free trial or
   introductory offer.
 - AC2: Every purchase is made with `appAccountToken` set to the purchasing Laju account's `user.id`.
 - AC3: Right after a successful purchase, the app shows the user as Premium from StoreKit 2's local
@@ -1107,12 +1132,31 @@ attributed (by `appAccountToken`) to the deleted account. A new Laju account on 
 then refused Premium (AC7, no transfer — AC12) until that subscription expires, while it keeps
 billing. The T2.22 warning (AC13) is the only mitigation.
 
-### 4.24 Club (Fase 4, added 2026-09-23 — NOT v1/Must-have)
+### 4.24 Club (Fase 4, added 2026-09-23, **display name changed to "Circle" 2026-09-26** — NOT
+v1/Must-have)
 
-**Status: scoped 2026-09-23** (PM decisions after options were presented; not built). Task: **T4.1**
-in tasks/phase-4-backlog.md. This is the base Club feature that Club War (§4.19), Club Global
-Leaderboard (§4.20) and Premium Club (§4.19/§4.23) sit on. It reconciles part of user-flow.md §2.6
-("Circle"), which is still an unreconciled draft for everything not decided here.
+**Status: scoped 2026-09-23, extended 2026-09-26** (PM decisions after options were presented; not
+built). Task: **T4.1** in tasks/phase-4-backlog.md. This is the base Club feature that Club War
+(§4.19, on hold), Club Global Leaderboard (§4.20, open question) and Premium Club (§4.19/§4.23) sit
+on. It reconciles part of user-flow.md §2.6 ("Circle"), which is still an unreconciled draft for
+everything not decided here.
+
+> **Display name: "Circle" everywhere the user sees it, 2026-09-26 (PM decision) — presentation
+> layer only.** Database tables, columns, API paths, Swift type/file names all stay `club`/`Club`
+> (`club_id`, `POST /api/clubs`, `ClubHomeView.swift`, etc.) — renaming those would mean a live
+> production migration (club/club_member/club_war* tables are already applied, see T4.2a) plus
+> reworking shipped iOS/backend code, for a purely cosmetic gain. Only user-facing copy (screen
+> titles, tab label, buttons, notification text, any backend response text a user reads directly)
+> changes to "Circle". This reverses a rename made the other direction just 3 days earlier
+> (2026-09-23, "Circle"→"Club", done specifically to match the code's existing `club_id` naming) —
+> that reasoning still holds for internal naming, hence the split: display says Circle, everything
+> else stays club.
+
+> **IMPORTANT — this section also reverses T4.1b's already-built code, 2026-09-26.** T4.1b's
+> `POST /api/clubs` was implemented as Premium-gated (2026-09-25), which **contradicts AC1 below**
+> (already on record since 2026-09-23: "Any tier can create a club"). This is real engineering work
+> to revert, not a doc-only fix — flagged here so it is not silently missed. See
+> tasks/phase-4-backlog.md T4.1b for the corresponding task note.
 
 **Already decided elsewhere (restated, not re-decided):** one club per user (§4.19); roles `owner` /
 `admin` / `member` (T4.2a's `club_member`); a Club is a *Premium Club* when its owner has active
@@ -1128,8 +1172,8 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
 5. ~~**Admin tools (club analytics, internal challenges) deferred entirely** — they overlap T4.8's
    B2B dashboard and must not be built twice.~~ **Revised 2026-09-23 (PM): admin tools are IN
    scope for T4.1** — T4.8 (a separate B2B web dashboard) is dissolved and merged here, so there's
-   still only one place they're built. They are a **Premium feature included in the $7.99
-   subscription** (no separate product or purchase), available **only to the owner or an admin of a
+   still only one place they're built. They are a **Premium feature included in the $1.99
+   subscription** (revised 2026-09-26, was $7.99) (no separate product or purchase), available **only to the owner or an admin of a
    Premium Club** (the club's owner has active Premium — same rule as §4.19/§4.23). They stay
    **entirely internal**: analytics and challenges are seen by, and apply to, that club's own members
    only — never public, never reaching anyone outside the club. Reaching or notifying the whole Laju
@@ -1165,20 +1209,74 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   (the same "ran" definition and live roster as §4.20 Club Aktif's Participation Rate — reused, not
   a new metric); and the **top-N contributors**. Nothing more in v1. **Settled 2026-09-24 (PM):** all
   three figures cover a **rolling 30-day window**, and N = **5** (top-5 contributors).
-- AC13 (added 2026-09-23, **revised 2026-09-24**): ~~an owner/admin can create an internal challenge
-  with a name, a target distance and a time window (start/end) — the draft's example is "500km
-  bareng bulan ini". Progress is the club members' combined distance inside the window. No rewards,
-  no penalties, no other challenge types in v1.~~ an owner/admin can create an internal challenge
-  with a name, a **collective target — distance or duration** — and a **deadline** (e.g. the draft's
-  "500km bareng bulan ini"). Progress is the members' combined distance or run time up to the
-  deadline. **No automatic reward and no link to the points system** — a challenge never awards or
-  removes points. **Settled 2026-09-24 (PM):** runs count toward a challenge by the same rule as §4.20
-  (`validated`, `approved` or `flagged`, over the ADR-0009 distance gate); **at most one active
-  challenge per club** at a time; **no push notifications** for challenges in v1.
+- AC13 (added 2026-09-23, **revised 2026-09-24, mechanics fully detailed 2026-09-26**): ~~an
+  owner/admin can create an internal challenge with a name, a target distance and a time window
+  (start/end) — the draft's example is "500km bareng bulan ini". Progress is the club members'
+  combined distance inside the window. No rewards, no penalties, no other challenge types in v1.~~
+  an owner/admin can create an internal challenge with a name, a **collective target — distance or
+  duration** — and a **deadline** (e.g. the draft's "500km bareng bulan ini"). Progress is the
+  members' combined distance or run time up to the deadline. **No automatic reward and no link to
+  the points system** — a challenge never awards or removes points. **Settled 2026-09-24 (PM):**
+  runs count toward a challenge by the same rule as §4.20 (`validated`, `approved` or `flagged`,
+  over the ADR-0009 distance gate); **at most one active challenge per club** at a time.
+  **Push notifications now IN v1 for challenges, reversed 2026-09-26** — see the cancellation rule
+  below; this is the one case that needs a real push, everything else about a challenge stays
+  in-app only.
+
+  **Full mechanics, decided 2026-09-26 (PM):**
+  - **Participation is automatic — no join/opt-in step.** Any run by a current Circle member,
+    started normally from Track (no special "challenge mode"), counts automatically if it falls
+    inside the challenge's active window and the member was a Circle member at the time it happened.
+  - **A member who joins the Circle mid-challenge** only has runs from *after* they joined count;
+    earlier runs (from before they were a member) never count.
+  - **The collective total only ever increases, never decreases** — once a run's contribution is
+    counted toward the collective total, it stays counted even if that member later leaves the
+    Circle. (This was explicitly chosen over the alternative of retroactively subtracting a
+    departed member's contribution, to avoid the group's shared progress regressing through no
+    fault of the remaining members.)
+  - **The individual per-member ranking-within-challenge is different**: a member who leaves the
+    Circle is removed from that ranking display (they're no longer part of the current roster), but
+    their own run/points data is never touched — it remains fully visible in their own personal
+    history, just no longer shown in this Circle's challenge leaderboard.
+  - **Reaching the collective target before the deadline does not end the challenge early.** It
+    stays open, collecting further contributions and updating the individual ranking, all the way
+    to the original deadline — it just carries a "target reached" status from that point on.
+  - **If the deadline passes without the collective target being reached**, the challenge still
+    closes at the deadline (never extended); the individual ranking is still shown, ordered by each
+    member's own contribution, independent of whether the group target was met.
+  - **The owner can cancel a running challenge at any time — full, centralized owner control.** On
+    cancel: the individual ranking accumulated so far is **frozen and kept as a final historical
+    record, never deleted**, and every participating member receives a **real push notification**
+    (not just an in-app banner) along these lines: *"(Nama Challenge) suddenly cancelled by owner,
+    but your run history still in rank! Thank you for participating."* This is a deliberate,
+    narrow exception to the general "no push" posture elsewhere in the app (§5 Non-Goals, real-time
+    push infrastructure) — scoped to this one cancellation event only, not challenge progress
+    updates in general, which stay in-app.
 - AC14 (added 2026-09-23): club analytics and internal challenges are visible only to that club's
   members. Nothing about them is public, shown to, or sent to any user outside the club.
 - AC15 (added 2026-09-23): anything that would reach the whole Laju user base is not an admin tool —
   it remains Laju-exclusive (§4.21, ADR-0014).
+- AC22 (added 2026-09-26, PM decision): **member cap — Free Circle: max 20 members; Premium Circle
+  (owner has active Premium, checked live): max 100 members.** Explicitly a business/growth lever,
+  not a technical necessity — analytics (AC12) is a light aggregate query, its cost does not
+  meaningfully differ between 20 and 100 members. A Circle over its cap (e.g. an owner's Premium
+  lapsed while above 20) is never force-shrunk — see AC24 (freeze).
+- AC23 (added 2026-09-26, PM decision): **kick-member, transfer-ownership (AC16), edit
+  name/description/privacy, regenerate invite code (AC20), and promote-to-admin (AC17) are ALL free
+  for every tier — never bundled with the Premium admin tools (AC11-AC13).** These are basic
+  governance/moderation needs, not growth/insight tools — gating kick-member specifically would
+  leave a Free Circle with no way to remove a toxic member without paying, a real moderation risk,
+  not just a fairness one. (This corrects an earlier ambiguous note in
+  tasks/03-development/tasks/README.md that had bundled "owner-removes-member" into the deferred
+  admin-tools bucket — that bundling is now explicitly wrong.)
+- AC24 (added 2026-09-26, PM decision): **Premium Club status "freezes," it never deletes or kicks.**
+  When a Circle owner's Premium lapses (including while the Circle is over the Free cap): existing
+  members are never removed, the Circle is never deleted, previously-created challenges/analytics
+  history is not erased. What locks: starting a new challenge, viewing analytics, and — if the
+  Circle is currently at or above the Free cap (20) — accepting new members, until either the
+  Circle drops back under the cap (members leaving) or the owner's Premium is active again. This
+  mirrors the "Premium Club" check already defined in §4.19 (derived live from the current owner,
+  never a stored/cached flag).
 
 - AC16 (added 2026-09-24, PM decision): the owner can't leave directly. They must first **transfer
   ownership** to another member, or — if they are the club's only member — ~~**delete the club**~~
@@ -1227,8 +1325,9 @@ Premium (§4.19); Club Aktif needs 10+ members to be ranked (§4.20).
   consistent); more than one challenge at once; notifying members.~~ → §4.20's run rule; max one
   active challenge per club; no push notifications in v1 (AC13).
 
-**Still deferred (T4.1 extended scope):** ~~ownership transfer, club deletion,~~ member cap.
-(Ownership transfer and club archiving moved into v1 by AC16 on 2026-09-24.)
+**Still deferred (T4.1 extended scope):** ~~ownership transfer, club deletion, member cap~~ — all
+now decided (ownership transfer/archiving by AC16, 2026-09-24; member cap by AC22, 2026-09-26).
+Nothing left deferred in this section as of 2026-09-26.
 
 ### 4.25 Monetization: Advanced Statistics (Fase 4, added 2026-09-24 — NOT v1/Must-have)
 
@@ -1255,31 +1354,56 @@ question — promoted to full AC per this repo's convention (same treatment as C
   locally on that device — no attempt to backfill from the server. This is a known, accepted
   consequence of the on-device decision, not a bug to fix later.
 
+**Confirmed 2026-09-26 (PM, product review session):** AC1-AC3 stay in v1 as-is, despite being a
+weaker Premium hook than the rest of the bundle (LAJU cannot match Strava's HR/power-based
+analytics — no sensor data exists to compute them, see §4.22 Apple Watch Companion for the only
+path to HR data at all) — a deliberate PM call to keep them anyway, not an oversight. **AC2's
+Personal Record is explicitly NOT the same thing as an Achievement tier (§4.31)** — Personal Record
+is a continuously-updating "your own best ever" value; an Achievement is a fixed, permanently-
+unlocked threshold badge. The two systems are not merged.
+
 **Depends on:** T4.20c (StoreKit entitlement check must exist to gate this).
 
 **Reference:** user-flow.md §2.5 (metrics draft), product-spec.md §4.23 (Premium gating pattern).
 
-### 4.26 Monetization: Premium Profile (Fase 4, added 2026-09-24 — NOT v1/Must-have)
+### 4.26 Monetization: Premium Profile (Fase 4, added 2026-09-24, **profile photo/bio reversed to
+free-for-all 2026-09-26** — NOT v1/Must-have)
 
-**Status: AC-complete 2026-09-24** (T4.7). Was a scope note (2026-09-23, PM) with no open product
-question.
+**Status: AC-complete 2026-09-24** (T4.7). **Revised 2026-09-26 (PM decision, product review
+session): profile photo and bio are no longer Premium-gated — Alt App Icon is now the only
+Premium-exclusive item in this section.**
+
+**Rationale for the reversal:** profile photo and bio are basic social-participation identity, not
+a status flex — gating them felt like "paying to be a normal user," not "paying to look cool"
+(the Discord Nitro precedent: avatar/About Me are free for everyone; only the *flair on top*
+— animated avatars, decorations, banners — is paywalled). There is also a concrete functional
+reason: once Social Feed (T4.15, already live) shows posts with profile photos, a Freemium user
+with no photo would render broken/incomplete in a feed meant to drive growth across the whole user
+base, not just Premium subscribers.
 
 **Decided:**
-- Exactly three things, nothing more: profile photo, bio, alternative app icon.
+- **Photo and bio: free for every tier**, effective 2026-09-26.
+- **Alternative app icon: remains Premium-only** — the one item in this section that stays gated.
+  It is a private, self-only cosmetic (visible only on the owner's own homescreen, never to other
+  users), which is a deliberately accepted weak spot for social-visibility-driven conversion — see
+  §4.31 (Achievement showcase) for the Premium item that *is* visible to others.
 - Photo storage/moderation is a real concern, explicitly **not a blocker** for this task — recorded
-  for whoever implements it, not solved here.
-- Pricing (already decided, product-spec.md §5): $7.99/mo, monthly only, no annual plan, no free
-  trial (2026-09-23, deliberate v1 packaging decision).
+  for whoever implements it, not solved here. This now applies to every user, not just Premium.
+- Pricing (already decided, product-spec.md §5): $1.99/mo (revised 2026-09-26, was $7.99), monthly
+  only, no annual plan, no free trial (2026-09-23, deliberate v1 packaging decision, price point
+  revisited 2026-09-26 — see §4.23 decision #7 for the full rationale).
 
 **Acceptance Criteria:**
-- AC1: A Premium user can set a profile photo, visible wherever the profile is shown (profile
-  screen, feed posts once Social Feed/T4.15 exists).
-- AC2: A Premium user can set a free-text bio.
+- AC1: Any user, Freemium or Premium, can set a profile photo, visible wherever the profile is
+  shown (profile screen, Social Feed posts).
+- AC2: Any user, Freemium or Premium, can set a free-text bio.
 - AC3: A Premium user can choose an alternative app icon from a fixed set (exact icon set not
   specified here — a design decision, not a product-spec AC).
-- AC4: A Freemium user sees none of AC1-AC3 as available — Premium-gated the same way as §4.25.
+- AC4: A Freemium user sees AC3 as unavailable (Premium-gated) — AC1/AC2 are available to them
+  the same as a Premium user.
 - AC5: Photo upload has *some* size/format constraint before it ships (exact limits not specified
-  here) — flagged so it isn't shipped unbounded, not because the limit itself is decided.
+  here) — flagged so it isn't shipped unbounded, not because the limit itself is decided. Applies
+  to all users now, not just Premium.
 
 **Depends on:** T4.20c (StoreKit entitlement check).
 
@@ -1352,6 +1476,218 @@ item in this document.
 §2.10 (HealthKit draft — note: that draft also lists *calories*, which Laju doesn't compute today;
 not covered by AC4).
 
+### 4.29 Real-time Anti-Cheat Warning (Track) (Fase 4, added 2026-09-26 — NOT v1/Must-have)
+
+**Status: scoped 2026-09-26** (PM decision, product review session). Extends §4.2 (GPS Run
+Tracking) and the server anti-cheat pipeline (tech-spec.md §2.4) — reuses the existing GPS
+speed-jump check (T2.8, 25km/h threshold), not a new detection mechanism.
+
+**Decided:**
+1. **Trigger: 5 detections of the existing speed-jump check, consecutively, within a rolling
+   2-minute window.** Falling back to normal (not detected again) resets the count to 0 — this
+   is not a total-per-run counter.
+2. **Below the 5x/2min threshold:** no special outcome. The run still goes through the existing
+   `excluded_pct` pipeline (tech-spec.md §2.4.1) as before — a shorter anomalous segment can still
+   push a run into `flagged`, just not this section's harsher category.
+3. **At or above the 5x/2min threshold, if the user does not stop or pause:** at Finish, the run
+   is marked with a new outcome distinct from ordinary `rejected` — 0 points **and** a trust-score
+   penalty **heavier than** the standard HIGH-flag penalty (exact deduction not decided — needs its
+   own calibration pass, same status as the pace-multiplier/streak-bonus constants in tech-spec.md
+   §2.3).
+4. **The live warning is advisory only — the server remains the sole authority.** The client shows
+   the warning and counts locally for UX, but the same speed-jump check is re-run server-side on
+   sync from the raw `gps_route` (ADR-0008) — a modified client cannot bypass the outcome.
+5. **Warning copy must be neutral, not accusatory** (e.g. "Pace tidak wajar terdeteksi, periksa
+   aktivitas Anda") — avoids falsely accusing a user mid-false-positive.
+6. **Hard prerequisite: the live/instant pace display bug must be fixed first** (see
+   `04-quality-security/code-quality-audit.md`, new finding CQ-11) — building this feature on top of
+   an unsmoothed, jittery live pace signal would produce false warnings and destroy user trust in
+   the feature from day one.
+
+**Acceptance Criteria:**
+- AC1: During an active run, 5 consecutive speed-jump detections within a rolling 2-minute window
+  trigger an in-app warning banner with neutral copy.
+- AC2: The consecutive count resets to 0 the moment a non-violating GPS sample is read.
+- AC3: If the user stops or pauses before reaching the 5x threshold, no penalty applies.
+- AC4: If the user continues past the 5x threshold without stopping/pausing, the run is marked at
+  Finish with 0 points and a trust-score penalty heavier than the standard HIGH-flag deduction.
+- AC5: The server independently re-derives the same outcome from `gps_route` on sync — the
+  client-side warning/count is never trusted as the final decision.
+
+**Depends on:** the live-pace display bug fix (code-quality-audit.md CQ-11); reuses T2.8 (speed-jump
+check) and the existing trust-score model (tech-spec.md §2.4).
+
+**Not decided — flagged for a separate calibration pass:** the exact trust-score penalty magnitude
+for this new outcome category.
+
+### 4.30 Trigger Start via Triple Back-Tap (Track) (Fase 4, added 2026-09-26 — NOT v1/Must-have)
+
+**Status: scoped 2026-09-26** (PM decision). Extends §4.2 (GPS Run Tracking)/the Run Tracking
+screen (screen 5).
+
+**Decided:**
+1. **Mechanism: iOS Back Tap (Settings → Accessibility → Touch → Back Tap), triggering a Laju
+   Shortcut/App Intent** ("Mulai Lari") — not a private/undocumented API. **Triple tap specifically**
+   (not double) — chosen deliberately for a lower accidental-trigger rate during actual running
+   motion (a bump needs to register as exactly 3 taps in a short window, not 1-2).
+2. **Laju cannot enable this automatically and cannot read whether it is currently bound.** The
+   app can only (a) expose the Shortcut/App Intent, and (b) show an in-app tutorial/CTA that sends
+   the user to iOS Settings to bind it themselves. There is no persistent "on/off" toggle inside
+   Laju's own Settings screen that reflects true state — showing one would be misleading.
+3. **False-trigger risk while actually running (phone in pocket/armband) must be verified on a
+   real device before this is considered done** — Back Tap is known to be trigger-happy in bags/
+   pockets; triple-tap's specificity mitigates but does not eliminate this.
+
+**Acceptance Criteria:**
+- AC1: Laju exposes a "Mulai Lari" App Intent/Shortcut that iOS Back Tap can be bound to.
+- AC2: An in-app tutorial shows the user how to bind it manually in iOS Settings — Laju never
+  claims to do this automatically.
+- AC3: False-trigger rate is verified acceptable on a real device during actual running motion
+  (not just standing still) before sign-off.
+
+**Depends on:** nothing else in this document; independent of §4.29.
+
+### 4.31 Achievement System (Fase 4, added 2026-09-26 — NOT v1/Must-have)
+
+**Status: mechanism scoped 2026-09-26** (PM decision). **Content (the actual achievement list —
+names, thresholds, categories) deliberately NOT included here** — the PM is compiling that list
+separately and will bring it back for a dedicated scoping pass. This section covers the mechanism
+only; do not invent achievement content from this section.
+
+**Decided:**
+1. **Two distinct systems, not one — do not merge them:**
+   - **Achievement** = a **fixed threshold tier** (e.g. a "30K" tier). Once a qualifying run/lifetime
+     total crosses the tier's threshold, the tier is unlocked permanently — a 38km run still only
+     unlocks "30K", not a rounded-up tier. Collectible/completionist in nature.
+   - **Personal Record** (§4.25's existing "personal record" metric — longest distance, fastest
+     pace) is a **separate, continuously-updating value**, not an achievement tier. The two are
+     **not merged** — Personal Record stays inside Advanced Stats (§4.25), unchanged.
+2. **Earning is free for every user, Freemium and Premium alike** — no achievement is ever
+   Premium-gated to *unlock*. This is consistent with Level/Points/Streak already being free.
+3. **Showcasing an earned achievement (making it visible on profile and on Social Feed posts) is
+   Premium-only.** A Freemium user still earns achievements; they just cannot display them publicly.
+   Because this is visible to *other* users, the backend is the source of truth for whether a given
+   post/profile is entitled to show a badge (same pattern as §4.23 decision #1 — never a
+   client-only claim).
+4. **Season-end top-10 reward is one achievement source among several** — see §4.32 (NFC Card)
+   for the physical-card tie-in. A season top-10 finish (opt-in claim, extra manual anti-cheat
+   verification before physical fulfillment — see §4.32) unlocks both a digital achievement badge
+   and eligibility for the physical NFC card.
+
+**Acceptance Criteria:**
+- AC1: An achievement tier unlocks the moment a qualifying stat crosses its threshold, for any
+  user regardless of subscription tier.
+- AC2: A Freemium user can see their own earned achievements privately, but cannot showcase them
+  on their public profile or on a Social Feed post.
+- AC3: A Premium user's earned achievements are shown on their public profile and can accompany a
+  Social Feed post.
+- AC4: Achievement showcase status is verified server-side for any view where another user would
+  see it — never a client-only flag.
+- AC5: Personal Record (§4.25) is never treated as, or merged into, an achievement tier.
+
+**Depends on:** §4.23 (Premium subscription infrastructure, for the showcase gate); the PM's own
+forthcoming achievement content list (not yet delivered).
+
+**Reference:** §4.25 (Advanced Statistics, Personal Record), §4.32 (NFC Card).
+
+### 4.32 Kartu NFC — Auth Link & Physical Reward (Fase 4, added 2026-09-26 — NOT v1/Must-have)
+
+**Status: scoped 2026-09-26** (PM decision). A new, standalone hardware/merchandise item — not
+part of the Premium subscription, not required for any core feature.
+
+**Decided:**
+1. **Sold separately** (merchandise), not bundled with or required by any subscription tier.
+   Buying one never grants Premium or any in-app entitlement by itself — App Store IAP rules
+   require any Premium unlock to go through IAP (§4.23), never a physical-good purchase.
+2. **Not a replacement for Apple/Google Sign-In — a secondary link/auth path to an existing
+   account.** A card must be linked to an already-authenticated Laju account (created via Apple ID
+   or Google, per §4.1) before it can be used for anything.
+3. **Two-factor when used as a sign-in method: card (something you have) + PIN (something you
+   know).** The bare NFC UID is never sufficient alone — a static, unencrypted UID is readable by
+   any consumer NFC-reader app, so PIN is mandatory, not optional, for any auth use of the card.
+4. **The PIN is never stored in plaintext anywhere** (hashed server-side, same pattern as any
+   credential) and **PIN attempts are rate-limited** to prevent brute-force (a short numeric PIN
+   has a small keyspace).
+5. **Card linking always happens from an already-authenticated session** (Apple/Google sign-in
+   first) — the card is never itself the first/bootstrapping credential for a new account.
+6. **A user can deactivate a lost/stolen card from within the app**, reachable via normal
+   Apple/Google sign-in — this does not require the card's own PIN (a lost-card scenario must not
+   depend on the lost item to be revoked).
+7. **Use cases (not exhaustive, may grow):**
+   - Signing in on a device without the user's own Apple ID/Google account.
+   - Fast check-in at official Laju offline events.
+   - Anti-fraud identity verification for offline-event raffles/undian (one card = one person,
+     harder to fake than a paper sign-in sheet) — the legal distinction between skill-based rank
+     rewards (not regulated as a lottery) and chance-based raffles (may need a permit in Indonesia)
+     still needs separate legal review before any raffle mechanic ships.
+   - Physical reward for a Season top-10 finish (§4.31 AC/achievement tie-in): **opt-in claim**
+     (the user submits a shipping address themselves — Laju does not pre-collect addresses from
+     every potential top-10 finisher) **plus extra manual anti-cheat verification** before physical
+     fulfillment, given a real tangible prize is now at stake.
+
+**Acceptance Criteria:**
+- AC1: A card can only be linked to a Laju account from an already-authenticated Apple/Google
+  session — never as a bootstrapping credential.
+- AC2: Using a linked card to sign in requires both the card's UID and its PIN; UID alone is never
+  sufficient.
+- AC3: PIN is stored hashed, never plaintext; failed PIN attempts are rate-limited.
+- AC4: A user can deactivate their own card from within the app via normal Apple/Google sign-in,
+  without needing the card's PIN.
+- AC5: A Season top-10 physical-card reward requires the user to opt in and submit shipping
+  details themselves; Laju does not collect shipping data from non-claimants.
+- AC6: A Season top-10 finish undergoes manual anti-cheat re-verification before the physical
+  reward ships.
+
+**Not decided — flagged, not invented:** exact card manufacturing/vendor process; exact legal
+mechanism for any future offline-event raffle (undian); whether/how the card integrates with
+event check-in beyond the concept described here.
+
+**Depends on:** §4.1 (Account & Profile, for the account it links to); §4.31 (Achievement, for the
+top-10 tie-in).
+
+### 4.33 Social Feed — Feed/Friends Segments & Follow (Fase 4, added 2026-09-26 — NOT v1/Must-have)
+
+**Status: scoped 2026-09-26** (PM decision), extending T4.15's already-shipped v1 (public-only
+feed, live in production — see tasks/phase-4-backlog.md). This section adds a follow graph that
+did not exist when T4.15 v1 was scoped.
+
+**Decided:**
+1. **One-way follow relationship** (asymmetric, like Twitter/Instagram/Strava's own model) — not a
+   friend-request/accept flow. A single `follow` relationship table is sufficient.
+2. **"Friends" is a computed filter over the same follow relationship** (both directions exist —
+   mutual follow), **not a second data model.** No friend-request/accept flow is built.
+3. **Two segments in the Social tab: "Feed" (public, the existing T4.15 behavior) and "Friends"**
+   (posts from mutual-follow accounts only) — kept as separate segments so content doesn't mix.
+4. **Search entry point: a search icon in the Social tab's top navigation**, visible from both
+   segments — not in the You tab, not a separate tab. Search is by username.
+5. **v1 Follow button lives on the post card in the feed itself** — not on a full user-profile
+   screen (viewing another user's full profile remains out of scope, same gap T4.15 v1 already
+   flagged). A minimal profile screen may follow later.
+6. **New post type: achievement-unlock**, alongside the existing run-activity post — reuses §4.31's
+   achievement data, distinct visual card from a run post.
+7. **Caption field added to both post types** (run-activity and achievement-unlock) — **not a
+   standalone free-text post type.** A freestanding Twitter-style text post was considered and
+   rejected: every post must still anchor to a real activity/achievement, both for moderation-risk
+   containment (this is Laju's first public UGC surface, and T4.15's own scoping already flagged
+   moderation as a gap to revisit before wide release) and to avoid mission drift into a general
+   social network, which is not Laju's differentiation.
+
+**Acceptance Criteria:**
+- AC1: A user can follow another user one-way; the followed user is not required to follow back.
+- AC2: The "Friends" segment shows only posts from accounts with a mutual (two-way) follow
+  relationship with the viewer — computed from the same follow table, no separate friend model.
+- AC3: The Social tab has a search-by-username entry point in its top navigation, reachable from
+  both the Feed and Friends segments.
+- AC4: A Follow/Unfollow action is available directly from a post card in the feed.
+- AC5: An achievement-unlock post type exists alongside the existing run-activity post type.
+- AC6: Both post types support an optional short caption; no standalone text-only post type exists.
+
+**Not decided — flagged for later:** a dedicated full profile-view screen for another user (T4.15's
+existing gap, unchanged); moderation beyond delete-own-post (T4.15's existing gap, unchanged, now
+more relevant with a caption field adding free text).
+
+**Depends on:** T4.15 (Social Feed v1, already live); §4.31 (Achievement, for the unlock post type).
+
 ## 5. Non-Goals (v1) — dan alasannya
 
 | Non-goal | Alasan |
@@ -1359,7 +1695,7 @@ not covered by AC4).
 | ~~Circle~~ **Club** / Matchmaking | mvp-report eksplisit: loop individual harus tervalidasi dulu sebelum lapisan sosial ditambahkan — supaya tidak menutupi apakah core loop benar-benar rewarding tanpa teman. **Renamed "Circle" → "Club" 2026-09-23** (PM decision) — the DB schema already used `club_id` (database-api-spec.md §1), so this brings docs into alignment with existing code, not the reverse. **Club War specifically is now CONFIRMED TO BUILD** (2026-09-23, reversed from "nice to have v2+"/Non-goal) — see the new §4.19 below. Still not v1/Fase 4-scheduled; only the eventual shape is now decided, not the timing. ~~Matchmaking (circle-to-circle) stays a Non-goal, undecided shape.~~ **Matchmaking confirmed to build (Fase 4), 2026-09-23 — suggestion-only (T4.3).** Base Club scoped 2026-09-23 (§4.24). |
 | Social Feed (post pencapaian, like, comment) | Sama alasannya dengan Club di atas — draft di user-flow.md (belum direkonsiliasi ke dokumen manapun sampai 2026-09-12) menggabungkan Social Feed dengan Circle/Club-feed; keduanya sama-sama lapisan sosial yang sengaja ditunda sampai core loop individual tervalidasi. Rekomendasi: Fase 4 backlog (T4.15), bukan Fase 3 — lihat tasks/phase-4-backlog.md. **Urutan diputuskan 2026-09-23 (PM): Social Feed dibangun SEBELUM Club (T4.1)** — tetap Fase 4. |
 | Leaderboard Lokal (kecamatan / kabupaten-kota / provinsi) | ~~**Ditunda ke v1.1 / Fase 4 (2026-09-21) — bukan dibatalkan.** Butuh kepadatan user tinggi supaya berguna: dengan user awal sedikit, satu kecamatan hanya berisi beberapa orang dan leaderboard-nya kosong/tidak kompetitif. Global-only untuk MVP terasa "lokal" secara natural saat user masih sedikit. Kerja yang sudah ada (hierarki wilayah, skema `LEADERBOARD_SCOPE`, task T3.2–T3.5) disimpan sebagai referensi, ditandai deferred — lihat §4.6 dan tasks/phase-4-backlog.md.~~ **DIBATALKAN PERMANEN 2026-09-22 (PM sign-off)** — bukan ditunda. Alasan: scope terlalu luas untuk logic leaderboard yang dibutuhkan. Hierarki wilayah di `User` dan nilai `scope_type` regional di `LEADERBOARD_SCOPE` justru **dihapus** dari skema, bukan disimpan sebagai referensi (Task B). Lihat §4.6 dan tasks/phase-4-backlog.md. |
-| ~~Monetisasi (Premium, B2B dashboard)~~ | ~~Fokus v1 = retention/validasi core loop, bukan revenue. Monetisasi baru relevan setelah ada basis user aktif.~~ **Premium pricing DECIDED 2026-09-23** (PM decision): $7.99/bulan (harga referensi USD), harga regional lewat App Store Connect's price-tier localization sendiri — bukan sistem konversi kurs custom, ini sebagian besar tugas konfigurasi store, bukan engineering. Ini bukan berarti Premium sudah dijadwalkan untuk dibangun v1/Fase 4 — cuma bentuk harganya yang sudah tidak terbuka lagi. ~~B2B dashboard (EO) tetap Non-goal v1; modelnya sendiri direframe 2026-09-23, lihat lean-canvas.md §2/§6.~~ **Konsep EO diganti total 2026-09-23** — sekarang Laju Branded Events (§4.21, sponsorship fee), bukan dashboard EO. **Paket Premium v1 (2026-09-23):** bulanan saja, tanpa paket tahunan dan tanpa free trial — keputusan sadar membatasi scope. Infrastruktur langganannya (StoreKit/verifikasi server) belum ada sama sekali: §4.23 / task T4.20. |
+| ~~Monetisasi (Premium, B2B dashboard)~~ | ~~Fokus v1 = retention/validasi core loop, bukan revenue. Monetisasi baru relevan setelah ada basis user aktif.~~ **Premium pricing DECIDED 2026-09-23, REVISI 2026-09-26** (PM decision): ~~$7.99/bulan~~ **$1.99/bulan** (harga referensi USD — diturunkan 2026-09-26 karena bundle Premium sengaja ringan setelah Club War ditahan dan Club dibuat gratis; lihat §4.23 poin 7 untuk alasan lengkap), harga regional lewat App Store Connect's price-tier localization sendiri — bukan sistem konversi kurs custom, ini sebagian besar tugas konfigurasi store, bukan engineering. Ini bukan berarti Premium sudah dijadwalkan untuk dibangun v1/Fase 4 — cuma bentuk harganya yang sudah tidak terbuka lagi. ~~B2B dashboard (EO) tetap Non-goal v1; modelnya sendiri direframe 2026-09-23, lihat lean-canvas.md §2/§6.~~ **Konsep EO diganti total 2026-09-23** — sekarang Laju Branded Events (§4.21, sponsorship fee), bukan dashboard EO. **Paket Premium v1 (2026-09-23):** bulanan saja, tanpa paket tahunan dan tanpa free trial — keputusan sadar membatasi scope. Infrastruktur langganannya (StoreKit/verifikasi server) belum ada sama sekali: §4.23 / task T4.20. |
 | Android support | v1 launches iOS-exclusive, native Swift/SwiftUI — Android ditunda tanpa timeline pasti (keputusan platform, bukan technical debt). Lihat tech-spec.md §1. |
 | ~~Route map visualization~~ | **Dicabut sebagai Non-goal (2026-09-12)** — dipecah jadi Live map (§4.8) dan Static map (§4.9), keduanya Must-have Fase 1. Alasan awal (biaya Maps API) sudah tidak berlaku setelah keputusan pakai MapKit native (tech-spec.md §1, lean-canvas.md §7); alasan "bukan bagian dari core loop" tetap benar secara literal, tapi diputuskan tetap masuk sebagai fitur engagement pendukung core loop, bukan lagi dianggap di luar prioritas. |
 | Government / sports-brand partnership tooling | Tidak ada demand tervalidasi; secondary user, bukan primary. |
