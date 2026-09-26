@@ -31,7 +31,6 @@ Read alongside [design-notes.md](./design-notes.md) for tokens (colors, type, co
 - **Idle (pre-run)** — map centred on user, one primary Start button. Everything else absent or dimmed. This is the app's default screen; it should feel like an invitation, not a dashboard.
 - **Active** — as above, all stats live.
 - **Paused (manual)** — stats frozen and visibly frozen. The user must be able to tell at a glance that nothing is being recorded.
-- **Auto-paused (5b)** — **must be visually distinct from manual pause** (AC 4.11.2). Suggest: the same frozen treatment plus an explicit "Auto-paused" label, since the distinction is *why* it paused, not *that* it paused. The user did not choose this, so it needs to explain itself.
 - **GPS degraded (5a)** — banner present, stats continue. Must not look like an error state; tracking is still working.
 - **Permission: While-Using (5c)** — persistent banner warning that tracking stops when the screen locks, with a "Buka Pengaturan" action (AC 4.15.2).
 - **Permission: Denied (5d)** — stronger treatment; the core loop is unavailable. Still offers the Settings deep link (AC 4.15.3).
