@@ -145,3 +145,120 @@ struct KickMemberResponse: Decodable, Sendable, Equatable {
         case kicked
     }
 }
+
+/// product-spec.md §4.24 AC13: Circle Challenge. `targetType` is `"distance"` or `"duration"` — unit
+/// depends on it, matching the backend's own convention (meters/seconds), same as `Run`'s columns.
+struct CreateChallengeRequest: Encodable, Sendable {
+    let name: String
+    let targetType: String
+    let targetValue: Double
+    let deadline: Date
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case targetType = "target_type"
+        case targetValue = "target_value"
+        case deadline
+    }
+}
+
+struct CreateChallengeResponse: Decodable, Sendable, Equatable {
+    let challengeId: String
+    let clubId: String
+    let name: String
+    let targetType: String
+    let targetValue: Double
+    let deadline: Date
+    let status: String
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case challengeId = "challenge_id"
+        case clubId = "club_id"
+        case name
+        case targetType = "target_type"
+        case targetValue = "target_value"
+        case deadline
+        case status
+        case createdAt = "created_at"
+    }
+}
+
+struct ChallengeRankingEntry: Decodable, Sendable, Equatable, Identifiable {
+    let userId: String
+    let total: Double
+
+    var id: String { userId }
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case total
+    }
+}
+
+/// `GET /api/clubs/[id]/challenge` — progress + individual ranking. Distinct from
+/// `CreateChallengeResponse` (no `created_at`/`collective_total`/`ranking` overlap between the two
+/// endpoints' shapes).
+struct ChallengeProgressResponse: Decodable, Sendable, Equatable {
+    let challengeId: String
+    let clubId: String
+    let name: String
+    let targetType: String
+    let targetValue: Double
+    let deadline: Date
+    let status: String
+    let collectiveTotal: Double
+    let ranking: [ChallengeRankingEntry]
+
+    enum CodingKeys: String, CodingKey {
+        case challengeId = "challenge_id"
+        case clubId = "club_id"
+        case name
+        case targetType = "target_type"
+        case targetValue = "target_value"
+        case deadline
+        case status
+        case collectiveTotal = "collective_total"
+        case ranking
+    }
+}
+
+struct CancelChallengeResponse: Decodable, Sendable, Equatable {
+    let challengeId: String
+    let cancelled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case challengeId = "challenge_id"
+        case cancelled
+    }
+}
+
+struct ClubAnalyticsContributor: Decodable, Sendable, Equatable, Identifiable {
+    let userId: String
+    let distanceMeters: Double
+    let points: Int
+
+    var id: String { userId }
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case distanceMeters = "distance_meters"
+        case points
+    }
+}
+
+/// product-spec.md §4.24 AC12: rolling 30 days, top-5 ranked by distance (confirmed 2026-09-26, not
+/// points — product-spec.md's own note on this).
+struct ClubAnalyticsResponse: Decodable, Sendable, Equatable {
+    let totalDistanceMeters: Double
+    let totalPoints: Int
+    let activeMemberCount: Int
+    let topContributors: [ClubAnalyticsContributor]
+
+    enum CodingKeys: String, CodingKey {
+        case totalDistanceMeters = "total_distance_meters"
+        case totalPoints = "total_points"
+        case activeMemberCount = "active_member_count"
+        case topContributors = "top_contributors"
+    }
+}

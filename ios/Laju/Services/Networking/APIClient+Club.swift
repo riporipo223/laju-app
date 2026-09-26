@@ -101,4 +101,65 @@ extension APIClient {
         }
         return try RunSubmissionCoding.makeDecoder().decode(KickMemberResponse.self, from: data)
     }
+
+    /// product-spec.md §4.24 AC13: 403 `not_premium_club` (Circle isn't a Premium Club) and 409
+    /// `challenge_active` (already has an open one) are both expected, handled responses, not just
+    /// generic failures — callers switch on `APIClientError.server`'s body for both.
+    func createChallenge(clubId: String, name: String, targetType: String, targetValue: Double, deadline: Date, jwt: String) async throws
+        -> CreateChallengeResponse
+    {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/clubs/\(clubId)/challenge"))
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = try RunSubmissionCoding.makeEncoder().encode(
+            CreateChallengeRequest(name: name, targetType: targetType, targetValue: targetValue, deadline: deadline)
+        )
+
+        let (data, response) = try await session.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIClientError.invalidResponse }
+        guard httpResponse.statusCode == 201 else {
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: String(data: data, encoding: .utf8) ?? "")
+        }
+        return try RunSubmissionCoding.makeDecoder().decode(CreateChallengeResponse.self, from: data)
+    }
+
+    /// 404 means the Circle has no challenge at all (never created one, or the app should treat this
+    /// as "show the empty state") — a normal, expected response, not a generic failure.
+    func fetchChallenge(clubId: String, jwt: String) async throws -> ChallengeProgressResponse {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/clubs/\(clubId)/challenge"))
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIClientError.invalidResponse }
+        guard httpResponse.statusCode == 200 else {
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: String(data: data, encoding: .utf8) ?? "")
+        }
+        return try RunSubmissionCoding.makeDecoder().decode(ChallengeProgressResponse.self, from: data)
+    }
+
+    /// Owner only (server-enforced) — freezes the ranking as a final record, never deletes it.
+    func cancelChallenge(clubId: String, jwt: String) async throws -> CancelChallengeResponse {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/clubs/\(clubId)/challenge/cancel"))
+        urlRequest.httpMethod = "DELETE"
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIClientError.invalidResponse }
+        guard httpResponse.statusCode == 200 else {
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: String(data: data, encoding: .utf8) ?? "")
+        }
+        return try RunSubmissionCoding.makeDecoder().decode(CancelChallengeResponse.self, from: data)
+    }
+
+    /// product-spec.md §4.24 AC12: owner/admin of a Premium Club only — 403 `not_premium_club` is an
+    /// expected response here too, same posture as `createChallenge`.
+    func fetchClubAnalytics(clubId: String, jwt: String) async throws -> ClubAnalyticsResponse {
+        var urlRequest = URLRequest(url: APIConfig.baseURL.appendingPathComponent("api/clubs/\(clubId)/analytics"))
+        urlRequest.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIClientError.invalidResponse }
+        guard httpResponse.statusCode == 200 else {
+            throw APIClientError.server(statusCode: httpResponse.statusCode, body: String(data: data, encoding: .utf8) ?? "")
+        }
+        return try RunSubmissionCoding.makeDecoder().decode(ClubAnalyticsResponse.self, from: data)
+    }
 }
