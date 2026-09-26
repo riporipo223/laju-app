@@ -270,7 +270,8 @@ same job to a new `season_id`.
   T4.15 → T4.1 (Club) → T4.2 (Club War). Club itself scoped in
   product-spec.md §4.24; matchmaking (T4.3) confirmed as suggestion-only.
 - Monetization: seasonal pass, advanced statistics, exclusive badges,
-  premium profile (pricing decided 2026-09-23: $7.99/mo + App Store
+  premium profile (pricing decided 2026-09-23, revised 2026-09-26: ~~$7.99/mo~~
+  **$1.99/mo** + App Store
   Connect regional tiers, product-spec.md §5; monthly only, no annual,
   no trial in v1 — all of these depend on T4.20, Premium subscription
   infrastructure, which does not exist yet — product-spec.md §4.23),

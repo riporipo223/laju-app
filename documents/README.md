@@ -5,7 +5,14 @@
 > self-contained orientation doc — reading order, workflow rules, current status, the recurring
 > Apple Developer Program blocker, final decisions, and a security checklist for this public repo.
 
-**Last updated: 2026-09-17.**
+**Last updated: 2026-09-26.**
+
+> **2026-09-26 PM product-review session** produced a large batch of Fase 4 decisions (Club/Circle
+> rename + revert of its Premium gate, member cap, Circle challenge mechanics, Club War put on
+> hold, Premium price cut to $1.99, profile photo/bio made free, new Achievement/NFC-card/real-time
+> anti-cheat/Social-follow scope, plus new bug CQ-11) — full detail in HANDOFF.md §3's own dated
+> entry and product-spec.md §4.19/§4.20/§4.23-§4.26/§4.29-§4.33. Not yet reflected below in every
+> place it touches (§1/§3's own text) — read HANDOFF.md §3 first if this file and it disagree.
 
 Two questions, answered in one place, so neither track has to ask the other what to do next:
 
@@ -112,6 +119,9 @@ Not blocking either track today, but each will block something soon.
 | 5 | **`user-flow.md` reconciliation** — Circle, Social Feed, Freemium/Premium tiering | Nothing today; it is correctly parked | That document is still labelled "draft standalone, belum diintegrasikan". Screens there are excluded from the design inventory on purpose |
 | 6 | **Onboarding step order** — code runs sign-in *before* location permission; `user-flow.md` §2.1 still says the reverse | Nothing today, but the two documents disagree | Confirmed visually on simulator 2026-09-17: the running order is Welcome → Core Loop → Sign in → Permission. The 2026-09-14 code comment says user-flow.md should be updated if this order is kept. Confirm, then sync the doc |
 | 7 | **T2.9's teleport threshold (150km/h) is a starting value, not spec-given** | Nothing today; flagged for the same real-data calibration pass as the pace-bracket table and `MIN_DISTANCE_KM_FOR_POINTS` | tech-spec.md §2.4's Distance/duration sanity row has no explicit number, unlike pace cap (3:00/km) and speed jump (25km/h) — `backend/lib/anti-cheat/distance-duration-sanity.ts` documents the value and its rationale inline, following the project's own established convention |
+| 8 | **Is T4.17 (Club Global Leaderboard, club-vs-club ranking) still worth building?** | T4.17's own scoping — do not build against it until answered | Raised 2026-09-26: Circle's own internal leaderboard (§4.24 AC9) turned out to be a cheap, precompute-free reuse of existing data; T4.17's club-vs-club ranking is a separate, heavier thing (its own precompute tables, T4.17a/b) that was never re-confirmed once that became clear. Keep as scoped, defer alongside Club War, or cancel outright (as Local Leaderboard was) — see product-spec.md §4.20's header note |
+| 9 | **Exact trust-score penalty for the new "ignored 5x anti-cheat warning" outcome** (product-spec.md §4.29) | T4.22's own DoD | The outcome (0 points + a penalty heavier than the standard HIGH-flag deduction) is decided; the exact deduction magnitude is not — needs its own calibration pass, same status as the pace-multiplier/streak-bonus constants (tech-spec.md §2.3) |
+| 10 | **Achievement content list** (names, thresholds, categories) | T4.24's own scope | Deliberately not decided in product-spec.md §4.31 — the PM is compiling this separately and will bring it back for its own scoping pass. Do not invent content in the meantime |
 
 ### Closed 2026-09-21
 

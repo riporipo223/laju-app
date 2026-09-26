@@ -77,6 +77,64 @@ This project has a specific way of working. Follow it exactly; it is not a sugge
 
 ## 3. If the user types "Lanjutkan" right now
 
+**Update, 2026-09-26**: a long PM product-review session (no code written, discussion + doc
+updates only) produced a large batch of Fase 4 product decisions — all written into
+`product-spec.md` §4.19, §4.20 (flagged, not decided), §4.23-§4.26, and new §4.29-§4.33, plus
+`code-quality-audit.md` (new finding CQ-11) and `tasks/phase-4-backlog.md`/`tasks/README.md`.
+**Read this before touching any Fase 4 Club/Circle/Premium/Social work — several of these reverse
+already-built code, not just docs:**
+
+1. **Club renamed "Circle" in the UI only** (2026-09-26) — internal `club`/API/DB naming is
+   unchanged, this is presentation-layer copy only. See product-spec.md §4.24's header note.
+2. **`POST /api/clubs`'s Premium gate (added 2026-09-25) must be reverted** — creating a Circle is
+   free for every tier again, per product-spec.md §4.24 AC1 (which the 2026-09-25 code had drifted
+   from). **Real engineering work outstanding, not done as of this writing.**
+3. **Member cap added**: Free Circle 20, Premium Circle 100 (§4.24 AC22) — not yet enforced in code.
+4. **Kick-member/transfer-ownership/edit-info/regenerate-code/promote-admin confirmed free for
+   every tier** (§4.24 AC23) — corrects a prior wrong assumption that bundled kick-member with the
+   Premium-gated admin tools (`tasks/README.md`'s old T4.1b line said "owner-removes-member...
+   deferred, blocked on T4.20b" — that was wrong, now corrected).
+5. **Circle challenges fully detailed** (§4.24 AC13): automatic participation, collective total
+   only ever increases, individual ranking drops a departed member but their own data is untouched,
+   reaching the target early doesn't end the challenge before its deadline, owner-cancel now sends
+   a real push notification (a narrow, deliberate exception to "no push" elsewhere).
+6. **Club War put ON HOLD, not cancelled** (§4.19) — no timeline. T4.2a's applied schema and
+   T4.2b's inert `isPremiumClub()` stub are unaffected, stay exactly as built.
+7. **Club Global Leaderboard (T4.17, §4.20) has an open, unresolved question** — do not build
+   against it until the PM explicitly answers whether it's still needed now that Circle's own
+   internal leaderboard turned out to be a cheap reuse.
+8. **Premium pricing revised: $1.99/mo, was $7.99/mo** (§4.23 decision #7) — reasoning: the Premium
+   bundle is intentionally light (Club War on hold, Circle free), so priced to match, not to match
+   Strava's own $9.99-11.99/mo tier.
+9. **Profile photo & bio are now free for every tier** (§4.26) — only Alt App Icon stays
+   Premium-only. Reversal reason: Social Feed shows post authors' photos; a Freemium user with no
+   photo would render broken in a feed meant to drive growth for the whole user base.
+10. **New Achievement system, mechanism only** (§4.31): earning is free for every tier; showcasing
+    an earned achievement on profile/Social Feed is Premium-only and server-verified. **Explicitly
+    NOT the same thing as Personal Record** (§4.25, unchanged, stays inside Advanced Stats). The
+    actual achievement content list (names/thresholds) is not decided — the PM is compiling it
+    separately.
+11. **New: Kartu NFC** (§4.32) — sold separately (merchandise, never grants Premium by itself, App
+    Store IAP rules), a secondary auth link (card + PIN, two-factor) to an already-authenticated
+    Apple/Google account, ties into a Season top-10 physical reward (opt-in claim + extra manual
+    anti-cheat verification).
+12. **New: real-time anti-cheat warning during tracking** (§4.29) — 5 consecutive speed-jump
+    detections within 2 minutes triggers a warning; ignoring it results in 0 points + a heavier
+    trust-score penalty at Finish. **Hard-blocked on CQ-11** (see below) being fixed first.
+13. **New: triple back-tap to trigger Start** (§4.30) — via an App Intent/Shortcut the user must
+    bind manually in iOS Settings; Laju cannot enable or detect this automatically.
+14. **New: Social Feed Feed/Friends segments + one-way follow** (§4.33), extending the already-live
+    T4.15 — "Friends" is a computed mutual-follow filter, not a second data model. A standalone
+    free-text (Twitter-style) post type was considered and explicitly rejected.
+15. **New bug found, not yet fixed: CQ-11** (`code-quality-audit.md`) — the live/instant pace shown
+    during tracking has no defined smoothing/windowing rule (unlike the stable `avg_pace_sec_per_km`
+    used for points, which is unaffected). Reported as "kadang melompat, kadang tidak sesuai dengan
+    kecepatan aslinya." This is now also a hard prerequisite for item 12 above.
+
+None of items 2-4, 12, 13, 15 have any code written yet — this session was discussion + documentation
+only, no Senior iOS Developer work was dispatched. Next session's job is to turn the above into
+real, checkpointed implementation tasks (one at a time, per this file's own workflow contract in §1).
+
 **Update, 2026-09-24**: real device dogfood (Google sign-in, not Apple) surfaced product feedback,
 acted on the same day (commits `07e7a6b`, `b33add4`, `6ec3cc0`) — no task number owns this, it's
 ad-hoc PM-directed nav/UX work, not part of the phase-N task files:
@@ -239,6 +297,21 @@ One-liners only. Full rationale: `documents/02-architecture/adr/README.md` (13 A
   original 91-day expectation. **Not implemented yet — the live season row and any season-length
   constant are untouched.** Do not touch them without a separate, explicitly scoped task (see
   tasks/phase-4-backlog.md T4.18). Full detail: product-spec.md §4.20.
+- **Club display name is "Circle" — UI copy only, internal `club` naming unchanged** — decided
+  2026-09-26 (PM decision, product review session), reverses the *other* direction taken just 3
+  days earlier (2026-09-23, "Circle"→"Club" to match existing `club_id` code). Full detail:
+  product-spec.md §4.24's header note.
+- **Circle creation is free for every tier, not Premium-gated** — decided 2026-09-23
+  (product-spec.md §4.24 AC1), **the 2026-09-25 code (`POST /api/clubs`) drifted from this
+  decision and needs reverting** — see §3 item 2 above. Member cap (Free 20 / Premium 100) added
+  2026-09-26 as the actual Free/Premium differentiator for Circle capacity (§4.24 AC22).
+- **Club War is on hold, not cancelled** — decided 2026-09-26 (PM decision), no timeline set. See
+  product-spec.md §4.19's header note.
+- **Premium price is $1.99/mo, not $7.99/mo** — revised 2026-09-26 (PM decision), reverses the
+  2026-09-23 figure. Still monthly-only, no annual plan, no free trial (unchanged). Full
+  rationale: product-spec.md §4.23 decision #7.
+- **Profile photo and bio are free for every tier** — revised 2026-09-26 (PM decision), reverses
+  the 2026-09-24 figure (product-spec.md §4.26 AC1-AC2). Only Alt App Icon remains Premium-only.
 
 ---
 

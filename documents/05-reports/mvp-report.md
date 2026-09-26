@@ -61,14 +61,17 @@ Run again
   drain baterai — divalidasi lewat T0.9 (physical device test)
 
 ## 7. Out of Scope untuk v1
-- Club, Matchmaking — fitur sosial ditunda sampai core loop individual
-  tervalidasi. Club War sendiri **confirmed to build (Fase 4)**, 2026-09-23
-  — tetap bukan v1, ~~hanya bentuknya sudah tidak lagi 100% terbuka~~
-  mekanismenya sudah final (product-spec.md §4.19 AC1-AC15)
+- Club/Circle (nama tampilan diganti "Circle" 2026-09-26, internal tetap `club`), Matchmaking —
+  fitur sosial ditunda sampai core loop individual tervalidasi. Club War sendiri
+  **confirmed to build (Fase 4)** 2026-09-23, mekanisme final (product-spec.md
+  §4.19 AC1-AC15), tapi **build-nya sendiri ditahan 2026-09-26 (tidak dibatalkan)**
+  — Circle dasarnya kini gratis untuk semua tier, lapisan Club War yang lebih
+  berat ditunda ke rilis berikutnya
 - Monetisasi (Freemium/Premium/~~B2B~~ — B2B dihapus 2026-09-23, lihat bawah) — fokus dulu ke retention, monetisasi
   baru relevan setelah ada basis user aktif. **Harga Premium sudah
-  diputuskan 2026-09-23** ($7.99/bulan + tier regional App Store Connect,
-  product-spec.md §5; bulanan saja, tanpa paket tahunan/trial di v1), tapi
+  diputuskan 2026-09-23, direvisi 2026-09-26**: ~~$7.99/bulan~~ **$1.99/bulan**
+  + tier regional App Store Connect (product-spec.md §5; bulanan saja, tanpa
+  paket tahunan/trial di v1 — tidak berubah), tapi
   belum dijadwalkan untuk v1/Fase 4. Infrastruktur langganannya belum ada
   sama sekali — T4.20 / product-spec.md §4.23
 - Android — ditunda tanpa timeline pasti; v1 launch iOS-exclusive

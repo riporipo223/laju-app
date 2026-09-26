@@ -121,7 +121,10 @@ berbasis poin/leaderboard kompetitif.
 - **Freemium** — semua fitur dasar gratis (tracking, poin, rank, leaderboard)
 - **Premium** — Seasonal pass, Advanced statistics, Exclusive badge, Premium
   profile (referensi: Discord Nitro model — kosmetik/status, bukan pay-to-win).
-  **Harga DECIDED 2026-09-23**: $7.99/bulan (harga referensi USD), harga
+  **Harga DECIDED 2026-09-23, REVISI 2026-09-26**: ~~$7.99/bulan~~ **$1.99/bulan**
+  (harga referensi USD, diturunkan 2026-09-26 — bundle Premium sengaja
+  ringan setelah Club War ditahan dan Club dibuat gratis, lihat
+  product-spec.md §4.23 poin 7), harga
   regional lewat App Store Connect's price-tier localization sendiri —
   bukan sistem konversi kurs custom, ini tugas konfigurasi store, bukan
   engineering. Lihat product-spec.md §5 (baris Monetisasi). **Paket v1
@@ -136,7 +139,7 @@ berbasis poin/leaderboard kompetitif.
   stream terpisah.** Tidak ada dashboard web, tidak ada produk B2B untuk
   running club. Admin tools Club (analytics, challenge internal) masuk ke
   fitur Club (T4.1, product-spec.md §4.24) sebagai bagian dari **Premium
-  $7.99** — pendapatannya ikut baris Premium di atas. Tetap internal ke
+  $1.99** (direvisi 2026-09-26, sebelumnya $7.99) — pendapatannya ikut baris Premium di atas. Tetap internal ke
   Club itu sendiri; menjangkau seluruh user tetap eksklusif Laju (§4.21,
   ADR-0014).
 - ~~**B2B — event organizer**: Dashboard untuk event organizer (partisipasi,
