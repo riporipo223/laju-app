@@ -135,6 +135,68 @@ None of items 2-4, 12, 13, 15 have any code written yet — this session was dis
 only, no Senior iOS Developer work was dispatched. Next session's job is to turn the above into
 real, checkpointed implementation tasks (one at a time, per this file's own workflow contract in §1).
 
+**Audit drift 2026-09-26** — full read of the code against the 2026-09-26 doc update above (audit
+only, zero production code touched, per its own task instructions). Numbered against that task's own
+8 checklist points:
+
+1. **Club War stub — no drift.** `backend/lib/club-war/premium.ts`'s `isPremiumClub()` still
+   unconditionally returns `false`, no env flag, no bypass. No new Club War scope added anywhere in
+   `backend/app/api/club-wars/`. Matches "on hold" exactly.
+2. **`POST /api/clubs` Premium gate — real contradiction, confirmed.**
+   `backend/app/api/clubs/route.ts:72-74` still calls `isPremiumUser` and 403s `not_premium` for
+   every non-Premium caller. Directly contradicts §4.24 AC1 ("any tier can create"). iOS side has
+   the matching gate: `CreateClubView.swift:23-24` swaps the form for `PremiumUpsellView` on
+   `model.isPremiumRequired`. Both need reverting — real engineering work, not done.
+3. **Member cap — confirmed absent, not a contradiction.** `backend/app/api/clubs/[id]/join/route.ts`
+   has zero count/limit logic of any kind — checked the full file. This is new scope decided
+   2026-09-26 (after the 2026-09-25 code), so absence is expected, not drift.
+4. **Kick-member — confirmed absent, PLUS a stale comment worth flagging.**
+   `backend/app/api/clubs/[id]/members/route.ts`'s `DELETE` handler is self-leave only (`.eq(
+   "user_id", user.id)`, no `:userId` path param) — no owner-removes-member endpoint exists. Its own
+   doc comment currently reads *"owner-removes-member is admin tooling, deferred behind T4.20b same
+   as everything else Premium-gated"* — this comment is now factually wrong per §4.24 AC23 (kick-
+   member confirmed free for every tier, not admin/Premium tooling) and should be corrected/removed
+   whenever this endpoint is actually built, not just left as-is.
+5. **Freeze policy — confirmed absent.** No challenge/analytics endpoint exists anywhere under
+   `backend/app/api/clubs/` at all (only `route.ts`, `[id]/join/`, `[id]/members/`), so there is
+   nowhere for above/below-cap freeze logic to live yet. New scope, not drift.
+6. **"Club" vs "Circle" copy — full location list, none changed yet (audit only, as instructed).**
+   User-facing "Club" strings found: `RootTabView.swift:69` (tab label), `RanksView.swift:19-20`
+   (segmented control) `:44-45,53-54` (empty-state titles/body copy, Indonesian), `ClubHomeView.swift
+   :27,45,62,66` (nav title, "Browse Clubs"/"Club Saya"/"Club War" buttons), `ClubBrowseView.swift:28`
+   (nav title), `CreateClubView.swift:29` (nav title), `ClubMemberListView.swift` (doc-comment only,
+   mentions a "Leave Club" button whose actual label needs checking against whatever the button text
+   literally is when this gets built). **Open question for the PM, not assumed:** `ClubWarView.swift`
+   also says "Club War" (`:37` nav title, `:53` card title) and `ClubWarPreviewData.swift:25` says
+   "Club Kamu" — product-spec.md §4.24's rename note covers the base Club feature explicitly but
+   §4.19 (Club War) has no equivalent rename note either direction. Does "Club War" become "Circle
+   War" too, or does War intentionally keep the old name? Not guessed here.
+7. **CQ-11 root cause — confirmed present, but the doc's own speculated mechanism is wrong.**
+   Live pace (now displayed as live speed after this session's separate km/h change — same
+   underlying value) is computed in `RunTrackingView.swift`'s `liveSpeedLabel` (was `livePaceLabel`)
+   as `liveActiveDuration() / (distanceMeters / 1000)` — i.e. **whole-run cumulative average**,
+   recomputed on every UI tick from the SAME two running totals the stable `avg_pace_sec_per_km`
+   uses at Stop. CQ-11 speculates the likely cause is "computes pace from the last one or two GPS
+   samples directly" — **that read of the code is not what's happening; there is no last-N-samples
+   logic anywhere in this path.** The real, evidence-based mechanism: early in a run, the
+   denominator (elapsed active duration) is small, so each newly-accepted GPS movement chunk (10-20m
+   steps past the stationary-anchor filter, `RunViewModel.swift:295-336`) swings the cumulative
+   average sharply; later in a run, the same-size chunk is diluted by a much larger denominator and
+   barely moves it. This matches "kadang melompat, kadang tidak sesuai" (jumps early, settles later)
+   better than a raw-instant-velocity theory would. CQ-11's core finding (no defined
+   windowing/smoothing rule) still holds — only the specific guessed mechanism needed correcting
+   before a fix task designs around it.
+8. **General sweep — clean, nothing else found.** Grepped `backend/` and `ios/` for stale `$7.99`/
+   `7.99` pricing and any "no push"/"never send push" assumption in code comments — zero hits in
+   either. `tasks/README.md`'s T4.1b/T4.1c lines were already corrected by the PM's own reconcile
+   commit (`60eb675`) before this audit started — confirmed consistent with everything found above,
+   not a new finding.
+
+Nothing above was fixed — audit only, per this task's own instructions. Next session: turn items
+2-6 into real, checkpointed implementation tasks one at a time (same workflow contract as §1),
+starting with item 2 (the live contradiction) and item 6's open question (needs the PM's answer
+before any Club War copy is touched).
+
 **Update, 2026-09-24**: real device dogfood (Google sign-in, not Apple) surfaced product feedback,
 acted on the same day (commits `07e7a6b`, `b33add4`, `6ec3cc0`) — no task number owns this, it's
 ad-hoc PM-directed nav/UX work, not part of the phase-N task files:
